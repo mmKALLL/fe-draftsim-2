@@ -1,969 +1,2210 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GBA Emblem Roguelike Prototype</title>
-<style>
-  :root{
-    --bg:#111827;--panel:#1f2937;--panel2:#0f172a;--ink:#f8fafc;--muted:#94a3b8;--accent:#fbbf24;--blue:#2563eb;--red:#b91c1c;--green:#16a34a;
-  }
-  *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#111827,#020617);font:14px/1.35 system-ui,Segoe UI,Arial;color:var(--ink)}
-  h1,h2,h3{margin:0 0 8px}.wrap{max-width:none;margin:0;padding:16px}.top{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
-  .badge{display:inline-flex;gap:6px;align-items:center;border:1px solid #334155;border-radius:999px;padding:5px 9px;background:#0f172a;color:#cbd5e1;font-size:12px}
-  .grid{display:grid;grid-template-columns:minmax(340px,360px) minmax(520px,1fr) minmax(340px,360px);gap:12px}.panel{background:rgba(15,23,42,.92);border:1px solid #334155;border-radius:12px;padding:12px;box-shadow:0 8px 26px rgba(0,0,0,.25)}
-  button{border:1px solid #475569;background:#1e293b;color:#fff;border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:650}button:hover{background:#334155}button.primary{background:#92400e;border-color:#f59e0b}button.primary:hover{background:#b45309}button.good{background:#166534;border-color:#22c55e}button.danger{background:#7f1d1d;border-color:#ef4444}button:disabled{opacity:.45;cursor:not-allowed}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.space{justify-content:space-between}.small{font-size:12px;color:var(--muted)}.muted{color:var(--muted)}.hidden{display:none!important}
-  .card{border:1px solid #334155;border-radius:10px;padding:9px;background:rgba(30,41,59,.78);margin:8px 0}.unitCard{display:grid;grid-template-columns:64px 1fr;gap:9px;align-items:start}.unitCard.selected{outline:2px solid #fbbf24}.portrait{width:60px;height:60px;border:2px solid #111827;border-radius:4px;background:#334155;image-rendering:pixelated;box-shadow:0 0 0 1px #64748b}.battleSprite{width:64px;height:64px;image-rendering:pixelated;filter:drop-shadow(0 6px 0 rgba(0,0,0,.25));}
-  .name{font-weight:800}.class{font-size:12px;color:#cbd5e1}.hpbar{height:8px;border-radius:99px;background:#450a0a;overflow:hidden;border:1px solid #7f1d1d;margin-top:3px}.hpbar>i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#84cc16)}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:5px}.stats span{background:#111827;border:1px solid #334155;border-radius:5px;padding:2px 4px;font-size:11px}.stats b{color:#e2e8f0}.teamGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.arena{display:grid;grid-template-columns:1fr 70px 1fr;gap:8px;align-items:start}.side h3{text-align:center}.spriteRow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;min-height:150px}.combatSlot{min-width:0}.combatant{position:relative;text-align:center;border-radius:8px;padding:5px;background:rgba(15,23,42,.8);border:1px solid #334155;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease, opacity .3s ease}.combatant.active{transform:translateY(-10px);border-color:#fde68a;box-shadow:0 0 0 2px rgba(251,191,36,.5),0 12px 24px rgba(0,0,0,.35)}.combatant.target{transform:translateY(-10px);border-color:#93c5fd;box-shadow:0 0 0 2px rgba(147,197,253,.45),0 12px 24px rgba(0,0,0,.35)}.combatant.selectable{cursor:pointer;border-color:#22c55e}.combatant.selectable:hover{transform:translateY(-10px);box-shadow:0 0 0 2px rgba(34,197,94,.55)}.combatant.striking{transform:translateY(-10px) scale(1.08)}.combatant .hpText{font-size:12px;color:#cbd5e1}.combatant .hpbar{height:7px;margin:3px 0 2px}.combatant .hpbar>i{transition:width .3s ease}.combatPreview{min-height:36px;margin-top:8px;font-size:11px;line-height:1.2;color:#cbd5e1;text-align:center;white-space:normal}.combatPreview.empty{visibility:hidden}.combatPreview .hitAdv{color:#86efac}.combatPreview .hitDis{color:#fca5a5}.combatPreview .hitNeu{color:#e2e8f0}.combatPreview .critLine{color:#e2e8f0}.bossTag{color:#fde68a;font-weight:900}.nextMarker{position:absolute;left:50%;top:-22px;transform:translateX(-50%);width:18px;height:18px;z-index:3;filter:drop-shadow(0 2px 1px rgba(0,0,0,.75));animation:nextPulse .9s ease-in-out infinite}.nextMarker svg{display:block;width:18px;height:18px}.nextMarker path{fill:#bae6fd;stroke:#0f172a;stroke-width:1.5px}@keyframes nextPulse{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(3px)}}.floatText{position:absolute;left:50%;top:0;transform:translate(-50%,-18px);font-weight:900;text-shadow:0 2px 0 #000;animation:floatDamage .55s ease forwards;pointer-events:none}.floatText.damage{color:#fca5a5}.floatText.healing{color:#86efac}.floatText.missText{color:#93c5fd}@keyframes floatDamage{0%{opacity:0;transform:translate(-50%,0)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-32px)}}.dead{opacity:.35;filter:grayscale(1)}.versus{font-weight:900;font-size:28px;color:#fbbf24;text-align:center;margin-top:76px}.log{height:360px;overflow:auto;background:#020617;border:1px solid #334155;border-radius:10px;padding:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.log p{margin:0 0 5px}.hit{color:#fde68a}.miss{color:#93c5fd}.crit{color:#fca5a5}.heal{color:#86efac}.death{color:#f87171}.rewardGrid{display:grid;grid-template-columns:1fr;gap:8px}.reward{border:1px solid #475569;border-radius:10px;padding:10px;background:#172033}.reward h4{margin:0 0 5px;color:#fde68a}.pickList{max-height:480px;overflow:auto}.tabs{display:flex;gap:6px;margin:8px 0}.tab.active{background:#475569}.footer{margin-top:10px;color:#64748b;font-size:12px}.notice{background:rgba(15,23,42,.72);border:1px solid #334155;border-radius:10px;padding:8px;margin-bottom:10px;color:#cbd5e1}.assetNote{font-size:12px;color:#94a3b8;margin-top:6px}.assetNote code{background:#020617;border:1px solid #334155;border-radius:4px;padding:1px 4px;color:#e2e8f0}.statCompare{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.35;color:#cbd5e1;margin-top:5px;white-space:pre}.statCompare b{color:#e2e8f0}.modal{position:fixed;inset:0;background:rgba(2,6,23,.72);display:flex;align-items:center;justify-content:center;z-index:10}.modalBox{width:min(720px,96vw);max-height:90vh;overflow:auto;background:#0f172a;border:1px solid #fbbf24;border-radius:12px;padding:14px}.choice{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #334155;border-radius:10px;padding:9px;margin:8px 0;background:#111827}.pill{display:inline-block;border-radius:999px;padding:1px 6px;background:#334155;color:#e2e8f0;font-size:11px}.weaponStats{display:grid;grid-template-columns:repeat(5,auto);gap:3px;margin-top:5px}.weaponStats span{background:#172033;border:1px solid #334155;border-radius:5px;padding:2px 4px;font-size:11px;color:#cbd5e1}.weaponStats b{color:#f8fafc}.kbd{font-family:monospace;background:#020617;border:1px solid #334155;border-radius:4px;padding:1px 4px}
-  @media(max-width:1000px){.grid{grid-template-columns:1fr}.arena{grid-template-columns:1fr}.versus{margin:0}.teamGrid{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="top">
-    <div><h1>GBA Emblem Roguelike Prototype</h1><div class="small">FEMP-compatible asset hooks, FE7-inspired mechanics, richer weapons, animated round-robin arena loop.</div></div>
-    <div class="row"><span class="badge">Battle <b id="battleNo">0</b>/20</span><span class="badge">Roster <b id="rosterCount">0</b>/5</span><span class="badge">Seed <b id="seedLabel"></b></span></div>
-  </div>
-  
-
-  <div id="draftScreen" class="panel">
-    <h2>Random starting roster</h2>
-    <div class="small">Five units are rolled automatically and start with iron/basic weapons. Most begin at level 1; low-growth units may begin 2 or 4 internal levels higher. Reaching level 21 promotes and resets to promoted level 1.</div>
-    <div id="draftList" class="teamGrid"></div>
-    <div class="row space" style="margin-top:10px"><div id="draftHint" class="small"></div><div class="row"><button id="rerollBtn">Reroll roster</button><button id="startBtn" class="primary">Start run</button></div></div>
-  </div>
-
-  <div id="gameScreen" class="grid hidden">
-    <section class="panel">
-      <div class="row space"><h2>Your roster</h2><button id="resetBtn">New run</button></div>
-      <div id="playerTeam"></div>
-    </section>
-    <main class="panel">
-      <div class="row space"><h2>Arena</h2><div class="row"><span class="badge">Battles auto-start; choose targets on player turns</span></div></div>
-      <div id="combatStatus" class="notice hidden"></div>
-      <div id="arena" class="arena">
-        <div class="side"><h3>Blue</h3><div id="blueSprites" class="spriteRow"></div></div><div class="versus">VS</div><div class="side"><h3>Red</h3><div id="redSprites" class="spriteRow"></div></div>
-      </div>
-      <h3 style="margin-top:10px">Combat log</h3><div id="log" class="log"></div>
-    </main>
-    <aside class="panel">
-      <h2>Enemy team</h2><div id="enemyTeam"></div>
-      <div class="footer">Tip: click a unit card to inspect its exact stats. A battle ends when one team has no living units. Player turns require choosing an enemy target. Defeated slots are skipped; player and enemy rotations advance independently.</div>
-    </aside>
-  </div>
-</div>
-
-<div id="modal" class="modal hidden"><div class="modalBox"><div id="modalBody"></div></div></div>
-
-<script>
-// Version: 2026-05-29 femp-assets-support-plus-weapons.
-
-'use strict';
-// ---------- deterministic-ish utilities ----------
-let seed = Math.floor(Math.random()*999999); document.getElementById('seedLabel').textContent=seed;
-function rnd(){ seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
-function rint(n){ return Math.floor(rnd()*n); }
-function pick(a){ return a[rint(a.length)]; }
-function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
-function floor(v){ return Math.floor(v); }
-function capStat(unit,k){ return unit.caps?.[k] ?? (k==='hp'?60:30); }
-
-// ---------- original pixel sprite system ----------
-const palettes = {
-  blue:['#1e3a8a','#2563eb','#93c5fd','#f8fafc','#7c2d12','#f2c9a0','#111827'],
-  red:['#7f1d1d','#dc2626','#fecaca','#f8fafc','#422006','#f2c9a0','#111827'],
-  green:['#14532d','#16a34a','#bbf7d0','#f8fafc','#3f2a1d','#f2c9a0','#111827'],
-  purple:['#581c87','#9333ea','#e9d5ff','#f8fafc','#1f2937','#f2c9a0','#111827'],
-  gold:['#713f12','#d97706','#fde68a','#f8fafc','#111827','#f2c9a0','#111827']
-};
-function svgDataUri(kind='lord', team='blue', promoted=false){
-  const p=palettes[team]||palettes.blue, [dark,main,light,white,hair,skin,black]=p;
-  const cape = kind==='mage'||kind==='cleric'||kind==='shaman';
-  const armor = kind==='knight'||kind==='cavalier'||kind==='wyvern';
-  const bow = kind==='archer';
-  const axe = kind==='fighter'||kind==='brigand';
-  const lance = kind==='pegasus'||kind==='cavalier'||kind==='knight'||kind==='wyvern';
-  const sword = kind==='lord'||kind==='merc'||kind==='myrm'||kind==='thief';
-  const staff = kind==='cleric';
-  const scale = 4;
-  function rect(x,y,w,h,c){return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;}
-  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">`;
-  s+=rect(0,0,64,64,'transparent');
-  // shadow
-  s+=rect(14,56,36,4,'rgba(0,0,0,.35)');
-  // weapon behind
-  if(sword){ s+=rect(45,10,4,36,white)+rect(47,8,2,4,light)+rect(43,42,10,3,dark); }
-  if(lance){ s+=rect(49,5,3,46,white)+rect(47,3,7,6,light); }
-  if(axe){ s+=rect(48,16,4,34,hair)+rect(44,12,12,9,white)+rect(52,15,7,8,light); }
-  if(bow){ s+=`<path d="M48 12 L57 23 L57 42 L48 53 L51 42 L51 23 Z" fill="none" stroke="${hair}" stroke-width="3"/>`+rect(53,17,1,31,white); }
-  if(staff){ s+=rect(49,9,3,42,white)+rect(46,7,9,8,light)+rect(48,5,5,4,white); }
-  // cape/wings/mount hints
-  if(cape) s+=rect(14,25,36,30,dark)+rect(18,29,28,25,main);
-  if(kind==='pegasus') s+=rect(6,33,19,8,white)+rect(5,29,15,5,light)+rect(40,33,19,8,white)+rect(44,29,15,5,light);
-  if(kind==='wyvern') s+=rect(5,31,19,8,dark)+rect(4,27,15,5,main)+rect(40,31,20,8,dark)+rect(45,27,14,5,main);
-  if(kind==='cavalier') s+=rect(11,42,42,13,hair)+rect(12,51,8,9,black)+rect(43,51,8,9,black);
-  // legs/body/head
-  s+=rect(24,44,6,13,dark)+rect(35,44,6,13,dark)+rect(22,27,22,19,armor?light:main)+rect(20,30,6,14,dark)+rect(42,30,6,14,dark);
-  if(armor){s+=rect(25,29,16,13,white)+rect(27,32,12,10,light)+rect(22,27,22,3,dark);}
-  s+=rect(25,14,15,13,skin)+rect(23,11,19,8,hair)+rect(25,8,14,5,hair)+rect(29,20,3,3,black)+rect(36,20,3,3,black)+rect(31,25,7,2,'#9f1239');
-  // class details
-  if(kind==='myrm') s+=rect(19,26,27,4,light)+rect(17,25,6,6,white);
-  if(kind==='thief') s+=rect(24,13,18,4,dark)+rect(42,16,5,4,dark);
-  if(kind==='mage'||kind==='shaman') s+=rect(20,12,24,5,dark)+rect(24,8,16,5,main)+rect(28,4,8,5,light);
-  if(kind==='cleric') s+=rect(24,7,16,6,white)+rect(30,4,4,13,light);
-  if(promoted){ s+=rect(16,23,6,6,'#fde68a')+rect(42,23,6,6,'#fde68a')+rect(30,2,5,5,'#fde68a'); }
-  s+=`</svg>`; return 'data:image/svg+xml;utf8,'+encodeURIComponent(s);
-}
-
-function mugshotDataUri(name='', kind='lord', team='blue', promoted=false){
-  const p=palettes[team]||palettes.blue;
-  const [dark,main,light,white,hairBase,skin,black]=p;
-  let h=0; for(const ch of name) h=(h*31+ch.charCodeAt(0))>>>0;
-  const hairColors=['#1f2937','#3f2a1d','#713f12','#78350f','#451a03','#4c1d95','#7f1d1d','#92400e'];
-  const hair=hairColors[h%hairColors.length];
-  const skinTones=['#f2c9a0','#e8b88e','#d69b73','#c1845f','#f7d6b8'];
-  const face=skinTones[(h>>3)%skinTones.length];
-  const eye=(h%3===0)?'#0f172a':(h%3===1?'#1e3a8a':'#14532d');
-  const mouth=(h%2)?'#9f1239':'#7f1d1d';
-  const bangs=(h>>4)%4, jaw=(h>>6)%3;
-  const hat = ['mage','shaman','cleric'].includes(kind);
-  const helm = ['knight','wyvern','cavalier'].includes(kind);
-  function r(x,y,w,h,c){return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;}
-  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">`;
-  s+=r(0,0,64,64,'#0f172a')+r(2,2,60,60,'#1e293b')+r(4,4,56,56,'#334155');
-  s+=r(8,44,48,16,dark)+r(13,38,38,19,main)+r(18,38,28,6,light);
-  if(helm){ s+=r(16,10,32,12,dark)+r(14,18,36,16,main)+r(20,13,24,7,light); }
-  else if(hat){ s+=r(15,8,34,8,dark)+r(19,4,26,7,main)+r(24,1,16,5,light); }
-  else { s+=r(17,10,30,8,hair)+r(14,16,36,10,hair); if(bangs===0)s+=r(20,24,7,6,hair)+r(34,23,8,6,hair); if(bangs===1)s+=r(16,24,12,5,hair)+r(28,22,7,7,hair); if(bangs===2)s+=r(36,23,11,7,hair); if(bangs===3)s+=r(21,22,20,4,hair); }
-  s+=r(18,20,28,26,face);
-  if(jaw===0)s+=r(21,46,22,4,face); else if(jaw===1)s+=r(24,46,16,5,face); else s+=r(19,44,26,3,face);
-  s+=r(15,25,4,13,hair)+r(45,25,4,13,hair);
-  s+=r(23,29,4,4,eye)+r(38,29,4,4,eye)+r(27,27,7,2,hair)+r(36,27,7,2,hair);
-  s+=r(31,32,3,7,'#b7795b')+r(28,40,10,2,mouth);
-  if(kind==='myrm'||kind==='thief') s+=r(13,19,38,3,dark)+r(48,22,5,7,dark);
-  if(kind==='pegasus') s+=r(8,36,9,7,white)+r(47,36,9,7,white);
-  if(kind==='fighter') s+=r(9,41,9,9,hair)+r(46,41,9,9,hair);
-  if(promoted) s+=r(29,6,6,4,'#fde68a')+r(12,42,5,5,'#fde68a')+r(47,42,5,5,'#fde68a');
-  s+=`</svg>`;
-  return 'data:image/svg+xml;utf8,'+encodeURIComponent(s);
-}
-
-
-// ---------- optional FEMP asset hooks ----------
-// The prototype does not bundle third-party files. If you download FEMP/FEU assets,
-// put them next to this HTML using the folder layout below and the UI will use them.
-// Portrait examples: ./assets/femp/portraits/lyn.png, ./assets/femp/portraits/eliwood.png
-// Battle examples:  ./assets/femp/battle/myrm.png, ./assets/femp/battle/cavalier.gif
-const FEMP_ASSET_ROOT = './assets/femp';
-const FEMP_IMAGE_EXTS = ['png','gif','webp'];
-const FEMP_NAME_OVERRIDES = {
-  "L'Arachel": 'larachel',
-  'Pent': 'pent', 'Lucius':'lucius', 'Canas':'canas', 'Niime':'niime', 'Athos':'athos'
-};
-function assetSlug(s=''){
-  return String(s).toLowerCase().replace(/['’]/g,'').replace(/[^a-z0-9]+/g,'').trim();
-}
-function titleStem(stem=''){
-  return stem ? stem.charAt(0).toUpperCase()+stem.slice(1) : stem;
-}
-function assetPathVariants(folder, stem){
-  const stems=[stem, titleStem(stem), stem.toUpperCase()].filter(Boolean);
-  const seen=new Set(), out=[];
-  for(const st of stems){
-    for(const ext of FEMP_IMAGE_EXTS){
-      const path=`${FEMP_ASSET_ROOT}/${folder}/${st}.${ext}`;
-      if(!seen.has(path)){ seen.add(path); out.push(path); }
-    }
-  }
-  return out;
-}
-function portraitFileStem(name){ return FEMP_NAME_OVERRIDES[name] || assetSlug(name); }
-function battleFileStem(kind){
-  const map={lord:'lord',merc:'merc',myrm:'myrm',thief:'thief',cavalier:'cavalier',knight:'knight',pegasus:'pega',wyvern:'wyvern',fighter:'fighter',brigand:'brigand',archer:'archer',mage:'mage',cleric:'cleric',shaman:'shaman'};
-  return map[kind] || assetSlug(kind);
-}
-function fallbackPortrait(name, kind, team, promoted){ return mugshotDataUri(name, kind, team, promoted); }
-function fallbackBattle(kind, team, promoted){ return svgDataUri(kind, team, promoted); }
-function assetImg(cls, primary, fallbacks, fallbackData, alt=''){
-  const chain=[primary, ...fallbacks, fallbackData].filter(Boolean);
-  const encoded=chain.map(x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;')).join('|');
-  return `<img class="${cls}" src="${chain[0]}" alt="${alt}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)">`;
-}
-function assetFallback(img){
-  const chain=(img.dataset.chain||'').split('|');
-  let i=Number(img.dataset.chainI||0)+1;
-  if(i<chain.length){ img.dataset.chainI=String(i); img.src=chain[i]; }
-  else { img.onerror=null; }
-}
-function portraitImgForBase(b,c){
-  const stem=portraitFileStem(b.name);
-  const paths=assetPathVariants('portraits', stem);
-  return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(b.name,c.kind,b.palette,false), b.name);
-}
-function portraitImgForUnit(u){
-  const label=u.isEnemy ? (u.baseName || u.name) : (u.baseName || u.name);
-  const stem=portraitFileStem(label);
-  const paths=assetPathVariants('portraits', stem);
-  return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(label,u.kind,u.team,u.promoted), label);
-}
-function battleImgForUnit(u){
-  const stem=battleFileStem(u.kind);
-  const promotedStem=u.promoted ? `${stem}_promoted` : stem;
-  const paths=[
-    ...assetPathVariants('battle', promotedStem),
-    ...assetPathVariants('battle', stem)
-  ];
-  return assetImg('battleSprite', paths[0], paths.slice(1), fallbackBattle(u.kind,u.team,u.promoted), u.displayCls || u.cls || u.kind);
-}
-
-
-// ---------- game data: close FE7 starting archetypes, compact roster ----------
-const CLASSES = {
-  Lord:{promotesTo:'Blade Lord', kind:'lord', caps:{hp:60,str:27,skl:29,spd:30,lck:30,def:22,res:22,con:20}, promo:{hp:4,str:2,skl:2,spd:1,def:3,res:3,con:1}},
-  Mercenary:{promotesTo:'Hero', kind:'merc', caps:{hp:60,str:25,skl:30,spd:26,lck:30,def:25,res:22,con:20}, promo:{hp:4,str:2,skl:1,spd:1,def:2,res:2,con:1}},
-  Myrmidon:{promotesTo:'Swordmaster', kind:'myrm', caps:{hp:60,str:24,skl:29,spd:30,lck:30,def:22,res:23,con:20}, promo:{hp:4,str:2,skl:2,spd:1,def:2,res:2,con:1}},
-  Knight:{promotesTo:'General', kind:'knight', caps:{hp:60,str:27,skl:25,spd:24,lck:30,def:30,res:25,con:20}, promo:{hp:4,str:2,skl:2,spd:2,def:4,res:3,con:2}},
-  Cavalier:{promotesTo:'Paladin', kind:'cavalier', caps:{hp:60,str:25,skl:26,spd:24,lck:30,def:25,res:25,con:20}, promo:{hp:3,str:2,skl:1,spd:1,def:2,res:3,con:1}},
-  Pegasus:{promotesTo:'Falcon Knight', kind:'pegasus', caps:{hp:60,str:23,skl:25,spd:28,lck:30,def:22,res:26,con:20}, promo:{hp:4,str:2,skl:2,spd:2,def:2,res:2,con:1}},
-  Fighter:{promotesTo:'Warrior', kind:'fighter', caps:{hp:60,str:30,skl:28,spd:26,lck:30,def:26,res:22,con:20}, promo:{hp:3,str:1,skl:2,spd:2,def:3,res:3,con:1}},
-  Archer:{promotesTo:'Sniper', kind:'archer', caps:{hp:60,str:25,skl:30,spd:28,lck:30,def:25,res:23,con:20}, promo:{hp:3,str:1,skl:2,spd:2,def:2,res:2,con:1}},
-  Mage:{promotesTo:'Sage', kind:'mage', caps:{hp:60,str:28,skl:30,spd:26,lck:30,def:21,res:25,con:20}, promo:{hp:3,str:1,skl:1,spd:1,def:3,res:3,con:1}},
-  Cleric:{promotesTo:'Bishop', kind:'cleric', caps:{hp:60,str:25,skl:26,spd:24,lck:30,def:21,res:30,con:20}, promo:{hp:3,str:2,skl:1,spd:1,def:2,res:3,con:1}},
-  Shaman:{promotesTo:'Druid', kind:'shaman', caps:{hp:60,str:29,skl:26,spd:26,lck:30,def:21,res:28,con:20}, promo:{hp:4,str:1,skl:1,spd:2,def:2,res:2,con:1}},
-  Wyvern:{promotesTo:'Wyvern Lord', kind:'wyvern', caps:{hp:60,str:27,skl:25,spd:23,lck:30,def:28,res:22,con:20}, promo:{hp:3,str:2,skl:2,spd:2,def:3,res:1,con:1}}
-};
-const CLASS_TAGS = {
-  Lord:[], 'Blade Lord':[], Mercenary:[], Hero:[], Myrmidon:[], Swordmaster:[],
-  Knight:['armored'], General:['armored'], Cavalier:['mounted'], Paladin:['mounted'],
-  Pegasus:['flying'], 'Falcon Knight':['flying'], Wyvern:['flying','dragon'], 'Wyvern Lord':['flying','dragon'],
-  Fighter:[], Warrior:[], Archer:[], Sniper:[], Mage:[], Sage:[], Cleric:[], Bishop:[], Shaman:[], Druid:[]
-};
-const WEAPONS = [
-  {name:'Iron Sword', type:'sword', mt:5, hit:90, wt:5, crit:0, magic:false},
-  {name:'Slim Sword', type:'sword', mt:3, hit:100, wt:2, crit:5, magic:false},
-  {name:'Steel Sword', type:'sword', mt:8, hit:75, wt:10, crit:0, magic:false},
-  {name:'Iron Blade', type:'sword', mt:9, hit:70, wt:12, crit:0, magic:false},
-  {name:'Armourslayer', type:'sword', mt:8, hit:80, wt:11, crit:0, magic:false, effective:['armored']},
-  {name:'Longsword', type:'sword', mt:6, hit:85, wt:11, crit:0, magic:false, effective:['mounted']},
-  {name:'Killing Edge', type:'sword', mt:9, hit:75, wt:7, crit:30, magic:false},
-  {name:'Lancereaver', type:'sword', mt:9, hit:75, wt:9, crit:5, magic:false, reaver:true},
-  {name:'Brave Sword', type:'sword', mt:9, hit:75, wt:12, crit:0, magic:false, brave:true},
-  {name:'Silver Sword', type:'sword', mt:13, hit:80, wt:8, crit:0, magic:false},
-  {name:'Regal Blade', type:'sword', mt:20, hit:85, wt:9, crit:0, magic:false},
-
-  {name:'Iron Lance', type:'lance', mt:7, hit:80, wt:8, crit:0, magic:false},
-  {name:'Slim Lance', type:'lance', mt:4, hit:85, wt:4, crit:5, magic:false},
-  {name:'Steel Lance', type:'lance', mt:10, hit:70, wt:13, crit:0, magic:false},
-  {name:'Heavy Spear', type:'lance', mt:9, hit:70, wt:14, crit:0, magic:false, effective:['armored']},
-  {name:'Horseslayer', type:'lance', mt:7, hit:75, wt:13, crit:0, magic:false, effective:['mounted']},
-  {name:'Killer Lance', type:'lance', mt:10, hit:70, wt:9, crit:30, magic:false},
-  {name:'Axereaver', type:'lance', mt:10, hit:70, wt:11, crit:5, magic:false, reaver:true},
-  {name:'Brave Lance', type:'lance', mt:10, hit:70, wt:14, crit:0, magic:false, brave:true},
-  {name:'Silver Lance', type:'lance', mt:14, hit:75, wt:10, crit:0, magic:false},
-
-  {name:'Iron Axe', type:'axe', mt:8, hit:75, wt:10, crit:0, magic:false},
-  {name:'Steel Axe', type:'axe', mt:11, hit:65, wt:15, crit:0, magic:false},
-  {name:'Hand Axe', type:'axe', mt:7, hit:60, wt:12, crit:0, magic:false},
-  {name:'Hammer', type:'axe', mt:10, hit:55, wt:15, crit:0, magic:false, effective:['armored']},
-  {name:'Halberd', type:'axe', mt:10, hit:60, wt:15, crit:0, magic:false, effective:['mounted']},
-  {name:'Longaxe', type:'axe', mt:8, hit:65, wt:13, crit:0, magic:false, effective:['mounted']},
-  {name:'Killer Axe', type:'axe', mt:11, hit:65, wt:11, crit:30, magic:false},
-  {name:'Swordreaver', type:'axe', mt:11, hit:65, wt:13, crit:5, magic:false, reaver:true},
-  {name:'Swordslayer', type:'axe', mt:11, hit:80, wt:13, crit:5, magic:false, reaver:true, effective:['swordUser']},
-  {name:'Brave Axe', type:'axe', mt:10, hit:65, wt:16, crit:0, magic:false, brave:true},
-  {name:'Silver Axe', type:'axe', mt:15, hit:70, wt:12, crit:0, magic:false},
-
-  {name:'Iron Bow', type:'bow', mt:6, hit:85, wt:5, crit:0, magic:false, effective:['flying']},
-  {name:'Steel Bow', type:'bow', mt:9, hit:70, wt:9, crit:0, magic:false, effective:['flying']},
-  {name:'Short Bow', type:'bow', mt:5, hit:85, wt:3, crit:10, magic:false, effective:['flying']},
-  {name:'Killer Bow', type:'bow', mt:9, hit:75, wt:7, crit:30, magic:false, effective:['flying']},
-  {name:'Brave Bow', type:'bow', mt:10, hit:70, wt:12, crit:0, magic:false, brave:true, effective:['flying']},
-  {name:'Silver Bow', type:'bow', mt:13, hit:75, wt:6, crit:0, magic:false, effective:['flying']},
-
-  {name:'Fire', type:'anima', mt:5, hit:90, wt:4, crit:0, magic:true},
-  {name:'Thunder', type:'anima', mt:8, hit:80, wt:6, crit:5, magic:true},
-  {name:'Elfire', type:'anima', mt:10, hit:85, wt:10, crit:0, magic:true},
-  {name:'Fimbulvetr', type:'anima', mt:12, hit:80, wt:12, crit:0, magic:true},
-  {name:'Excalibur', type:'anima', mt:18, hit:90, wt:13, crit:10, magic:true, effective:['flying']},
-  {name:'Lightning', type:'light', mt:4, hit:95, wt:6, crit:5, magic:true},
-  {name:'Shine', type:'light', mt:6, hit:90, wt:8, crit:8, magic:true},
-  {name:'Divine', type:'light', mt:8, hit:85, wt:12, crit:10, magic:true},
-  {name:'Aura', type:'light', mt:12, hit:80, wt:15, crit:15, magic:true},
-  {name:'Aureola', type:'light', mt:18, hit:85, wt:14, crit:5, magic:true},
-  {name:'Flux', type:'dark', mt:7, hit:80, wt:8, crit:0, magic:true},
-  {name:'Luna', type:'dark', mt:0, hit:95, wt:12, crit:20, magic:true, pierceRes:true},
-  {name:'Nosferatu', type:'dark', mt:10, hit:70, wt:14, crit:0, magic:true, drain:true},
-  {name:'Fenrir', type:'dark', mt:15, hit:70, wt:18, crit:0, magic:true},
-  {name:'Ereshkigal', type:'dark', mt:20, hit:95, wt:12, crit:0, magic:true},
-  {name:'Heal Staff', type:'staff', mt:10, hit:100, wt:0, crit:0, staff:true, magic:true, effect:'heal'},
-  {name:'Mend Staff', type:'staff', mt:20, hit:100, wt:0, crit:0, staff:true, magic:true, effect:'heal'},
-  {name:'Sleep Staff', type:'staff', mt:0, hit:65, wt:0, crit:0, staff:true, magic:true, effect:'sleep'},
-  {name:'Berserk Staff', type:'staff', mt:0, hit:55, wt:0, crit:0, staff:true, magic:true, effect:'berserk'},
-  {name:'Fortify Staff', type:'staff', mt:0, hit:100, wt:0, crit:0, staff:true, magic:true, effect:'fortify'}
-]
-const BASES = [
-  // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data.
-  U('Lyn','Lord','sword',        {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
-  U('Eliwood','Lord','sword',    {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
-  U('Hector','Lord','axe',       {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25,gTotal:335},'green'),
-  U('Raven','Mercenary','sword', {bTotal:40,hp:25,str:8,skl:11,spd:13,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
-  U('Guy','Myrmidon','sword',    {bTotal:38,hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},  {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25,gTotal:310},'gold'),
-  U('Karel','Myrmidon','sword',  {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},  {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20,gTotal:280},'red'),
-  U('Harken','Mercenary','sword',{bTotal:41,hp:24,str:9,skl:9,spd:10,lck:4,def:7,res:2,con:11},  {hp:80,str:45,skl:45,spd:35,lck:35,def:30,res:25,gTotal:295},'blue'),
-
-  U('Oswin','Knight','lance',    {bTotal:46,hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
-  U('Sain','Cavalier','lance',   {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
-  U('Florina','Pegasus','lance', {bTotal:36,hp:17,str:5,skl:7,spd:9,lck:7,def:4,res:4,con:4},    {hp:60,str:40,skl:50,spd:55,lck:50,def:15,res:35,gTotal:305},'blue'),
-  U('Fiora','Pegasus','lance',   {bTotal:40,hp:19,str:6,skl:8,spd:10,lck:6,def:5,res:5,con:5},   {hp:70,str:35,skl:60,spd:50,lck:30,def:20,res:50,gTotal:315},'purple'),
-  U('Heath','Wyvern','lance',    {bTotal:40,hp:24,str:10,skl:7,spd:7,lck:7,def:8,res:1,con:9},   {hp:80,str:50,skl:50,spd:45,lck:20,def:30,res:20,gTotal:295},'red'),
-  U('Kent','Cavalier','sword',   {bTotal:27,hp:20,str:6,skl:6,spd:7,lck:2,def:5,res:1,con:9},    {hp:85,str:40,skl:50,spd:45,lck:20,def:25,res:25,gTotal:290},'red'),
-  U('Lowen','Cavalier','lance',  {bTotal:29,hp:23,str:7,skl:5,spd:7,lck:3,def:7,res:0,con:10},   {hp:90,str:30,skl:30,spd:30,lck:50,def:40,res:30,gTotal:300},'green'),
-
-  U('Dorcas','Fighter','axe',    {bTotal:26,hp:30,str:7,skl:7,spd:6,lck:3,def:3,res:0,con:14},   {hp:80,str:60,skl:40,spd:20,lck:45,def:25,res:15,gTotal:285},'gold'),
-  U('Bartre','Fighter','axe',    {bTotal:25,hp:29,str:9,skl:5,spd:3,lck:4,def:4,res:0,con:13},   {hp:85,str:50,skl:35,spd:40,lck:30,def:30,res:25,gTotal:295},'red'),
-  U('Geitz','Fighter','axe',     {bTotal:38,hp:27,str:10,skl:8,spd:8,lck:5,def:6,res:1,con:13},  {hp:85,str:50,skl:40,spd:40,lck:40,def:20,res:20,gTotal:295},'green'),
-  U('Garcia','Fighter','axe',    {bTotal:29,hp:28,str:8,skl:7,spd:6,lck:3,def:5,res:0,con:13},   {hp:80,str:65,skl:40,spd:30,lck:40,def:25,res:15,gTotal:295},'gold'),
-  U('Ross','Fighter','axe',      {bTotal:28,hp:22,str:6,skl:4,spd:5,lck:8,def:4,res:1,con:8},    {hp:70,str:50,skl:35,spd:30,lck:40,def:25,res:20,gTotal:270},'blue'),
-
-  U('Rebecca','Archer','bow',    {bTotal:23,hp:17,str:4,skl:5,spd:6,lck:4,def:3,res:1,con:5},    {hp:60,str:40,skl:50,spd:60,lck:50,def:15,res:30,gTotal:305},'green'),
-  U('Wil','Archer','bow',        {bTotal:27,hp:20,str:6,skl:5,spd:5,lck:6,def:5,res:0,con:6},    {hp:75,str:50,skl:50,spd:40,lck:40,def:20,res:25,gTotal:300},'blue'),
-  U('Louise','Archer','bow',     {bTotal:40,hp:19,str:7,skl:9,spd:9,lck:7,def:4,res:4,con:6},    {hp:60,str:35,skl:45,spd:40,lck:55,def:20,res:30,gTotal:285},'purple'),
-  U('Neimi','Archer','bow',      {bTotal:27,hp:17,str:4,skl:6,spd:7,lck:5,def:3,res:2,con:5},    {hp:55,str:45,skl:50,spd:60,lck:50,def:15,res:35,gTotal:310},'red'),
-  U('Innes','Archer','bow',      {bTotal:42,hp:21,str:8,skl:10,spd:10,lck:6,def:5,res:3,con:7},  {hp:75,str:40,skl:45,spd:45,lck:45,def:20,res:25,gTotal:295},'gold'),
-
-  U('Erk','Mage','anima',        {bTotal:27,hp:17,str:5,skl:6,spd:7,lck:3,def:2,res:4,con:5},    {hp:65,str:40,skl:40,spd:50,lck:30,def:20,res:40,gTotal:285},'purple'),
-  U('Nino','Mage','anima',       {bTotal:30,hp:15,str:3,skl:4,spd:8,lck:8,def:2,res:5,con:3},    {hp:55,str:50,skl:55,spd:60,lck:45,def:15,res:50,gTotal:330},'green'),
-  U('Pent','Mage','anima',       {bTotal:45,hp:22,str:8,skl:9,spd:10,lck:7,def:4,res:7,con:7},   {hp:70,str:35,skl:40,spd:40,lck:40,def:30,res:45,gTotal:300},'blue'),
-  U('Lute','Mage','anima',       {bTotal:35,hp:17,str:6,skl:6,spd:7,lck:8,def:3,res:5,con:3},    {hp:45,str:65,skl:30,spd:45,lck:45,def:15,res:40,gTotal:285},'purple'),
-  U('Saleh','Mage','anima',      {bTotal:40,hp:23,str:8,skl:8,spd:8,lck:5,def:5,res:6,con:8},    {hp:70,str:40,skl:40,spd:40,lck:30,def:25,res:45,gTotal:290},'gold'),
-
-  U('Lucius','Cleric','light',   {bTotal:32,hp:18,str:7,skl:6,spd:10,lck:2,def:1,res:6,con:6},   {hp:55,str:60,skl:50,spd:40,lck:20,def:10,res:60,gTotal:295},'blue'),
-  U('Renault','Cleric','light',  {bTotal:38,hp:22,str:7,skl:8,spd:7,lck:4,def:5,res:7,con:9},    {hp:60,str:40,skl:40,spd:35,lck:30,def:25,res:45,gTotal:275},'red'),
-  U('Artur','Cleric','light',    {bTotal:30,hp:19,str:6,skl:6,spd:8,lck:2,def:2,res:6,con:6},    {hp:55,str:50,skl:50,spd:40,lck:25,def:15,res:55,gTotal:290},'gold'),
-  U('Riev','Cleric','light',     {bTotal:36,hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},    {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60,gTotal:280},'purple'),
-
-  U('Canas','Shaman','dark',     {bTotal:47,hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
-  U('Knoll','Shaman','dark',     {bTotal:28,hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
-  U('Ewan','Shaman','dark',      {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:45,skl:40,spd:35,lck:50,def:15,res:40,gTotal:275},'red'),
-  U('Lyon','Shaman','dark',      {bTotal:35,hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},    {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55,gTotal:300},'purple'),
-
-  U('Serra','Cleric','staff',    {bTotal:28,hp:17,str:2,skl:5,spd:8,lck:6,def:2,res:5,con:4},    {hp:50,str:50,skl:30,spd:40,lck:60,def:15,res:55,gTotal:300},'gold'),
-  U('Priscilla','Cleric','staff',{bTotal:33,hp:16,str:3,skl:6,spd:8,lck:7,def:3,res:6,con:4},    {hp:45,str:40,skl:50,spd:40,lck:65,def:15,res:50,gTotal:305},'red'),
-  U('Moulder','Cleric','staff',  {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,res:5,con:9},    {hp:70,str:40,skl:50,spd:40,lck:20,def:25,res:25,gTotal:270},'blue'),
-  U('Natasha','Cleric','staff',  {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
-
-  // More FE7/FE8-inspired units for a broader, less swingy random pool. No FE8 skill systems are implemented.
-  U('Marcus','Cavalier','lance', {bTotal:43,hp:25,str:8,skl:8,spd:7,lck:5,def:9,res:6,con:11},   {hp:65,str:30,skl:50,spd:25,lck:30,def:15,res:35,gTotal:250},'gold',4),
-  U('Isadora','Cavalier','sword',{bTotal:43,hp:21,str:7,skl:8,spd:10,lck:6,def:6,res:6,con:6},   {hp:75,str:30,skl:35,spd:50,lck:45,def:20,res:25,gTotal:280},'red',2),
-  U('Wallace','Knight','lance',  {bTotal:41,hp:28,str:10,skl:6,spd:5,lck:6,def:12,res:2,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
-  U('Vaida','Wyvern','lance',    {bTotal:43,hp:27,str:11,skl:8,spd:8,lck:4,def:10,res:2,con:12}, {hp:80,str:45,skl:35,spd:30,lck:25,def:25,res:15,gTotal:255},'purple',2),
-  U('Farina','Pegasus','lance',  {bTotal:41,hp:18,str:7,skl:8,spd:9,lck:7,def:5,res:5,con:5},    {hp:75,str:50,skl:45,spd:45,lck:45,def:25,res:30,gTotal:315},'green'),
-  U('Rath','Archer','bow',       {bTotal:34,hp:22,str:7,skl:7,spd:8,lck:5,def:5,res:2,con:7},    {hp:80,str:50,skl:40,spd:50,lck:30,def:25,res:25,gTotal:300},'blue'),
-  U('Dart','Fighter','axe',      {bTotal:31,hp:25,str:8,skl:5,spd:8,lck:3,def:6,res:1,con:10},   {hp:70,str:65,skl:20,spd:60,lck:35,def:20,res:15,gTotal:285},'red'),
-  U('Hawkeye','Fighter','axe',   {bTotal:42,hp:28,str:10,skl:8,spd:6,lck:7,def:8,res:3,con:16},  {hp:50,str:40,skl:30,spd:25,lck:40,def:20,res:35,gTotal:240},'gold',4),
-  U('Matthew','Myrmidon','sword',{bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,res:0,con:7},   {hp:75,str:30,skl:40,spd:70,lck:50,def:25,res:20,gTotal:310},'green'),
-  U('Legault','Myrmidon','sword',{bTotal:38,hp:20,str:6,skl:8,spd:11,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
-  U('Jaffar','Myrmidon','sword', {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
-  U('Karla','Myrmidon','sword',  {bTotal:44,hp:20,str:7,skl:10,spd:12,lck:8,def:4,res:3,con:7},  {hp:60,str:25,skl:45,spd:55,lck:40,def:10,res:20,gTotal:255},'blue',2),
-  U('Athos','Mage','anima',      {bTotal:49,hp:24,str:10,skl:10,spd:8,lck:5,def:6,res:10,con:9}, {hp:40,str:30,skl:30,spd:20,lck:25,def:20,res:40,gTotal:205},'gold',4),
-  U('Niime','Shaman','dark',     {bTotal:42,hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},   {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45,gTotal:230},'purple',4),
-  U('L’Arachel','Cleric','staff',{bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
-];
-function U(name, cls, weaponType, stats, growths, palette, startOffset=0){return {name, cls, weaponType, stats, growths, palette, startOffset};}
-function promote(u, showLog=true){
-  if(u.promoted) return;
-  const c=CLASSES[u.cls], promo=c.promo||{};
-  for(const k of ['hp','str','skl','spd','lck','def','res','con']){
-    u.stats[k]=Math.min(capStat(u,k), u.stats[k]+(promo[k]||0));
-  }
-  u.promoted=true; u.displayCls=c.promotesTo; u.lvl=1; u.maxHp=u.stats.hp; u.hp=Math.min(u.hp,u.maxHp);
-  if(showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal');
-}
-window.promote = promote;
-function levelUp(u, showLog=true){
-  if(u.promoted && u.lvl>=20) return false;
-  if(!u.promoted && u.lvl>=20){ promote(u, showLog); return true; }
-  const before={...u.stats};
-  u.lvl++;
-  for(const k of ['hp','str','skl','spd','lck','def','res']){
-    if((rint(100)+1)<=u.growths[k]) u.stats[k]=Math.min(capStat(u,k),u.stats[k]+1);
-  }
-  u.maxHp=u.stats.hp; u.hp=Math.min(u.hp,u.maxHp);
-  if(showLog){
-    const gains=['hp','str','skl','spd','lck','def','res'].filter(k=>u.stats[k]>before[k]).map(k=>k.toUpperCase()).join(', ') || 'no stats';
-    logLine(null, `${u.name} reached Lv ${u.lvl}${u.promoted?' promoted':''}: ${gains}.`, 'heal');
-  }
-  return true;
-}
-window.levelUp = levelUp;
-function advanceTwoLevels(units){
-  units.forEach(u=>{ for(let i=0;i<2;i++) levelUp(u,true); u.hp=u.maxHp; });
-}
-function freshFromBase(base, enemy=false, targetLevel=1, promoted=false){
-  const c=CLASSES[base.cls], u={id:Math.random().toString(36).slice(2), name:base.name, baseName:base.name, cls:base.cls, displayCls:base.cls, weaponType:base.weaponType, palette: enemy?'red':base.palette, kind:c.kind, lvl:1, promoted:false, stats:{...base.stats}, growths:{...base.growths}, caps:{...c.caps}, team:enemy?'red':'blue', isEnemy:enemy, startOffset:base.startOffset||0, status:null};
-  u.weapon = startingWeapon(u.weaponType); u.maxHp=u.stats.hp; u.hp=u.maxHp;
-  const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset||0);
-  const internalLevel = clamp(requestedInternalLevel,1,40);
-  for(let i=1;i<internalLevel;i++) levelUp(u, false);
-  u.hp=u.maxHp; return u;
-}
-function startingWeapon(type){
-  const map={sword:'Iron Sword',lance:'Iron Lance',axe:'Iron Axe',bow:'Iron Bow',anima:'Fire',light:'Lightning',dark:'Flux',staff:'Heal Staff'};
-  return cloneWeapon(WEAPONS.find(w=>w.name===map[type]));
-}
-function cloneWeapon(w){ return {...w}; }
-function allowedWeapons(u){
-  const base=[u.weaponType];
-  if(u.promoted){ if(['Lord','Mercenary','Myrmidon'].includes(u.cls)) base.push('sword'); if(u.cls==='Fighter') base.push('bow'); if(u.cls==='Archer') base.push('bow'); if(u.cls==='Mage') base.push('anima','staff'); if(u.cls==='Cleric') base.push('light','staff'); if(u.cls==='Shaman') base.push('dark','staff'); if(u.cls==='Cavalier') base.push('sword','lance','axe'); if(u.cls==='Knight') base.push('sword','lance','axe'); }
-  return [...new Set(base)];
-}
-function weaponScore(w){
-  const staffFx={sleep:18, berserk:24, fortify:70}[w.effect]||0;
-  return (w.mt||0)*3 + (w.hit||0)/10 + (w.crit||0)/2 - (w.wt||0)/3 + (w.pierceRes?12:0) + (w.brave?18:0) + (w.reaver?5:0) + (w.effective?8:0) + (w.drain?10:0) + (w.staff?4:0) + staffFx;
-}
-function enemyWeaponFor(u,tier){
-  const opts=WEAPONS.filter(w=>allowedWeapons(u).includes(w.type));
-  if(!opts.length) return u.weapon;
-  if(tier==='major'){
-    const silver=opts.filter(w=>w.name.startsWith('Silver') || ['Regal Blade','Brave Sword','Brave Lance','Brave Axe','Brave Bow','Excalibur','Fimbulvetr','Aureola','Aura','Ereshkigal','Fenrir','Divine','Luna','Nosferatu','Elfire','Shine','Fortify Staff','Berserk Staff','Mend Staff'].includes(w.name));
-    const chosen=cloneWeapon((silver.length?silver:opts).sort((a,b)=>weaponScore(b)-weaponScore(a))[0]);
-    if(!chosen.staff){ chosen.name = chosen.name.includes('+') ? chosen.name : chosen.name + '+'; chosen.mt += 2; chosen.hit += 5; }
-    return chosen;
-  }
-  if(tier==='mini'){
-    const good=opts.filter(w=>!w.name.startsWith('Iron') && w.name!=='Heal Staff');
-    return cloneWeapon((good.length?good:opts).sort((a,b)=>weaponScore(b)-weaponScore(a))[0]);
-  }
-  if(battle>4){
-    const good=opts.filter(w=>!w.name.startsWith('Iron') && w.name!=='Heal Staff');
-    if(good.length && rnd()<0.55) return cloneWeapon(pick(good));
-  }
-  return cloneWeapon(u.weapon);
-}
-
-// ---------- FE7-ish mechanics ----------
-function unitTags(u){ return CLASS_TAGS[u.displayCls] || CLASS_TAGS[u.cls] || []; }
-function isWeaponEffective(w,d){
-  if(!w?.effective) return false;
-  const tags=unitTags(d);
-  return w.effective.some(e => tags.includes(e) || (e==='swordUser' && allowedWeapons(d).includes('sword')));
-}
-function triangle(a,b,aw=null,bw=null){
-  const beats={sword:'axe',axe:'lance',lance:'sword',anima:'light',light:'dark',dark:'anima'};
-  if(!beats[a] || !beats[b]) return {atk:0,hit:0};
-  let sign=0;
-  if(beats[a]===b) sign=1; else if(beats[b]===a) sign=-1;
-  const aRev=!!aw?.reaver, bRev=!!bw?.reaver;
-  if(aRev !== bRev) sign *= -1;
-  const mult = (aRev || bRev) && !(aRev && bRev) ? 2 : 1;
-  return {atk:sign*mult, hit:sign*15*mult};
-}
-function attackSpeed(u){ const penalty=Math.max(0,(u.weapon?.wt||0)-u.stats.con); return Math.max(0,u.stats.spd-penalty); }
-function effectiveMt(a,d){ const coeff=isWeaponEffective(a.weapon,d) ? 2 : 1; return (a.weapon.mt||0) * coeff; }
-function attackPower(a,d){ const t=triangle(a.weapon.type,d.weapon.type,a.weapon,d.weapon).atk; const stat=a.stats.str; return stat + effectiveMt(a,d) + t; }
-function defenseAgainst(d, weapon){ return weapon.magic ? d.stats.res : d.stats.def; }
-function rawDamage(a,d){ const def=a.weapon.pierceRes?0:defenseAgainst(d,a.weapon); return Math.max(0, attackPower(a,d)-def); }
-function hitRate(a,d){ const t=triangle(a.weapon.type,d.weapon.type,a.weapon,d.weapon).hit; return floor(a.weapon.hit + 2*a.stats.skl + a.stats.lck/2 + t); }
-function avoid(d){ return floor(2*attackSpeed(d)+d.stats.lck); }
-function displayedHit(a,d){ return clamp(hitRate(a,d)-avoid(d),0,100); }
-function trueHitRoll(displayed){ const rn=(rint(100)+1 + rint(100)+1)/2; return rn <= displayed; }
-function critRate(a,d){ let bonus=(a.displayCls==='Swordmaster'||a.displayCls==='Berserker')?15:0; return clamp(floor((a.weapon.crit||0)+a.stats.skl/2+bonus-d.stats.lck),0,100); }
-function triangleClass(a,d){
-  if(!a?.weapon || !d?.weapon) return 'hitNeu';
-  const wt=triangle(a.weapon.type,d.weapon.type,a.weapon,d.weapon).hit;
-  return wt>0 ? 'hitAdv' : wt<0 ? 'hitDis' : 'hitNeu';
-}
-function combatPreviewHTML(actor,target){
-  if(!actor || !target || actor.hp<=0 || target.hp<=0 || actor.weapon?.staff) return '';
-  const hit=displayedHit(actor,target), crit=critRate(actor,target), dmg=rawDamage(actor,target), hits=(canDouble(actor,target)?2:1) * (actor.weapon?.brave?2:1);
-  return `<div><span class="${triangleClass(actor,target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div>${dmg} dmg (x${hits})</div>`;
-}
-function classAbbrev(cls){
-  const map={'Lord':'Lord','Blade Lord':'BladeLord','Mercenary':'Merc','Hero':'Hero','Myrmidon':'Myrm','Swordmaster':'SwrdMstr','Knight':'Knight','General':'General','Cavalier':'Caval','Paladin':'Paladin','Pegasus':'Pegasus','Falcon Knight':'Falcon','Fighter':'Fighter','Warrior':'Warrior','Archer':'Archer','Sniper':'Sniper','Mage':'Mage','Sage':'Sage','Cleric':'Cleric','Bishop':'Bishop','Shaman':'Shaman','Druid':'Druid','Wyvern':'Wyvern','Wyvern Lord':'WyvLord'};
-  return map[cls] || String(cls).slice(0,7);
-}
-const BOSS_NAMES_BY_CLASS={
-  Lord:['Lundgren'],
-  'Blade Lord':['Lundgren'],
-  Mercenary:['Saar','Carjiga'],
-  Hero:['Linus','Caellach','Aias'],
-  Myrmidon:['Glass','Lloyd','Carlyle'],
-  Swordmaster:['Lloyd','Carlyle'],
-  Knight:['Wire','Boies','Breguet'],
-  General:['Darin','Tirado','Vigarde','Bauker'],
-  Cavalier:['Murray','Cameron'],
-  Paladin:['Eagler','Pascal','Orson'],
-  Fighter:['Batta','Zugu','Bazba','O’Neill','Bone'],
-  Warrior:['Oleg','Brendan'],
-  Archer:['Uhai'],
-  Sniper:['Uhai'],
-  Mage:['Aion','Pablo','Selena'],
-  Sage:['Sonia','Limstella','Pablo'],
-  Cleric:['Kenneth','Riev'],
-  Bishop:['Kenneth','Riev'],
-  Shaman:['Novala','Lyon','Teodor'],
-  Druid:['Nergal','Teodor'],
-  Wyvern:['Heath','Vaida','Glen','Valter'],
-  'Wyvern Lord':['Vaida','Glen','Valter']
-};
-function bossNameFor(u){
-  const list=BOSS_NAMES_BY_CLASS[u.displayCls] || BOSS_NAMES_BY_CLASS[u.cls];
-  return list ? list[rint(list.length)] : null;
-}
-function enemyDisplayName(u){
-  const bossName = u.bossTier ? bossNameFor(u) : null;
-  if(bossName) return bossName;
-  return classAbbrev(u.displayCls);
-}
-function canDouble(a,d){ return attackSpeed(a)-attackSpeed(d)>=4; }
-function healAmount(a){ return Math.max(1,(a.weapon.mt||10)+floor(a.stats.str/2)); }
-function fortifyAmount(a){ return Math.max(1,a.stats.str); }
-function staffEffect(w){ return w?.staff ? (w.effect || 'heal') : null; }
-function isStatusStaff(w){ const fx=staffEffect(w); return fx==='sleep' || fx==='berserk'; }
-function statusName(fx){ return ({sleep:'Sleep', berserk:'Berserk'})[fx] || ''; }
-function statusLabel(u){ return statusName(u.status); }
-function applyStatus(u,fx){ u.status=fx; }
-function clearUnitStatus(u){ delete u.status; }
-
-function strikeResult(a,d,suffix=''){
-  const dh=displayedHit(a,d), cr=critRate(a,d), dmg=rawDamage(a,d);
-  if(!trueHitRoll(dh)) return {hit:false, crit:false, damage:0, dh, cr, suffix};
-  const crit=(rint(100)+1)<=cr, finalDmg=crit?dmg*3:dmg;
-  const before=d.hp; d.hp=Math.max(0,d.hp-finalDmg);
-  return {hit:true, crit, damage:before-d.hp, dh, cr, suffix};
-}
-function performStrike(a,d,log,suffix=''){
-  const r=strikeResult(a,d,suffix);
-  if(!r.hit){ logLine(log, `${a.name}${suffix} attacks ${d.name}: miss (${r.dh}% displayed).`, 'miss'); return r; }
-  logLine(log, `${a.name}${suffix} hits ${d.name} for ${r.damage}${r.crit?' CRIT':''}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit?'crit':'hit');
-  if(d.hp<=0) logLine(log, `${d.name} falls.`, 'death');
-  return r;
-}
-function expectedDamage(a,d){
-  if(!a || !d || a.hp<=0 || d.hp<=0 || a.weapon.staff) return 0;
-  const hit=displayedHit(a,d)/100, crit=critRate(a,d)/100, dmg=rawDamage(a,d);
-  const strikes=canDouble(a,d)?2:1;
-  return hit * dmg * (1 + 2*crit) * strikes;
-}
-function avgExpectedDamage(a, foes){
-  const live=foes.filter(x=>x.hp>0); if(!live.length) return 0;
-  return live.reduce((sum,d)=>sum+expectedDamage(a,d),0)/live.length;
-}
-function chooseEnemyTarget(){
-  const live=player.filter(x=>x.hp>0);
-  if(!live.length) return null;
-  const roll=rnd();
-  if(roll<0.4) return [...live].sort((a,b)=>a.hp-b.hp || a.maxHp-b.maxHp)[0];
-  if(roll<0.8) return [...live].sort((a,b)=>avgExpectedDamage(b,enemy)-avgExpectedDamage(a,enemy))[0];
-  return pick(live);
-}
-function chooseStatusStaffTarget(actor, foes){
-  const live=foes.filter(x=>x.hp>0);
-  const unstated=live.filter(x=>!x.status);
-  const targets=unstated.length ? unstated : live;
-  if(!targets.length) return null;
-  if(rnd()<0.65) return [...targets].sort((a,b)=>displayedHit(actor,b)-displayedHit(actor,a))[0];
-  return pick(targets);
-}
-function lowestInjured(allies){
-  const injured=allies.filter(x=>x.hp>0 && x.hp<x.maxHp);
-  return injured.sort((a,b)=>a.hp-b.hp)[0] || null;
-}
-function sleep(ms){ return new Promise(res=>setTimeout(res,ms)); }
-function spriteEl(u){ return document.querySelector(`.combatant[data-id="${u.id}"]`); }
-function clearHighlights(){ document.querySelectorAll('.combatant').forEach(el=>el.classList.remove('active','target','selectable','striking')); }
-function setStatus(msg){ const el=$('combatStatus'); el.textContent=msg; el.classList.toggle('hidden',!msg); }
-function updateUnitVisual(u){
-  const el=spriteEl(u); if(!el) return;
-  const pct=Math.max(0,100*u.hp/u.maxHp);
-  const bar=el.querySelector('.hpbar>i'), hp=el.querySelector('.hpText');
-  if(bar) bar.style.width=pct+'%';
-  if(hp) hp.textContent=`${u.hp}/${u.maxHp}`;
-  el.classList.toggle('dead',u.hp<=0);
-}
-function floatText(u,text,cls){
-  const el=spriteEl(u); if(!el) return;
-  const n=document.createElement('div'); n.className='floatText '+cls; n.textContent=text; el.appendChild(n); setTimeout(()=>n.remove(),650);
-}
-function selectTarget(actor, targets, prompt){
-  activePreviewActor=actor;
-  renderTeams();
-  setStatus(prompt || `${actor.name}'s turn: choose a target.`);
-  const ae=spriteEl(actor); if(ae) ae.classList.add('active');
-  return new Promise(resolve=>{
-    targets.forEach(t=>{
-      const el=spriteEl(t); if(!el) return;
-      el.classList.add('selectable');
-      el.onclick=()=>{
-        document.querySelectorAll('.combatant').forEach(ex=>{ ex.classList.remove('selectable'); ex.onclick=null; });
-        activePreviewActor=null;
-        renderTeams();
-        resolve(t);
-      };
-    });
-  });
-}
-function nextLivingIndex(team, start){
-  for(let offset=0; offset<team.length; offset++){
-    const idx=(start+offset)%team.length;
-    if(team[idx]?.hp>0) return idx;
-  }
-  return -1;
-}
-async function animateStrike(actor,target,result){
-  clearHighlights();
-  const ae=spriteEl(actor), te=spriteEl(target);
-  if(ae) ae.classList.add('active');
-  if(te) te.classList.add('target');
-  await sleep(300);
-  if(ae) ae.classList.add('striking');
-  if(result.hit){ floatText(target, `-${result.damage}${result.crit?'!':''}`, 'damage'); }
-  else { floatText(target, 'MISS', 'missText'); }
-  updateUnitVisual(target);
-  renderSideCards();
-  await sleep(300);
-  if(ae) ae.classList.remove('striking');
-  if(target.hp<=0) updateUnitVisual(target);
-}
-async function animateHeal(actor,target,amt){
-  clearHighlights();
-  const ae=spriteEl(actor), te=spriteEl(target);
-  if(ae) ae.classList.add('active');
-  if(te) te.classList.add('target');
-  await sleep(300);
-  target.hp=Math.min(target.maxHp,target.hp+amt);
-  floatText(target, `+${amt}`, 'healing');
-  updateUnitVisual(target);
-  renderSideCards();
-  logLine(null, `${actor.name} heals ${target.name} for ${amt}.`, 'heal');
-  await sleep(300);
-}
-async function animateFortify(actor,targets,amt){
-  clearHighlights();
-  const ae=spriteEl(actor); if(ae) ae.classList.add('active');
-  await sleep(300);
-  let total=0;
-  targets.forEach(t=>{
-    const healed=Math.min(t.maxHp-t.hp,amt);
-    if(healed<=0) return;
-    t.hp+=healed; total+=healed;
-    floatText(t, `+${healed}`, 'healing');
-    updateUnitVisual(t);
-  });
-  renderSideCards();
-  logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal');
-  await sleep(450);
-}
-function staffStatusResult(a,d){
-  const dh=displayedHit(a,d);
-  return {hit:trueHitRoll(dh), dh, effect:staffEffect(a.weapon)};
-}
-async function animateStatusStaff(actor,target,result){
-  clearHighlights();
-  const ae=spriteEl(actor), te=spriteEl(target);
-  if(ae) ae.classList.add('active');
-  if(te) te.classList.add('target');
-  await sleep(300);
-  if(result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'missText');
-  else floatText(target, 'MISS', 'missText');
-  updateUnitVisual(target);
-  renderSideCards();
-  await sleep(350);
-}
-async function animateWait(actor,msg,cls='miss'){
-  clearHighlights();
-  const ae=spriteEl(actor); if(ae) ae.classList.add('active');
-  setStatus(msg); logLine(null,msg,cls);
-  floatText(actor, 'WAIT', 'missText');
-  await sleep(600);
-}
-async function resolveStaffTurn(actor, allies, foes, forcedTarget=null){
-  const fx=staffEffect(actor.weapon);
-  if(fx==='fortify'){
-    const targets=allies.filter(x=>x.hp>0 && x.hp<x.maxHp);
-    if(targets.length){ await animateFortify(actor,targets,fortifyAmount(actor)); return; }
-    await animateWait(actor, `${actor.name} waits; no ally needs Fortify.`);
-    return;
-  }
-  if(fx==='sleep' || fx==='berserk'){
-    const t=forcedTarget || chooseStatusStaffTarget(actor,foes);
-    if(!t){ await animateWait(actor, `${actor.name} waits; no status target is available.`); return; }
-    const r=staffStatusResult(actor,t);
-    if(r.hit){ applyStatus(t,fx); logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: ${statusName(fx)} lands (${r.dh}% displayed).`, 'hit'); }
-    else logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: miss (${r.dh}% displayed).`, 'miss');
-    await animateStatusStaff(actor,t,r);
-    return;
-  }
-  const t=forcedTarget || lowestInjured(allies);
-  if(t){ await animateHeal(actor,t,Math.min(t.maxHp-t.hp,healAmount(actor))); return; }
-  await animateWait(actor, `${actor.name} waits; no ally to heal.`);
-}
-async function consumeTurnStatus(actor, allies, foes){
-  if(!actor.status) return false;
-  const fx=actor.status; clearUnitStatus(actor); renderTeams();
-  if(fx==='sleep'){ await animateWait(actor, `${actor.name} is asleep and waits.`); return true; }
-  if(fx==='berserk'){
-    const targets=[...allies,...foes].filter(x=>x.hp>0 && x!==actor);
-    if(actor.weapon.staff || !targets.length){
-      await animateWait(actor, `${actor.name} is berserk, but cannot attack.`);
-      return true;
-    }
-    const target=pick(targets);
-    setStatus(`${actor.name} is berserk and attacks ${target.name}!`);
-    logLine(null, `${actor.name} is berserk and attacks ${target.name}!`, 'crit');
-    await resolveActorTurn(actor,allies,foes,target);
-    return true;
-  }
-  return false;
-}
-async function resolveActorTurn(actor, allies, foes, forcedTarget=null){
-  if(!actor || actor.hp<=0) return;
-  if(actor.weapon.staff){ await resolveStaffTurn(actor,allies,foes,forcedTarget); return; }
-  const targets=foes.filter(x=>x.hp>0); if(!targets.length) return;
-  const target=forcedTarget || pick(targets);
-  const rounds = canDouble(actor,target) ? 2 : 1;
-  const braveStrikes = actor.weapon?.brave ? 2 : 1;
-  for(let round=0; round<rounds && target.hp>0; round++){
-    for(let b=0; b<braveStrikes && target.hp>0; b++){
-      const suffix = round>0 ? ' follows up' : (b>0 ? ' strikes again' : '');
-      let r=strikeResult(actor,target,suffix);
-      if(!r.hit) logLine(null, `${actor.name}${suffix} attacks ${target.name}: miss (${r.dh}% displayed).`, 'miss');
-      else { logLine(null, `${actor.name}${suffix} hits ${target.name} for ${r.damage}${r.crit?' CRIT':''}. ${target.name} HP ${target.hp}/${target.maxHp}.`, r.crit?'crit':'hit'); if(target.hp<=0) logLine(null, `${target.name} falls.`, 'death'); }
-      await animateStrike(actor,target,r);
-      if(actor.weapon?.drain && r.hit && r.damage>0){
-        const before=actor.hp; actor.hp=Math.min(actor.maxHp, actor.hp+r.damage);
-        const healed=actor.hp-before; if(healed>0){ floatText(actor, `+${healed}`, 'healing'); updateUnitVisual(actor); renderSideCards(); }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GBA Emblem Roguelike Prototype</title>
+    <style>
+      :root {
+        --bg: #111827;
+        --panel: #1f2937;
+        --panel2: #0f172a;
+        --ink: #f8fafc;
+        --muted: #94a3b8;
+        --accent: #fbbf24;
+        --blue: #2563eb;
+        --red: #b91c1c;
+        --green: #16a34a;
       }
-    }
-  }
-}
-
-// ---------- state ----------
-let chosen=[], player=[], enemy=[], battle=0, awaitingReward=false, battleRunning=false, filter='all', activePreviewActor=null, nextEnemyMarkerId=null;
-const $=id=>document.getElementById(id);
-function randomRoster(){
-  const pool=[...BASES], out=[];
-  for(let i=0;i<5;i++){
-    const wantStaff = rnd() < 0.125;
-    let candidates = pool.map((b,idx)=>({b,idx}));
-    if(wantStaff){
-      const staffers=candidates.filter(x=>x.b.weaponType==='staff');
-      if(staffers.length) candidates=staffers;
-    }
-    const picked=pick(candidates);
-    out.push(picked.b.name);
-    pool.splice(picked.idx,1);
-  }
-  return out;
-}
-function padCell(v,w=3){ return String(v).padStart(w,' '); }
-function growthCompareHTML(b){
-  const s=b.stats, g=b.growths;
-  const baseLine=`Bases   HP ${padCell(s.hp)}  Str ${padCell(s.str)}  Skl ${padCell(s.skl)}  Spd ${padCell(s.spd)}  Lck ${padCell(s.lck)}  Def ${padCell(s.def)}  Res ${padCell(s.res)}`;
-  const growLine=`Growths HP ${padCell(g.hp)}% Str ${padCell(g.str)}% Skl ${padCell(g.skl)}% Spd ${padCell(g.spd)}% Lck ${padCell(g.lck)}% Def ${padCell(g.def)}% Res ${padCell(g.res)}%`;
-  return `<div class="statCompare">${baseLine}
-${growLine}</div>`;
-}
-function renderDraft(){
-  $('rosterCount').textContent=chosen.length;
-  $('draftHint').textContent='Rolled roster: '+chosen.join(', ')+'.';
-  $('startBtn').disabled=chosen.length!==5;
-  const list=$('draftList'); list.innerHTML='';
-  chosen.map(n=>BASES.find(b=>b.name===n)).forEach(b=>{
-    const c=CLASSES[b.cls];
-    const el=document.createElement('div'); el.className='card unitCard selected';
-    const lvlNote=b.startOffset?` · starts +${b.startOffset} levels`:' · starts Lv 1';
-    el.innerHTML=`${portraitImgForBase(b,c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType}${lvlNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`;
-    list.appendChild(el);
-  });
-}
-function weaponStatHTML(w){
-  if(!w) return '';
-  const fx=staffEffect(w);
-  const labels=w.staff
-    ? (fx==='heal' ? [['Heal', w.mt], ['Wt', w.wt], ['Type', 'Staff']]
-      : fx==='fortify' ? [['Heal', 'Mag'], ['Wt', w.wt], ['Type', 'Staff']]
-      : [['Fx', statusName(fx)], ['Hit', w.hit], ['Wt', w.wt], ['Type', 'Staff']])
-    : [['Mt', w.mt], ['Hit', w.hit], ['Crit', w.crit||0], ['Wt', w.wt], ['Type', w.type]];
-  const eff=[]; if(w.reaver) eff.push('Reaver'); if(w.brave) eff.push('Brave'); if(w.effective) eff.push('Eff'); if(w.pierceRes) eff.push('Pierce'); if(w.drain) eff.push('Drain');
-  if(eff.length) labels.push(['Fx', eff.join('/')]);
-  return `<div class="weaponStats">${labels.map(([k,v])=>`<span><b>${k}</b> ${v}</span>`).join('')}</div>`;
-}
-function statHTML(s){return ['hp','str','skl','spd','lck','def','res','con'].map(k=>`<span><b>${k.toUpperCase()}</b> ${s[k]}</span>`).join('');}
-function unitCard(u){
-  const wt=u.weapon?` · ${u.weapon.name}`:'';
-  const st=statusLabel(u);
-  const status=st?` · ${st}`:'';
-  const portrait=portraitImgForUnit(u);
-  return `<div class="card unitCard ${u.hp<=0?'dead':''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted?' promoted':''}${wt}${status}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${100*u.hp/u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff?'--':hitRate(u,{weapon:{type:'none'},stats:{lck:0,spd:0,con:99}})} · Avo ${avoid(u)} · Crit ${u.weapon.staff?'--':floor((u.weapon.crit||0)+u.stats.skl/2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`;
-}
-
-function renderSideCards(){
-  $('playerTeam').innerHTML=player.map(unitCard).join('');
-  $('enemyTeam').innerHTML=enemy.map(unitCard).join('');
-}
-function updateNextEnemyMarker(startIndex=0){
-  const idx=nextLivingIndex(enemy,startIndex);
-  nextEnemyMarkerId = idx>=0 ? enemy[idx].id : null;
-}
-function renderTeams(){
-  $('battleNo').textContent=battle; $('rosterCount').textContent=player.length || chosen.length;
-  renderSideCards();
-  $('blueSprites').innerHTML=player.map(u=>spriteMini(u,false)).join(''); $('redSprites').innerHTML=enemy.map(u=>spriteMini(u,true)).join('');
-}
-function spriteMini(u,isEnemy=false){
-  const preview=isEnemy ? combatPreviewHTML(activePreviewActor,u) : '';
-  const previewClass=preview ? 'combatPreview' : 'combatPreview empty';
-  const boss=u.bossTier==='major'?' <span class="bossTag">BOSS</span>':u.bossTier==='mini'?' <span class="bossTag">MINI</span>':'';
-  const st=statusLabel(u);
-  const status=st?` ${st}`:'';
-  const next=isEnemy && u.id===nextEnemyMarkerId && u.hp>0 ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>' : '';
-  const hpLine = isEnemy ? `L${u.lvl} - ${u.hp}/${u.maxHp}` : `${u.hp}/${u.maxHp}`;
-  return `<div class="combatSlot"><div class="combatant ${u.hp<=0?'dead':''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${100*u.hp/u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`;
-}
-function logLine(logEl,msg,cls=''){ const p=document.createElement('p'); p.className=cls; p.textContent=msg; (logEl||$('log')).prepend(p); }
-function startRun(){ player=chosen.map(n=>freshFromBase(BASES.find(b=>b.name===n),false,1,false)); $('draftScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); renderTeams(); beginNextBattle(); }
-function generateEnemy(){
-  battle++;
-  const baseInternal = clamp(1 + battle*2, 1, 40);
-  const bossTier = battle%5===0 ? 'major' : (battle%2===0 ? 'mini' : null);
-  enemy=[];
-  const pool=[...BASES];
-  for(let i=0;i<5;i++){
-    const b=pool.splice(rint(pool.length),1)[0]||pick(BASES);
-    const isBossSlot = i===0 && bossTier;
-    const internal = clamp(baseInternal + (isBossSlot ? (bossTier==='major'?6:4) : 0), 1, 40);
-    const promoted = internal>20;
-    const lvl = promoted ? internal-20 : internal;
-    const e=freshFromBase(b,true,lvl,promoted);
-    e.bossTier = isBossSlot ? bossTier : null;
-    e.palette='red'; e.team='red';
-    e.weapon=enemyWeaponFor(e,e.bossTier);
-    e.name=enemyDisplayName(e);
-    e.hp=e.maxHp;
-    enemy.push(e);
-  }
-  activePreviewActor=null; nextEnemyMarkerId=null;
-  $('log').innerHTML=''; setStatus('');
-  const msg = bossTier==='major' ? 'Major boss fight: slot 1 is +6 levels with silver+ gear.' : bossTier==='mini' ? 'Mini-boss fight: slot 1 is +4 levels.' : 'Standard enemy team.';
-  logLine(null, `Battle ${battle}: ${msg}`, bossTier?'crit':'hit');
-  renderTeams();
-}
-function beginNextBattle(){
-  if(battleRunning || awaitingReward) return;
-  generateEnemy();
-  runBattle();
-}
-const enemyNames=['Bandit','Raider','Arena','Fang','Knight','Nomad','Mage','Rogue','Wyvern','Merc'];
-async function runBattle(){
-  if(battleRunning || !enemy.length) return;
-  battleRunning=true;
-  let actions=0, side='player', pIdx=0, eIdx=0;
-  updateNextEnemyMarker(eIdx); renderTeams();
-  while(player.some(x=>x.hp>0)&&enemy.some(x=>x.hp>0)&&actions<300){
-    if(side==='player'){
-      pIdx=nextLivingIndex(player,pIdx);
-      updateNextEnemyMarker(eIdx); renderTeams();
-      if(pIdx!==-1){
-        const actor=player[pIdx]; clearHighlights(); const ae=spriteEl(actor); if(ae) ae.classList.add('active');
-        if(await consumeTurnStatus(actor,player,enemy)){ pIdx=(pIdx+1)%player.length; actions++; side='enemy'; continue; }
-        let target=null;
-        if(actor.weapon.staff){
-          if(isStatusStaff(actor.weapon)) target=await selectTarget(actor, enemy.filter(x=>x.hp>0), `${actor.name}'s turn: choose an enemy for ${actor.weapon.name}.`);
-          else setStatus(`${actor.name} looks for an ally to heal.`);
-        } else {
-          target=await selectTarget(actor, enemy.filter(x=>x.hp>0), `${actor.name}'s turn: choose an enemy to attack.`);
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #111827, #020617);
+        font:
+          14px/1.35 system-ui,
+          Segoe UI,
+          Arial;
+        color: var(--ink);
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0 0 8px;
+      }
+      .wrap {
+        max-width: none;
+        margin: 0;
+        padding: 16px;
+      }
+      .top {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .badge {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        border: 1px solid #334155;
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: #0f172a;
+        color: #cbd5e1;
+        font-size: 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(340px, 360px) minmax(520px, 1fr) minmax(340px, 360px);
+        gap: 12px;
+      }
+      .panel {
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25);
+      }
+      button {
+        border: 1px solid #475569;
+        background: #1e293b;
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-weight: 650;
+      }
+      button:hover {
+        background: #334155;
+      }
+      button.primary {
+        background: #92400e;
+        border-color: #f59e0b;
+      }
+      button.primary:hover {
+        background: #b45309;
+      }
+      button.good {
+        background: #166534;
+        border-color: #22c55e;
+      }
+      button.danger {
+        background: #7f1d1d;
+        border-color: #ef4444;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .space {
+        justify-content: space-between;
+      }
+      .small {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .hidden {
+        display: none !important;
+      }
+      .card {
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 9px;
+        background: rgba(30, 41, 59, 0.78);
+        margin: 8px 0;
+      }
+      .unitCard {
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        gap: 9px;
+        align-items: start;
+      }
+      .unitCard.selected {
+        outline: 2px solid #fbbf24;
+      }
+      .portrait {
+        width: 60px;
+        height: 60px;
+        border: 2px solid #111827;
+        border-radius: 4px;
+        background: #334155;
+        object-fit: cover;
+        object-position: center top;
+        image-rendering: pixelated;
+        box-shadow: 0 0 0 1px #64748b;
+      }
+      .battleSprite {
+        width: 64px;
+        height: 80px;
+        image-rendering: pixelated;
+        filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.25));
+      }
+      .mapSprite {
+        display: inline-flex;
+        overflow: hidden;
+        align-items: flex-start;
+        justify-content: center;
+        vertical-align: top;
+        background: transparent;
+      }
+      .mapSpriteSheet {
+        display: block;
+        width: 64px;
+        height: auto;
+        max-width: none;
+        image-rendering: pixelated;
+        animation: mapSpriteStand 0.9s steps(var(--frames, 1)) infinite;
+        will-change: transform;
+      }
+      @keyframes mapSpriteStand {
+        from {
+          transform: translateY(var(--sprite-offset, 0px));
         }
-        setStatus(`${actor.name} acts.`);
-        await resolveActorTurn(actor,player,enemy,target);
-        pIdx=(pIdx+1)%player.length; actions++;
+        to {
+          transform: translateY(calc(var(--sprite-offset, 0px) - var(--sprite-distance, 64px)));
+        }
       }
-      side='enemy';
-    } else {
-      eIdx=nextLivingIndex(enemy,eIdx);
-      if(eIdx!==-1){
-        const actor=enemy[eIdx]; nextEnemyMarkerId=actor.id; renderTeams();
-        if(await consumeTurnStatus(actor,enemy,player)){ eIdx=(eIdx+1)%enemy.length; updateNextEnemyMarker(eIdx); renderTeams(); actions++; side='player'; continue; }
-        const target=actor.weapon.staff ? (isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor,player) : null) : chooseEnemyTarget();
-        if(target) setStatus(`${actor.name} targets ${target.name}.`);
-        await resolveActorTurn(actor,enemy,player,target);
-        eIdx=(eIdx+1)%enemy.length; updateNextEnemyMarker(eIdx); renderTeams(); actions++;
+      .name {
+        font-weight: 800;
       }
-      side='player';
-    }
-  }
-  clearHighlights(); setStatus(''); nextEnemyMarkerId=null; renderTeams(); battleRunning=false;
-  if(player.some(x=>x.hp>0)){ logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal'); advanceTwoLevels(player); player.forEach(u=>{u.hp=u.maxHp; clearUnitStatus(u);}); renderTeams(); if(battle>=20){ showWin(); } else showRewards(); }
-  else { logLine(null, `Defeat on battle ${battle}.`, 'death'); showGameOver(); }
-}
-function showRewards(){ awaitingReward=true; const rewards=makeRewards(); let html=`<h2>Choose a reward</h2><div class="small">Pick exactly one. Weapon rewards equip immediately; stat boosters are consumed immediately. No roster swaps.</div><div class="rewardGrid">`;
-  rewards.forEach((r,i)=>{ html+=`<div class="choice"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`; }); html+='</div>'; showModal(html); document.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>applyReward(rewards[+btn.dataset.i]));
-}
-function weaponSummary(w){
-  const fx=staffEffect(w);
-  if(fx==='heal') return `staff, Heal ${w.mt}`;
-  if(fx==='fortify') return 'staff, heals all allies by Mag';
-  if(fx==='sleep' || fx==='berserk') return `staff, ${statusName(fx)}, Hit ${w.hit}`;
-  return `${w.type}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}`;
-}
-function weaponReward(){
-  const candidates=player.filter(u=>u.hp>0 && WEAPONS.some(w=>allowedWeapons(u).includes(w.type)));
-  const itemUnit=pick(candidates.length?candidates:player);
-  const opts=WEAPONS.filter(w=>allowedWeapons(itemUnit).includes(w.type));
-  const item=cloneWeapon(pick(opts.length?opts:WEAPONS));
-  return {type:'item', title:`Equip ${item.name}`, desc:`Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.`, unit:itemUnit, item};
-}
-function makeRewards(){
-  const a=weaponReward(); let b=weaponReward();
-  let guard=0; while(b.unit===a.unit && b.item.name===a.item.name && guard++<10) b=weaponReward();
-  const boost=boostReward();
-  return [a,b,boost];
-}
-function boostReward(){
-  if(Math.random()<0.22) return {type:'boost', stat:'level', amt:1, title:'Use Tome of Knowledge', desc:'Immediately gives a chosen unit +1 level. Promotion and level caps are respected.'};
-  const stat=pick(['hp','str','skl','spd','lck','def','res']);
-  const amt=stat==='hp'?7:(stat==='lck'?4:2);
-  return {type:'boost', title:`Use ${boosterName(stat)}`, desc:`Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt};
-}
-function boosterName(stat){return ({hp:'Angelic Robe',str:'Energy Ring',skl:'Secret Book',spd:'Speedwings',lck:'Goddess Icon',def:'Dragonshield',res:'Talisman',level:'Tome of Knowledge'})[stat];}
-function applyReward(r){
-  if(r.type==='item'){ r.unit.weapon=r.item; closeModal(); afterReward(`${r.unit.name} equipped ${r.item.name}.`); }
-  if(r.type==='boost') chooseBoostTarget(r);
-}
-function levelLabel(u){ return `${u.promoted?'P':''}L${u.lvl}`; }
-function chooseBoostTarget(r){
-  let html=`<h2>${boosterName(r.stat)}: choose target</h2>`;
-  player.forEach((u,i)=>{
-    const before = r.stat==='level' ? levelLabel(u) : u.stats[r.stat];
-    const after = r.stat==='level' ? (u.promoted&&u.lvl>=20 ? levelLabel(u) : '+1 level') : Math.min(capStat(u,r.stat),u.stats[r.stat]+r.amt);
-    const label = r.stat==='level' ? 'Level' : r.stat.toUpperCase();
-    html+=`<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-t="${i}">Use</button></div>`;
-  });
-  showModal(html);
-  document.querySelectorAll('[data-t]').forEach(btn=>btn.onclick=()=>{
-    const u=player[+btn.dataset.t];
-    if(r.stat==='level'){
-      const gained=levelUp(u,true); u.hp=u.maxHp;
-      closeModal(); afterReward(gained ? `${u.name} studied the Tome of Knowledge and gained a level.` : `${u.name} is already at the level cap.`);
-      return;
-    }
-    u.stats[r.stat]=Math.min(capStat(u,r.stat),u.stats[r.stat]+r.amt);
-    if(r.stat==='hp'){u.maxHp=u.stats.hp;u.hp=u.maxHp;}
-    closeModal(); afterReward(`${u.name} used ${boosterName(r.stat)}.`);
-  });
-}
-function afterReward(msg){ awaitingReward=false; logLine(null,msg,'heal'); renderTeams(); beginNextBattle(); }
-function showWin(){ showModal(`<h2>Run complete</h2><p>Your team survived 20 battles! Congratulations!</p><button onclick="location.reload()" class="primary">New run</button>`); }
-function showGameOver(){ showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p><button onclick="location.reload()" class="primary">Try again</button>`); }
-function showModal(html){ $('modalBody').innerHTML=html; $('modal').classList.remove('hidden'); }
-function closeModal(){ $('modal').classList.add('hidden'); $('modalBody').innerHTML=''; }
+      .class {
+        font-size: 12px;
+        color: #cbd5e1;
+      }
+      .hpbar {
+        height: 8px;
+        border-radius: 99px;
+        background: #450a0a;
+        overflow: hidden;
+        border: 1px solid #7f1d1d;
+        margin-top: 3px;
+      }
+      .hpbar > i {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #16a34a, #84cc16);
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 3px;
+        margin-top: 5px;
+      }
+      .stats span {
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 5px;
+        padding: 2px 4px;
+        font-size: 11px;
+      }
+      .stats b {
+        color: #e2e8f0;
+      }
+      .teamGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .arena {
+        display: grid;
+        grid-template-columns: 1fr 70px 1fr;
+        gap: 8px;
+        align-items: start;
+      }
+      .side h3 {
+        text-align: center;
+      }
+      .spriteRow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        min-height: 150px;
+      }
+      .combatSlot {
+        min-width: 0;
+      }
+      .combatant {
+        position: relative;
+        text-align: center;
+        border-radius: 8px;
+        padding: 5px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid #334155;
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease,
+          border-color 0.3s ease,
+          opacity 0.3s ease;
+      }
+      .combatant.active {
+        transform: translateY(-10px);
+        border-color: #fde68a;
+        box-shadow:
+          0 0 0 2px rgba(251, 191, 36, 0.5),
+          0 12px 24px rgba(0, 0, 0, 0.35);
+      }
+      .combatant.target {
+        transform: translateY(-10px);
+        border-color: #93c5fd;
+        box-shadow:
+          0 0 0 2px rgba(147, 197, 253, 0.45),
+          0 12px 24px rgba(0, 0, 0, 0.35);
+      }
+      .combatant.selectable {
+        cursor: pointer;
+        border-color: #22c55e;
+      }
+      .combatant.selectable:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.55);
+      }
+      .combatant.striking {
+        transform: translateY(-10px) scale(1.08);
+      }
+      .combatant .hpText {
+        font-size: 12px;
+        color: #cbd5e1;
+      }
+      .combatant .hpbar {
+        height: 7px;
+        margin: 3px 0 2px;
+      }
+      .combatant .hpbar > i {
+        transition: width 0.3s ease;
+      }
+      .combatPreview {
+        min-height: 36px;
+        margin-top: 8px;
+        font-size: 11px;
+        line-height: 1.2;
+        color: #cbd5e1;
+        text-align: center;
+        white-space: normal;
+      }
+      .combatPreview.empty {
+        visibility: hidden;
+      }
+      .combatPreview .hitAdv {
+        color: #86efac;
+      }
+      .combatPreview .hitDis {
+        color: #fca5a5;
+      }
+      .combatPreview .hitNeu {
+        color: #e2e8f0;
+      }
+      .combatPreview .critLine {
+        color: #e2e8f0;
+      }
+      .bossTag {
+        color: #fde68a;
+        font-weight: 900;
+      }
+      .nextMarker {
+        position: absolute;
+        left: 50%;
+        top: -22px;
+        transform: translateX(-50%);
+        width: 18px;
+        height: 18px;
+        z-index: 3;
+        filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.75));
+        animation: nextPulse 0.9s ease-in-out infinite;
+      }
+      .nextMarker svg {
+        display: block;
+        width: 18px;
+        height: 18px;
+      }
+      .nextMarker path {
+        fill: #bae6fd;
+        stroke: #0f172a;
+        stroke-width: 1.5px;
+      }
+      @keyframes nextPulse {
+        0%,
+        100% {
+          transform: translateX(-50%) translateY(0);
+        }
+        50% {
+          transform: translateX(-50%) translateY(3px);
+        }
+      }
+      .floatText {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translate(-50%, -18px);
+        font-weight: 900;
+        text-shadow: 0 2px 0 #000;
+        animation: floatDamage 0.55s ease forwards;
+        pointer-events: none;
+      }
+      .floatText.damage {
+        color: #fca5a5;
+      }
+      .floatText.healing {
+        color: #86efac;
+      }
+      .floatText.missText {
+        color: #93c5fd;
+      }
+      @keyframes floatDamage {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, 0);
+        }
+        20% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -32px);
+        }
+      }
+      .dead {
+        opacity: 0.35;
+        filter: grayscale(1);
+      }
+      .versus {
+        font-weight: 900;
+        font-size: 28px;
+        color: #fbbf24;
+        text-align: center;
+        margin-top: 76px;
+      }
+      .log {
+        height: 360px;
+        overflow: auto;
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+      .log p {
+        margin: 0 0 5px;
+      }
+      .hit {
+        color: #fde68a;
+      }
+      .miss {
+        color: #93c5fd;
+      }
+      .crit {
+        color: #fca5a5;
+      }
+      .heal {
+        color: #86efac;
+      }
+      .death {
+        color: #f87171;
+      }
+      .rewardGrid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .reward {
+        border: 1px solid #475569;
+        border-radius: 10px;
+        padding: 10px;
+        background: #172033;
+      }
+      .reward h4 {
+        margin: 0 0 5px;
+        color: #fde68a;
+      }
+      .pickList {
+        max-height: 480px;
+        overflow: auto;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin: 8px 0;
+      }
+      .tab.active {
+        background: #475569;
+      }
+      .footer {
+        margin-top: 10px;
+        color: #64748b;
+        font-size: 12px;
+      }
+      .notice {
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 8px;
+        margin-bottom: 10px;
+        color: #cbd5e1;
+      }
+      .assetNote {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 6px;
+      }
+      .assetNote code {
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 4px;
+        padding: 1px 4px;
+        color: #e2e8f0;
+      }
+      .statCompare {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        line-height: 1.35;
+        color: #cbd5e1;
+        margin-top: 5px;
+        white-space: pre;
+      }
+      .statCompare b {
+        color: #e2e8f0;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.72);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+      .modalBox {
+        width: min(720px, 96vw);
+        max-height: 90vh;
+        overflow: auto;
+        background: #0f172a;
+        border: 1px solid #fbbf24;
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .choice {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 9px;
+        margin: 8px 0;
+        background: #111827;
+      }
+      .pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 1px 6px;
+        background: #334155;
+        color: #e2e8f0;
+        font-size: 11px;
+      }
+      .weaponStats {
+        display: grid;
+        grid-template-columns: repeat(5, auto);
+        gap: 3px;
+        margin-top: 5px;
+      }
+      .weaponStats span {
+        background: #172033;
+        border: 1px solid #334155;
+        border-radius: 5px;
+        padding: 2px 4px;
+        font-size: 11px;
+        color: #cbd5e1;
+      }
+      .weaponStats b {
+        color: #f8fafc;
+      }
+      .kbd {
+        font-family: monospace;
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 4px;
+        padding: 1px 4px;
+      }
+      @media (max-width: 1000px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .arena {
+          grid-template-columns: 1fr;
+        }
+        .versus {
+          margin: 0;
+        }
+        .teamGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>GBA Emblem Roguelike Prototype</h1>
+          <div class="small">FEMP-compatible asset hooks, FE7-inspired mechanics, richer weapons, animated round-robin arena loop.</div>
+        </div>
+        <div class="row">
+          <span class="badge">Battle <b id="battleNo">0</b>/20</span><span class="badge">Roster <b id="rosterCount">0</b>/5</span
+          ><span class="badge">Seed <b id="seedLabel"></b></span>
+        </div>
+      </div>
 
-chosen=randomRoster();
-$('rerollBtn').onclick=()=>{ chosen=randomRoster(); renderDraft(); };
-$('startBtn').onclick=startRun; $('resetBtn').onclick=()=>location.reload();
-renderDraft();
-</script>
-</body>
+      <div id="draftScreen" class="panel">
+        <h2>Random starting roster</h2>
+        <div class="small">
+          Five units are rolled automatically and start with iron/basic weapons. Most begin at level 1; low-growth units may begin 2 or 4 internal levels higher. Reaching level 21
+          promotes and resets to promoted level 1.
+        </div>
+        <div id="draftList" class="teamGrid"></div>
+        <div class="row space" style="margin-top: 10px">
+          <div id="draftHint" class="small"></div>
+          <div class="row"><button id="rerollBtn">Reroll roster</button><button id="startBtn" class="primary">Start run</button></div>
+        </div>
+      </div>
+
+      <div id="gameScreen" class="grid hidden">
+        <section class="panel">
+          <div class="row space">
+            <h2>Your roster</h2>
+            <button id="resetBtn">New run</button>
+          </div>
+          <div id="playerTeam"></div>
+        </section>
+        <main class="panel">
+          <div class="row space">
+            <h2>Arena</h2>
+            <div class="row"><span class="badge">Battles auto-start; choose targets on player turns</span></div>
+          </div>
+          <div id="combatStatus" class="notice hidden"></div>
+          <div id="arena" class="arena">
+            <div class="side">
+              <h3>Blue</h3>
+              <div id="blueSprites" class="spriteRow"></div>
+            </div>
+            <div class="versus">VS</div>
+            <div class="side">
+              <h3>Red</h3>
+              <div id="redSprites" class="spriteRow"></div>
+            </div>
+          </div>
+          <h3 style="margin-top: 10px">Combat log</h3>
+          <div id="log" class="log"></div>
+        </main>
+        <aside class="panel">
+          <h2>Enemy team</h2>
+          <div id="enemyTeam"></div>
+          <div class="footer">
+            Tip: click a unit card to inspect its exact stats. A battle ends when one team has no living units. Player turns require choosing an enemy target. Defeated slots are
+            skipped; player and enemy rotations advance independently.
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div id="modal" class="modal hidden">
+      <div class="modalBox"><div id="modalBody"></div></div>
+    </div>
+
+    <script>
+      // Version: 2026-05-29 femp-assets-support-plus-weapons.
+
+      'use strict'
+      // ---------- deterministic-ish utilities ----------
+      let seed = Math.floor(Math.random() * 999999)
+      document.getElementById('seedLabel').textContent = seed
+      function rnd() {
+        seed = (seed * 1664525 + 1013904223) >>> 0
+        return seed / 4294967296
+      }
+      function rint(n) {
+        return Math.floor(rnd() * n)
+      }
+      function pick(a) {
+        return a[rint(a.length)]
+      }
+      function clamp(v, min, max) {
+        return Math.max(min, Math.min(max, v))
+      }
+      function floor(v) {
+        return Math.floor(v)
+      }
+      function capStat(unit, k) {
+        return unit.caps?.[k] ?? (k === 'hp' ? 60 : 30)
+      }
+
+      // ---------- original pixel sprite system ----------
+      const palettes = {
+        blue: ['#1e3a8a', '#2563eb', '#93c5fd', '#f8fafc', '#7c2d12', '#f2c9a0', '#111827'],
+        red: ['#7f1d1d', '#dc2626', '#fecaca', '#f8fafc', '#422006', '#f2c9a0', '#111827'],
+        green: ['#14532d', '#16a34a', '#bbf7d0', '#f8fafc', '#3f2a1d', '#f2c9a0', '#111827'],
+        purple: ['#581c87', '#9333ea', '#e9d5ff', '#f8fafc', '#1f2937', '#f2c9a0', '#111827'],
+        gold: ['#713f12', '#d97706', '#fde68a', '#f8fafc', '#111827', '#f2c9a0', '#111827'],
+      }
+      function svgDataUri(kind = 'lord', team = 'blue', promoted = false) {
+        const p = palettes[team] || palettes.blue,
+          [dark, main, light, white, hair, skin, black] = p
+        const cape = kind === 'mage' || kind === 'monk' || kind === 'cleric' || kind === 'shaman'
+        const armor = kind === 'knight' || kind === 'cavalier' || kind === 'wyvern'
+        const bow = kind === 'archer'
+        const axe = kind === 'fighter' || kind === 'brigand'
+        const lance = kind === 'pegasus' || kind === 'cavalier' || kind === 'knight' || kind === 'wyvern'
+        const sword = kind === 'lord' || kind === 'merc' || kind === 'myrm' || kind === 'thief'
+        const staff = kind === 'cleric'
+        const scale = 4
+        function rect(x, y, w, h, c) {
+          return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`
+        }
+        let s = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">`
+        s += rect(0, 0, 64, 64, 'transparent')
+        // shadow
+        s += rect(14, 56, 36, 4, 'rgba(0,0,0,.35)')
+        // weapon behind
+        if (sword) {
+          s += rect(45, 10, 4, 36, white) + rect(47, 8, 2, 4, light) + rect(43, 42, 10, 3, dark)
+        }
+        if (lance) {
+          s += rect(49, 5, 3, 46, white) + rect(47, 3, 7, 6, light)
+        }
+        if (axe) {
+          s += rect(48, 16, 4, 34, hair) + rect(44, 12, 12, 9, white) + rect(52, 15, 7, 8, light)
+        }
+        if (bow) {
+          s += `<path d="M48 12 L57 23 L57 42 L48 53 L51 42 L51 23 Z" fill="none" stroke="${hair}" stroke-width="3"/>` + rect(53, 17, 1, 31, white)
+        }
+        if (staff) {
+          s += rect(49, 9, 3, 42, white) + rect(46, 7, 9, 8, light) + rect(48, 5, 5, 4, white)
+        }
+        // cape/wings/mount hints
+        if (cape) s += rect(14, 25, 36, 30, dark) + rect(18, 29, 28, 25, main)
+        if (kind === 'pegasus') s += rect(6, 33, 19, 8, white) + rect(5, 29, 15, 5, light) + rect(40, 33, 19, 8, white) + rect(44, 29, 15, 5, light)
+        if (kind === 'wyvern') s += rect(5, 31, 19, 8, dark) + rect(4, 27, 15, 5, main) + rect(40, 31, 20, 8, dark) + rect(45, 27, 14, 5, main)
+        if (kind === 'cavalier') s += rect(11, 42, 42, 13, hair) + rect(12, 51, 8, 9, black) + rect(43, 51, 8, 9, black)
+        // legs/body/head
+        s += rect(24, 44, 6, 13, dark) + rect(35, 44, 6, 13, dark) + rect(22, 27, 22, 19, armor ? light : main) + rect(20, 30, 6, 14, dark) + rect(42, 30, 6, 14, dark)
+        if (armor) {
+          s += rect(25, 29, 16, 13, white) + rect(27, 32, 12, 10, light) + rect(22, 27, 22, 3, dark)
+        }
+        s +=
+          rect(25, 14, 15, 13, skin) + rect(23, 11, 19, 8, hair) + rect(25, 8, 14, 5, hair) + rect(29, 20, 3, 3, black) + rect(36, 20, 3, 3, black) + rect(31, 25, 7, 2, '#9f1239')
+        // class details
+        if (kind === 'myrm') s += rect(19, 26, 27, 4, light) + rect(17, 25, 6, 6, white)
+        if (kind === 'thief') s += rect(24, 13, 18, 4, dark) + rect(42, 16, 5, 4, dark)
+        if (kind === 'mage' || kind === 'shaman') s += rect(20, 12, 24, 5, dark) + rect(24, 8, 16, 5, main) + rect(28, 4, 8, 5, light)
+        if (kind === 'cleric') s += rect(24, 7, 16, 6, white) + rect(30, 4, 4, 13, light)
+        if (promoted) {
+          s += rect(16, 23, 6, 6, '#fde68a') + rect(42, 23, 6, 6, '#fde68a') + rect(30, 2, 5, 5, '#fde68a')
+        }
+        s += `</svg>`
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(s)
+      }
+
+      function mugshotDataUri(name = '', kind = 'lord', team = 'blue', promoted = false) {
+        const p = palettes[team] || palettes.blue
+        const [dark, main, light, white, hairBase, skin, black] = p
+        let h = 0
+        for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+        const hairColors = ['#1f2937', '#3f2a1d', '#713f12', '#78350f', '#451a03', '#4c1d95', '#7f1d1d', '#92400e']
+        const hair = hairColors[h % hairColors.length]
+        const skinTones = ['#f2c9a0', '#e8b88e', '#d69b73', '#c1845f', '#f7d6b8']
+        const face = skinTones[(h >> 3) % skinTones.length]
+        const eye = h % 3 === 0 ? '#0f172a' : h % 3 === 1 ? '#1e3a8a' : '#14532d'
+        const mouth = h % 2 ? '#9f1239' : '#7f1d1d'
+        const bangs = (h >> 4) % 4,
+          jaw = (h >> 6) % 3
+        const hat = ['mage', 'monk', 'shaman', 'cleric'].includes(kind)
+        const helm = ['knight', 'wyvern', 'cavalier'].includes(kind)
+        function r(x, y, w, h, c) {
+          return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`
+        }
+        let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">`
+        s += r(0, 0, 64, 64, '#0f172a') + r(2, 2, 60, 60, '#1e293b') + r(4, 4, 56, 56, '#334155')
+        s += r(8, 44, 48, 16, dark) + r(13, 38, 38, 19, main) + r(18, 38, 28, 6, light)
+        if (helm) {
+          s += r(16, 10, 32, 12, dark) + r(14, 18, 36, 16, main) + r(20, 13, 24, 7, light)
+        } else if (hat) {
+          s += r(15, 8, 34, 8, dark) + r(19, 4, 26, 7, main) + r(24, 1, 16, 5, light)
+        } else {
+          s += r(17, 10, 30, 8, hair) + r(14, 16, 36, 10, hair)
+          if (bangs === 0) s += r(20, 24, 7, 6, hair) + r(34, 23, 8, 6, hair)
+          if (bangs === 1) s += r(16, 24, 12, 5, hair) + r(28, 22, 7, 7, hair)
+          if (bangs === 2) s += r(36, 23, 11, 7, hair)
+          if (bangs === 3) s += r(21, 22, 20, 4, hair)
+        }
+        s += r(18, 20, 28, 26, face)
+        if (jaw === 0) s += r(21, 46, 22, 4, face)
+        else if (jaw === 1) s += r(24, 46, 16, 5, face)
+        else s += r(19, 44, 26, 3, face)
+        s += r(15, 25, 4, 13, hair) + r(45, 25, 4, 13, hair)
+        s += r(23, 29, 4, 4, eye) + r(38, 29, 4, 4, eye) + r(27, 27, 7, 2, hair) + r(36, 27, 7, 2, hair)
+        s += r(31, 32, 3, 7, '#b7795b') + r(28, 40, 10, 2, mouth)
+        if (kind === 'myrm' || kind === 'thief') s += r(13, 19, 38, 3, dark) + r(48, 22, 5, 7, dark)
+        if (kind === 'pegasus') s += r(8, 36, 9, 7, white) + r(47, 36, 9, 7, white)
+        if (kind === 'fighter') s += r(9, 41, 9, 9, hair) + r(46, 41, 9, 9, hair)
+        if (promoted) s += r(29, 6, 6, 4, '#fde68a') + r(12, 42, 5, 5, '#fde68a') + r(47, 42, 5, 5, '#fde68a')
+        s += `</svg>`
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(s)
+      }
+
+      // ---------- optional FEMP asset hooks ----------
+      // The prototype does not bundle third-party files. If you download FEMP/FEU assets,
+      // put them next to this HTML using the folder layout below and the UI will use them.
+      // Portrait examples: ./assets/femp/portraits/lyn.png, ./assets/femp/portraits/eliwood.png
+      // Enemy examples:    ./assets/femp/enemy-portraits/myrm.png, ./assets/femp/enemy-portraits/cavalier_promoted.png
+      // Boss examples:     ./assets/femp/boss-portraits/lloyd.png, ./assets/femp/boss-portraits/valter.png
+      // Map examples:      ./assets/femp/map/blue/myrm.png, ./assets/femp/map/red/cavalier.png
+      const FEMP_ASSET_ROOT = './assets/femp'
+      const FEMP_IMAGE_EXTS = ['png', 'gif', 'webp']
+      const MAP_SPRITE_SCALE = 4
+      const MAP_SPRITE_SLOT_H = 20 * MAP_SPRITE_SCALE
+      const STAFF_EXHAUST_ROUND_LIMIT = 30
+      const FEMP_NAME_OVERRIDES = {
+        "L'Arachel": 'larachel',
+        Pent: 'pent',
+        Lucius: 'lucius',
+        Canas: 'canas',
+        Niime: 'niime',
+        Athos: 'athos',
+      }
+      function assetSlug(s = '') {
+        return String(s)
+          .toLowerCase()
+          .replace(/['’]/g, '')
+          .replace(/[^a-z0-9]+/g, '')
+          .trim()
+      }
+      function titleStem(stem = '') {
+        return stem ? stem.charAt(0).toUpperCase() + stem.slice(1) : stem
+      }
+      function assetPathVariants(folder, stem) {
+        if (!folder || !stem) return []
+        const key = String(stem)
+        const stems = [key, titleStem(key), key.toUpperCase()].filter(Boolean)
+        const seen = new Set(),
+          out = []
+        for (const st of stems) {
+          for (const ext of FEMP_IMAGE_EXTS) {
+            const path = `${FEMP_ASSET_ROOT}/${folder}/${st}.${ext}`
+            if (!seen.has(path)) {
+              seen.add(path)
+              out.push(path)
+            }
+          }
+        }
+        return out
+      }
+      function assetChain(items) {
+        const seen = new Set(),
+          out = []
+        for (const item of items.filter(Boolean)) {
+          const key = String(item)
+          if (!seen.has(key)) {
+            seen.add(key)
+            out.push(key)
+          }
+        }
+        return out
+      }
+      function htmlAttr(s = '') {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      }
+      function portraitFileStem(name) {
+        return FEMP_NAME_OVERRIDES[name] || assetSlug(name)
+      }
+      function battleFileStem(kind) {
+        const map = {
+          lord: 'lord',
+          merc: 'merc',
+          myrm: 'myrm',
+          thief: 'thief',
+          cavalier: 'cavalier',
+          knight: 'knight',
+          pegasus: 'pega',
+          wyvern: 'wyvern',
+          fighter: 'fighter',
+          brigand: 'brigand',
+          archer: 'archer',
+          mage: 'mage',
+          monk: 'monk',
+          cleric: 'cleric',
+          shaman: 'shaman',
+        }
+        return map[kind] || assetSlug(kind)
+      }
+      function enemyPortraitFileStem(u) {
+        const stem = battleFileStem(u.kind)
+        return u.promoted ? `${stem}_promoted` : stem
+      }
+      function fallbackPortrait(name, kind, team, promoted) {
+        return mugshotDataUri(name, kind, team, promoted)
+      }
+      function fallbackBattle(kind, team, promoted) {
+        return svgDataUri(kind, team, promoted)
+      }
+      function assetImg(cls, primary, fallbacks, fallbackData, alt = '') {
+        const chain = assetChain([primary, ...fallbacks, fallbackData])
+        const encoded = chain.map(htmlAttr).join('|')
+        return `<img class="${cls}" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)">`
+      }
+      function assetSheet(cls, primary, fallbacks, fallbackData, alt = '') {
+        const chain = assetChain([primary, ...fallbacks, fallbackData])
+        const encoded = chain.map(htmlAttr).join('|')
+        return `<span class="${cls}" style="--frames:1;--sprite-offset:0px;--sprite-distance:64px"><img class="mapSpriteSheet" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)" onload="assetSheetLoaded(this)"></span>`
+      }
+      function assetFallback(img) {
+        const chain = (img.dataset.chain || '').split('|')
+        let i = Number(img.dataset.chainI || 0) + 1
+        if (i < chain.length) {
+          img.dataset.chainI = String(i)
+          img.src = chain[i]
+        } else {
+          img.onerror = null
+        }
+      }
+      function assetSheetLoaded(img) {
+        const wrap = img.closest('.mapSprite')
+        if (!wrap || !img.naturalWidth || !img.naturalHeight) return
+        const ratio = img.naturalHeight / img.naturalWidth
+        const frames = Math.max(1, ratio >= 3 ? 3 : Math.round(ratio))
+        const frameH = img.naturalHeight / frames
+        const scale = 64 / img.naturalWidth
+        const frameDisplayH = frameH * scale
+        const offset = MAP_SPRITE_SLOT_H - frameDisplayH
+        wrap.style.setProperty('--frames', String(frames))
+        wrap.style.setProperty('--sprite-offset', `${offset}px`)
+        wrap.style.setProperty('--sprite-distance', `${frames * frameDisplayH}px`)
+        img.style.width = `${img.naturalWidth * scale}px`
+      }
+      function portraitImgForBase(b, c) {
+        const stem = portraitFileStem(b.name)
+        const paths = assetPathVariants('portraits', stem)
+        return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(b.name, c.kind, b.palette, false), b.name)
+      }
+      function portraitImgForUnit(u) {
+        if (u.isEnemy) {
+          const stem = enemyPortraitFileStem(u)
+          const baseStem = battleFileStem(u.kind)
+          const bossStem = u.bossTier ? portraitFileStem(u.name) : null
+          const paths = [
+            ...(bossStem ? assetPathVariants('boss-portraits', bossStem) : []),
+            ...assetPathVariants('enemy-portraits', stem),
+            ...assetPathVariants('enemy-portraits', baseStem),
+            ...assetPathVariants('enemy-portraits', 'generic'),
+          ]
+          return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(u.name, u.kind, u.team, u.promoted), u.name)
+        }
+        const label = u.baseName || u.name
+        const stem = portraitFileStem(label)
+        const paths = assetPathVariants('portraits', stem)
+        return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(label, u.kind, u.team, u.promoted), label)
+      }
+      function battleImgForUnit(u) {
+        const stem = battleFileStem(u.kind)
+        const promotedStem = u.promoted ? `${stem}_promoted` : stem
+        const teamFolder = u.team === 'red' ? 'map/red' : 'map/blue'
+        const paths = [
+          ...assetPathVariants(teamFolder, promotedStem),
+          ...assetPathVariants(teamFolder, stem),
+          ...assetPathVariants('map/blue', promotedStem),
+          ...assetPathVariants('map/blue', stem),
+          ...assetPathVariants('battle', promotedStem),
+          ...assetPathVariants('battle', stem),
+        ]
+        return assetSheet('battleSprite mapSprite', paths[0], paths.slice(1), fallbackBattle(u.kind, u.team, u.promoted), u.displayCls || u.cls || u.kind)
+      }
+
+      // ---------- game data: close FE7 starting archetypes, compact roster ----------
+      // prettier-ignore
+      const CLASSES = {
+        Lord: {
+          promotesTo: 'Blade Lord',
+          kind: 'lord',
+          caps: { hp: 60, str: 27, skl: 29, spd: 30, lck: 30, def: 22, res: 22, con: 20 },
+          promo: { hp: 4, str: 2, skl: 2, spd: 1, def: 3, res: 3, con: 1 },
+        },
+        Mercenary: {
+          promotesTo: 'Hero',
+          kind: 'merc',
+          caps: { hp: 60, str: 25, skl: 30, spd: 26, lck: 30, def: 25, res: 22, con: 20 },
+          promo: { hp: 4, str: 2, skl: 1, spd: 1, def: 2, res: 2, con: 1 },
+        },
+        Myrmidon: {
+          promotesTo: 'Swordmaster',
+          kind: 'myrm',
+          caps: { hp: 60, str: 24, skl: 29, spd: 30, lck: 30, def: 22, res: 23, con: 20 },
+          promo: { hp: 4, str: 2, skl: 2, spd: 1, def: 2, res: 2, con: 1 },
+        },
+        Knight: {
+          promotesTo: 'General',
+          kind: 'knight',
+          caps: { hp: 60, str: 27, skl: 25, spd: 24, lck: 30, def: 30, res: 25, con: 20 },
+          promo: { hp: 4, str: 2, skl: 2, spd: 2, def: 4, res: 3, con: 2 },
+        },
+        Cavalier: {
+          promotesTo: 'Paladin',
+          kind: 'cavalier',
+          caps: { hp: 60, str: 25, skl: 26, spd: 24, lck: 30, def: 25, res: 25, con: 20 },
+          promo: { hp: 3, str: 2, skl: 1, spd: 1, def: 2, res: 3, con: 1 },
+        },
+        Pegasus: {
+          promotesTo: 'Falcon Knight',
+          kind: 'pegasus',
+          caps: { hp: 60, str: 23, skl: 25, spd: 28, lck: 30, def: 22, res: 26, con: 20 },
+          promo: { hp: 4, str: 2, skl: 2, spd: 2, def: 2, res: 2, con: 1 },
+        },
+        Fighter: {
+          promotesTo: 'Warrior',
+          kind: 'fighter',
+          caps: { hp: 60, str: 30, skl: 28, spd: 26, lck: 30, def: 26, res: 22, con: 20 },
+          promo: { hp: 3, str: 1, skl: 2, spd: 2, def: 3, res: 3, con: 1 },
+        },
+        Archer: {
+          promotesTo: 'Sniper',
+          kind: 'archer',
+          caps: { hp: 60, str: 25, skl: 30, spd: 28, lck: 30, def: 25, res: 23, con: 20 },
+          promo: { hp: 3, str: 1, skl: 2, spd: 2, def: 2, res: 2, con: 1 },
+        },
+        Mage: {
+          promotesTo: 'Sage',
+          kind: 'mage',
+          caps: { hp: 60, str: 28, skl: 30, spd: 26, lck: 30, def: 21, res: 25, con: 20 },
+          promo: { hp: 3, str: 1, skl: 1, spd: 1, def: 3, res: 3, con: 1 },
+        },
+        Monk: {
+          promotesTo: 'Sage',
+          kind: 'monk',
+          caps: { hp: 60, str: 28, skl: 30, spd: 26, lck: 30, def: 21, res: 25, con: 20 },
+          promo: { hp: 3, str: 1, skl: 1, spd: 1, def: 3, res: 3, con: 1 },
+        },
+        Cleric: {
+          promotesTo: 'Bishop',
+          kind: 'cleric',
+          caps: { hp: 60, str: 25, skl: 26, spd: 24, lck: 30, def: 21, res: 30, con: 20 },
+          promo: { hp: 3, str: 2, skl: 1, spd: 1, def: 2, res: 3, con: 1 },
+        },
+        Shaman: {
+          promotesTo: 'Druid',
+          kind: 'shaman',
+          caps: { hp: 60, str: 29, skl: 26, spd: 26, lck: 30, def: 21, res: 28, con: 20 },
+          promo: { hp: 4, str: 1, skl: 1, spd: 2, def: 2, res: 2, con: 1 },
+        },
+        Wyvern: {
+          promotesTo: 'Wyvern Lord',
+          kind: 'wyvern',
+          caps: { hp: 60, str: 27, skl: 25, spd: 23, lck: 30, def: 28, res: 22, con: 20 },
+          promo: { hp: 3, str: 2, skl: 2, spd: 2, def: 3, res: 1, con: 1 },
+        },
+      }
+      // prettier-ignore
+      const CLASS_TAGS = {
+        Lord: [],
+        'Blade Lord': [],
+        Mercenary: [],
+        Hero: [],
+        Myrmidon: [],
+        Swordmaster: [],
+        Knight: ['armored'],
+        General: ['armored'],
+        Cavalier: ['mounted'],
+        Paladin: ['mounted'],
+        Pegasus: ['flying'],
+        'Falcon Knight': ['flying'],
+        Wyvern: ['flying', 'dragon'],
+        'Wyvern Lord': ['flying', 'dragon'],
+        Fighter: [],
+        Warrior: [],
+        Archer: [],
+        Sniper: [],
+        Mage: [],
+        Monk: [],
+        Sage: [],
+        Cleric: [],
+        Bishop: [],
+        Shaman: [],
+        Druid: [],
+      }
+      // prettier-ignore
+      const WEAPONS = [
+        { name: 'Iron Sword', type: 'sword', mt: 5, hit: 90, wt: 5, crit: 0, magic: false },
+        { name: 'Slim Sword', type: 'sword', mt: 3, hit: 100, wt: 2, crit: 5, magic: false },
+        { name: 'Steel Sword', type: 'sword', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
+        { name: 'Iron Blade', type: 'sword', mt: 9, hit: 70, wt: 12, crit: 0, magic: false },
+        { name: 'Armourslayer', type: 'sword', mt: 8, hit: 80, wt: 11, crit: 0, magic: false, effective: ['armored'] },
+        { name: 'Longsword', type: 'sword', mt: 6, hit: 85, wt: 11, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Killing Edge', type: 'sword', mt: 9, hit: 75, wt: 7, crit: 30, magic: false },
+        { name: 'Lancereaver', type: 'sword', mt: 9, hit: 75, wt: 9, crit: 5, magic: false, reaver: true },
+        { name: 'Brave Sword', type: 'sword', mt: 9, hit: 75, wt: 12, crit: 0, magic: false, brave: true },
+        { name: 'Silver Sword', type: 'sword', mt: 13, hit: 80, wt: 8, crit: 0, magic: false },
+        { name: 'Regal Blade', type: 'sword', mt: 20, hit: 85, wt: 9, crit: 0, magic: false },
+
+        { name: 'Iron Lance', type: 'lance', mt: 7, hit: 80, wt: 8, crit: 0, magic: false },
+        { name: 'Slim Lance', type: 'lance', mt: 4, hit: 85, wt: 4, crit: 5, magic: false },
+        { name: 'Steel Lance', type: 'lance', mt: 10, hit: 70, wt: 13, crit: 0, magic: false },
+        { name: 'Heavy Spear', type: 'lance', mt: 9, hit: 70, wt: 14, crit: 0, magic: false, effective: ['armored'] },
+        { name: 'Horseslayer', type: 'lance', mt: 7, hit: 75, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Killer Lance', type: 'lance', mt: 10, hit: 70, wt: 9, crit: 30, magic: false },
+        { name: 'Axereaver', type: 'lance', mt: 10, hit: 70, wt: 11, crit: 5, magic: false, reaver: true },
+        { name: 'Brave Lance', type: 'lance', mt: 10, hit: 70, wt: 14, crit: 0, magic: false, brave: true },
+        { name: 'Silver Lance', type: 'lance', mt: 14, hit: 75, wt: 10, crit: 0, magic: false },
+
+        { name: 'Iron Axe', type: 'axe', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
+        { name: 'Steel Axe', type: 'axe', mt: 11, hit: 65, wt: 15, crit: 0, magic: false },
+        { name: 'Hand Axe', type: 'axe', mt: 7, hit: 60, wt: 12, crit: 0, magic: false },
+        { name: 'Hammer', type: 'axe', mt: 10, hit: 55, wt: 15, crit: 0, magic: false, effective: ['armored'] },
+        { name: 'Halberd', type: 'axe', mt: 10, hit: 60, wt: 15, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Longaxe', type: 'axe', mt: 8, hit: 65, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Killer Axe', type: 'axe', mt: 11, hit: 65, wt: 11, crit: 30, magic: false },
+        { name: 'Swordreaver', type: 'axe', mt: 11, hit: 65, wt: 13, crit: 5, magic: false, reaver: true },
+        { name: 'Swordslayer', type: 'axe', mt: 11, hit: 80, wt: 13, crit: 5, magic: false, reaver: true, effective: ['swordUser'] },
+        { name: 'Brave Axe', type: 'axe', mt: 10, hit: 65, wt: 16, crit: 0, magic: false, brave: true },
+        { name: 'Silver Axe', type: 'axe', mt: 15, hit: 70, wt: 12, crit: 0, magic: false },
+
+        { name: 'Iron Bow', type: 'bow', mt: 6, hit: 85, wt: 5, crit: 0, magic: false, effective: ['flying'] },
+        { name: 'Steel Bow', type: 'bow', mt: 9, hit: 70, wt: 9, crit: 0, magic: false, effective: ['flying'] },
+        { name: 'Short Bow', type: 'bow', mt: 5, hit: 85, wt: 3, crit: 10, magic: false, effective: ['flying'] },
+        { name: 'Killer Bow', type: 'bow', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
+        { name: 'Brave Bow', type: 'bow', mt: 10, hit: 70, wt: 12, crit: 0, magic: false, brave: true, effective: ['flying'] },
+        { name: 'Silver Bow', type: 'bow', mt: 13, hit: 75, wt: 6, crit: 0, magic: false, effective: ['flying'] },
+
+        { name: 'Fire', type: 'anima', mt: 5, hit: 90, wt: 4, crit: 0, magic: true },
+        { name: 'Thunder', type: 'anima', mt: 8, hit: 80, wt: 6, crit: 5, magic: true },
+        { name: 'Elfire', type: 'anima', mt: 10, hit: 85, wt: 10, crit: 0, magic: true },
+        { name: 'Fimbulvetr', type: 'anima', mt: 12, hit: 80, wt: 12, crit: 0, magic: true },
+        { name: 'Excalibur', type: 'anima', mt: 18, hit: 90, wt: 13, crit: 10, magic: true, effective: ['flying'] },
+        { name: 'Lightning', type: 'light', mt: 4, hit: 95, wt: 6, crit: 5, magic: true },
+        { name: 'Shine', type: 'light', mt: 6, hit: 90, wt: 8, crit: 8, magic: true },
+        { name: 'Divine', type: 'light', mt: 8, hit: 85, wt: 12, crit: 10, magic: true },
+        { name: 'Aura', type: 'light', mt: 12, hit: 80, wt: 15, crit: 15, magic: true },
+        { name: 'Aureola', type: 'light', mt: 18, hit: 85, wt: 14, crit: 5, magic: true },
+        { name: 'Flux', type: 'dark', mt: 7, hit: 80, wt: 8, crit: 0, magic: true },
+        { name: 'Luna', type: 'dark', mt: 0, hit: 95, wt: 12, crit: 20, magic: true, pierceRes: true },
+        { name: 'Nosferatu', type: 'dark', mt: 10, hit: 70, wt: 14, crit: 0, magic: true, drain: true },
+        { name: 'Fenrir', type: 'dark', mt: 15, hit: 70, wt: 18, crit: 0, magic: true },
+        { name: 'Ereshkigal', type: 'dark', mt: 20, hit: 95, wt: 12, crit: 0, magic: true },
+        { name: 'Heal Staff', type: 'staff', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+        { name: 'Mend Staff', type: 'staff', mt: 20, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+        { name: 'Sleep Staff', type: 'staff', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
+        { name: 'Berserk Staff', type: 'staff', mt: 0, hit: 55, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
+        { name: 'Fortify Staff', type: 'staff', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
+      ]
+      // prettier-ignore
+      const BASES = [
+        // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data.
+U('Lyn','Lord','sword',         {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
+U('Eliwood','Lord','sword',     {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
+U('Hector','Lord','axe',        {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25,gTotal:335},'green'),
+U('Raven','Mercenary','sword',  {bTotal:40,hp:25,str:8,skl:11,spd:13,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
+U('Guy','Myrmidon','sword',     {bTotal:38,hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},  {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25,gTotal:310},'gold'),
+U('Karel','Myrmidon','sword',   {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},  {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20,gTotal:280},'red'),
+U('Harken','Mercenary','sword', {bTotal:41,hp:24,str:9,skl:9,spd:10,lck:4,def:7,res:2,con:11},  {hp:80,str:45,skl:45,spd:35,lck:35,def:30,res:25,gTotal:295},'blue'),
+
+U('Oswin','Knight','lance',     {bTotal:46,hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
+U('Sain','Cavalier','lance',    {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
+U('Florina','Pegasus','lance',  {bTotal:36,hp:17,str:5,skl:7,spd:9,lck:7,def:4,res:4,con:4},    {hp:60,str:40,skl:50,spd:55,lck:50,def:15,res:35,gTotal:305},'blue'),
+U('Fiora','Pegasus','lance',    {bTotal:40,hp:19,str:6,skl:8,spd:10,lck:6,def:5,res:5,con:5},   {hp:70,str:35,skl:60,spd:50,lck:30,def:20,res:50,gTotal:315},'purple'),
+U('Heath','Wyvern','lance',     {bTotal:40,hp:24,str:10,skl:7,spd:7,lck:7,def:8,res:1,con:9},   {hp:80,str:50,skl:50,spd:45,lck:20,def:30,res:20,gTotal:295},'red'),
+U('Kent','Cavalier','sword',    {bTotal:27,hp:20,str:6,skl:6,spd:7,lck:2,def:5,res:1,con:9},    {hp:85,str:40,skl:50,spd:45,lck:20,def:25,res:25,gTotal:290},'red'),
+U('Lowen','Cavalier','lance',   {bTotal:29,hp:23,str:7,skl:5,spd:7,lck:3,def:7,res:0,con:10},   {hp:90,str:30,skl:30,spd:30,lck:50,def:40,res:30,gTotal:300},'green'),
+
+U('Dorcas','Fighter','axe',     {bTotal:26,hp:30,str:7,skl:7,spd:6,lck:3,def:3,res:0,con:14},   {hp:80,str:60,skl:40,spd:20,lck:45,def:25,res:15,gTotal:285},'gold'),
+U('Bartre','Fighter','axe',     {bTotal:25,hp:29,str:9,skl:5,spd:3,lck:4,def:4,res:0,con:13},   {hp:85,str:50,skl:35,spd:40,lck:30,def:30,res:25,gTotal:295},'red'),
+U('Geitz','Fighter','axe',      {bTotal:38,hp:27,str:10,skl:8,spd:8,lck:5,def:6,res:1,con:13},  {hp:85,str:50,skl:40,spd:40,lck:40,def:20,res:20,gTotal:295},'green'),
+U('Garcia','Fighter','axe',     {bTotal:29,hp:28,str:8,skl:7,spd:6,lck:3,def:5,res:0,con:13},   {hp:80,str:65,skl:40,spd:30,lck:40,def:25,res:15,gTotal:295},'gold'),
+U('Ross','Fighter','axe',       {bTotal:28,hp:22,str:6,skl:4,spd:5,lck:8,def:4,res:1,con:8},    {hp:70,str:50,skl:35,spd:30,lck:40,def:25,res:20,gTotal:270},'blue'),
+
+U('Rebecca','Archer','bow',     {bTotal:23,hp:17,str:4,skl:5,spd:6,lck:4,def:3,res:1,con:5},    {hp:60,str:40,skl:50,spd:60,lck:50,def:15,res:30,gTotal:305},'green'),
+U('Wil','Archer','bow',         {bTotal:27,hp:20,str:6,skl:5,spd:5,lck:6,def:5,res:0,con:6},    {hp:75,str:50,skl:50,spd:40,lck:40,def:20,res:25,gTotal:300},'blue'),
+U('Louise','Archer','bow',      {bTotal:40,hp:19,str:7,skl:9,spd:9,lck:7,def:4,res:4,con:6},    {hp:60,str:35,skl:45,spd:40,lck:55,def:20,res:30,gTotal:285},'purple'),
+U('Neimi','Archer','bow',       {bTotal:27,hp:17,str:4,skl:6,spd:7,lck:5,def:3,res:2,con:5},    {hp:55,str:45,skl:50,spd:60,lck:50,def:15,res:35,gTotal:310},'red'),
+U('Innes','Archer','bow',       {bTotal:42,hp:21,str:8,skl:10,spd:10,lck:6,def:5,res:3,con:7},  {hp:75,str:40,skl:45,spd:45,lck:45,def:20,res:25,gTotal:295},'gold'),
+
+U('Erk','Mage','anima',         {bTotal:27,hp:17,str:5,skl:6,spd:7,lck:3,def:2,res:4,con:5},    {hp:65,str:40,skl:40,spd:50,lck:30,def:20,res:40,gTotal:285},'purple'),
+U('Nino','Mage','anima',        {bTotal:30,hp:15,str:3,skl:4,spd:8,lck:8,def:2,res:5,con:3},    {hp:55,str:50,skl:55,spd:60,lck:45,def:15,res:50,gTotal:330},'green'),
+U('Pent','Mage','anima',        {bTotal:45,hp:22,str:8,skl:9,spd:10,lck:7,def:4,res:7,con:7},   {hp:70,str:35,skl:40,spd:40,lck:40,def:30,res:45,gTotal:300},'blue'),
+U('Lute','Mage','anima',        {bTotal:35,hp:17,str:6,skl:6,spd:7,lck:8,def:3,res:5,con:3},    {hp:45,str:65,skl:30,spd:45,lck:45,def:15,res:40,gTotal:285},'purple'),
+U('Saleh','Mage','anima',       {bTotal:40,hp:23,str:8,skl:8,spd:8,lck:5,def:5,res:6,con:8},    {hp:70,str:40,skl:40,spd:40,lck:30,def:25,res:45,gTotal:290},'gold'),
+
+U('Lucius','Monk','light',      {bTotal:32,hp:18,str:7,skl:6,spd:10,lck:2,def:1,res:6,con:6},   {hp:55,str:60,skl:50,spd:40,lck:20,def:10,res:60,gTotal:295},'blue'),
+U('Renault','Monk','light',     {bTotal:38,hp:22,str:7,skl:8,spd:7,lck:4,def:5,res:7,con:9},    {hp:60,str:40,skl:40,spd:35,lck:30,def:25,res:45,gTotal:275},'red'),
+U('Artur','Monk','light',       {bTotal:30,hp:19,str:6,skl:6,spd:8,lck:2,def:2,res:6,con:6},    {hp:55,str:50,skl:50,spd:40,lck:25,def:15,res:55,gTotal:290},'gold'),
+U('Riev','Monk','light',        {bTotal:36,hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},    {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60,gTotal:280},'purple'),
+
+U('Canas','Shaman','dark',      {bTotal:47,hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
+U('Knoll','Shaman','dark',      {bTotal:28,hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
+U('Ewan','Shaman','dark',       {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:45,skl:40,spd:35,lck:50,def:15,res:40,gTotal:275},'red'),
+U('Lyon','Shaman','dark',       {bTotal:35,hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},    {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55,gTotal:300},'purple'),
+
+U('Serra','Cleric','staff',     {bTotal:28,hp:17,str:2,skl:5,spd:8,lck:6,def:2,res:5,con:4},    {hp:50,str:50,skl:30,spd:40,lck:60,def:15,res:55,gTotal:300},'gold'),
+U('Priscilla','Cleric','staff', {bTotal:33,hp:16,str:3,skl:6,spd:8,lck:7,def:3,res:6,con:4},    {hp:45,str:40,skl:50,spd:40,lck:65,def:15,res:50,gTotal:305},'red'),
+U('Moulder','Cleric','staff',   {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,res:5,con:9},    {hp:70,str:40,skl:50,spd:40,lck:20,def:25,res:25,gTotal:270},'blue'),
+U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
+
+U('Marcus','Cavalier','lance',  {bTotal:43,hp:25,str:8,skl:8,spd:7,lck:5,def:9,res:6,con:11},   {hp:65,str:30,skl:50,spd:25,lck:30,def:15,res:35,gTotal:250},'gold',4),
+U('Isadora','Cavalier','sword', {bTotal:43,hp:21,str:7,skl:8,spd:10,lck:6,def:6,res:6,con:6},   {hp:75,str:30,skl:35,spd:50,lck:45,def:20,res:25,gTotal:280},'red',2),
+U('Wallace','Knight','lance',   {bTotal:41,hp:28,str:10,skl:6,spd:5,lck:6,def:12,res:2,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
+U('Vaida','Wyvern','lance',     {bTotal:43,hp:27,str:11,skl:8,spd:8,lck:4,def:10,res:2,con:12}, {hp:80,str:45,skl:35,spd:30,lck:25,def:25,res:15,gTotal:255},'purple',2),
+U('Farina','Pegasus','lance',   {bTotal:41,hp:18,str:7,skl:8,spd:9,lck:7,def:5,res:5,con:5},    {hp:75,str:50,skl:45,spd:45,lck:45,def:25,res:30,gTotal:315},'green'),
+U('Rath','Archer','bow',        {bTotal:34,hp:22,str:7,skl:7,spd:8,lck:5,def:5,res:2,con:7},    {hp:80,str:50,skl:40,spd:50,lck:30,def:25,res:25,gTotal:300},'blue'),
+U('Dart','Fighter','axe',       {bTotal:31,hp:25,str:8,skl:5,spd:8,lck:3,def:6,res:1,con:10},   {hp:70,str:65,skl:20,spd:60,lck:35,def:20,res:15,gTotal:285},'red'),
+U('Hawkeye','Fighter','axe',    {bTotal:42,hp:28,str:10,skl:8,spd:6,lck:7,def:8,res:3,con:16},  {hp:50,str:40,skl:30,spd:25,lck:40,def:20,res:35,gTotal:240},'gold',4),
+U('Matthew','Myrmidon','sword', {bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,res:0,con:7},   {hp:75,str:30,skl:40,spd:70,lck:50,def:25,res:20,gTotal:310},'green'),
+U('Legault','Myrmidon','sword', {bTotal:38,hp:20,str:6,skl:8,spd:11,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
+U('Jaffar','Myrmidon','sword',  {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
+U('Karla','Myrmidon','sword',   {bTotal:44,hp:20,str:7,skl:10,spd:12,lck:8,def:4,res:3,con:7},  {hp:60,str:25,skl:45,spd:55,lck:40,def:10,res:20,gTotal:255},'blue',2),
+U('Athos','Mage','anima',       {bTotal:49,hp:24,str:10,skl:10,spd:8,lck:5,def:6,res:10,con:9}, {hp:40,str:30,skl:30,spd:20,lck:25,def:20,res:40,gTotal:205},'gold',4),
+U('Niime','Shaman','dark',      {bTotal:42,hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},   {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45,gTotal:230},'purple',4),
+U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
+      ]
+      function U(name, cls, weaponType, stats, growths, palette, startOffset = 0) {
+        return { name, cls, weaponType, stats, growths, palette, startOffset }
+      }
+      function promote(u, showLog = true) {
+        if (u.promoted) return
+        const c = CLASSES[u.cls],
+          promo = c.promo || {}
+        for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']) {
+          u.stats[k] = Math.min(capStat(u, k), u.stats[k] + (promo[k] || 0))
+        }
+        u.promoted = true
+        u.displayCls = c.promotesTo
+        u.lvl = 1
+        u.maxHp = u.stats.hp
+        u.hp = Math.min(u.hp, u.maxHp)
+        if (showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal')
+      }
+      window.promote = promote
+      function levelUp(u, showLog = true) {
+        if (u.promoted && u.lvl >= 20) return false
+        if (!u.promoted && u.lvl >= 20) {
+          promote(u, showLog)
+          return true
+        }
+        const before = { ...u.stats }
+        u.lvl++
+        for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']) {
+          if (rint(100) + 1 <= u.growths[k]) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
+        }
+        u.maxHp = u.stats.hp
+        u.hp = Math.min(u.hp, u.maxHp)
+        if (showLog) {
+          const gains =
+            ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
+              .filter((k) => u.stats[k] > before[k])
+              .map((k) => k.toUpperCase())
+              .join(', ') || 'no stats'
+          logLine(null, `${u.name} reached Lv ${u.lvl}${u.promoted ? ' promoted' : ''}: ${gains}.`, 'heal')
+        }
+        return true
+      }
+      window.levelUp = levelUp
+      function advanceTwoLevels(units) {
+        units.forEach((u) => {
+          for (let i = 0; i < 2; i++) levelUp(u, true)
+          u.hp = u.maxHp
+        })
+      }
+      function freshFromBase(base, enemy = false, targetLevel = 1, promoted = false) {
+        const c = CLASSES[base.cls],
+          u = {
+            id: Math.random().toString(36).slice(2),
+            name: base.name,
+            baseName: base.name,
+            cls: base.cls,
+            displayCls: base.cls,
+            weaponType: base.weaponType,
+            palette: enemy ? 'red' : base.palette,
+            kind: c.kind,
+            lvl: 1,
+            promoted: false,
+            stats: { ...base.stats },
+            growths: { ...base.growths },
+            caps: { ...c.caps },
+            team: enemy ? 'red' : 'blue',
+            isEnemy: enemy,
+            startOffset: base.startOffset || 0,
+            status: null,
+          }
+        u.weapon = startingWeapon(u.weaponType)
+        u.maxHp = u.stats.hp
+        u.hp = u.maxHp
+        const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset || 0)
+        const internalLevel = clamp(requestedInternalLevel, 1, 40)
+        for (let i = 1; i < internalLevel; i++) levelUp(u, false)
+        u.hp = u.maxHp
+        return u
+      }
+      function startingWeapon(type) {
+        const map = { sword: 'Iron Sword', lance: 'Iron Lance', axe: 'Iron Axe', bow: 'Iron Bow', anima: 'Fire', light: 'Lightning', dark: 'Flux', staff: 'Heal Staff' }
+        return cloneWeapon(WEAPONS.find((w) => w.name === map[type]))
+      }
+      function cloneWeapon(w) {
+        return { ...w }
+      }
+      function allowedWeapons(u) {
+        const base = [u.weaponType]
+        if (u.promoted) {
+          if (['Lord', 'Mercenary', 'Myrmidon'].includes(u.cls)) base.push('sword')
+          if (u.cls === 'Fighter') base.push('bow')
+          if (u.cls === 'Archer') base.push('bow')
+          if (u.cls === 'Mage') base.push('anima', 'staff')
+          if (u.cls === 'Monk') base.push('light', 'anima', 'staff')
+          if (u.cls === 'Cleric') base.push('light', 'staff')
+          if (u.cls === 'Shaman') base.push('dark', 'staff')
+          if (u.cls === 'Cavalier') base.push('sword', 'lance', 'axe')
+          if (u.cls === 'Knight') base.push('sword', 'lance', 'axe')
+        }
+        return [...new Set(base)]
+      }
+      function weaponScore(w) {
+        const staffFx = { sleep: 18, berserk: 24, fortify: 70 }[w.effect] || 0
+        return (
+          (w.mt || 0) * 3 +
+          (w.hit || 0) / 10 +
+          (w.crit || 0) / 2 -
+          (w.wt || 0) / 3 +
+          (w.pierceRes ? 12 : 0) +
+          (w.brave ? 18 : 0) +
+          (w.reaver ? 5 : 0) +
+          (w.effective ? 8 : 0) +
+          (w.drain ? 10 : 0) +
+          (w.staff ? 4 : 0) +
+          staffFx
+        )
+      }
+      function enemyWeaponFor(u, tier) {
+        const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
+        if (!opts.length) return u.weapon
+        if (tier === 'major') {
+          const silver = opts.filter(
+            (w) =>
+              w.name.startsWith('Silver') ||
+              [
+                'Regal Blade',
+                'Brave Sword',
+                'Brave Lance',
+                'Brave Axe',
+                'Brave Bow',
+                'Excalibur',
+                'Fimbulvetr',
+                'Aureola',
+                'Aura',
+                'Ereshkigal',
+                'Fenrir',
+                'Divine',
+                'Luna',
+                'Nosferatu',
+                'Elfire',
+                'Shine',
+                'Fortify Staff',
+                'Berserk Staff',
+                'Mend Staff',
+              ].includes(w.name)
+          )
+          const chosen = cloneWeapon((silver.length ? silver : opts).sort((a, b) => weaponScore(b) - weaponScore(a))[0])
+          if (!chosen.staff) {
+            chosen.name = chosen.name.includes('+') ? chosen.name : chosen.name + '+'
+            chosen.mt += 2
+            chosen.hit += 5
+          }
+          return chosen
+        }
+        if (tier === 'mini') {
+          const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
+          return cloneWeapon((good.length ? good : opts).sort((a, b) => weaponScore(b) - weaponScore(a))[0])
+        }
+        if (battle > 4) {
+          const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
+          if (good.length && rnd() < 0.55) return cloneWeapon(pick(good))
+        }
+        return cloneWeapon(u.weapon)
+      }
+
+      // ---------- FE7-ish mechanics ----------
+      function unitTags(u) {
+        return CLASS_TAGS[u.displayCls] || CLASS_TAGS[u.cls] || []
+      }
+      function isWeaponEffective(w, d) {
+        if (!w?.effective) return false
+        const tags = unitTags(d)
+        return w.effective.some((e) => tags.includes(e) || (e === 'swordUser' && allowedWeapons(d).includes('sword')))
+      }
+      function triangle(a, b, aw = null, bw = null) {
+        const beats = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
+        if (!beats[a] || !beats[b]) return { atk: 0, hit: 0 }
+        let sign = 0
+        if (beats[a] === b) sign = 1
+        else if (beats[b] === a) sign = -1
+        const aRev = !!aw?.reaver,
+          bRev = !!bw?.reaver
+        if (aRev !== bRev) sign *= -1
+        const mult = (aRev || bRev) && !(aRev && bRev) ? 2 : 1
+        return { atk: sign * mult, hit: sign * 15 * mult }
+      }
+      function attackSpeed(u) {
+        const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con)
+        return Math.max(0, u.stats.spd - penalty)
+      }
+      function effectiveMt(a, d) {
+        const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
+        return (a.weapon.mt || 0) * coeff
+      }
+      function attackPower(a, d) {
+        const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
+        const stat = a.stats.str
+        return stat + effectiveMt(a, d) + t
+      }
+      function defenseAgainst(d, weapon) {
+        return weapon.magic ? d.stats.res : d.stats.def
+      }
+      function rawDamage(a, d) {
+        const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
+        return Math.max(0, attackPower(a, d) - def)
+      }
+      function hitRate(a, d) {
+        const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
+        return floor(a.weapon.hit + 2 * a.stats.skl + a.stats.lck / 2 + t)
+      }
+      function avoid(d) {
+        return floor(2 * attackSpeed(d) + d.stats.lck)
+      }
+      function displayedHit(a, d) {
+        return clamp(hitRate(a, d) - avoid(d), 0, 100)
+      }
+      function trueHitRoll(displayed) {
+        const rn = (rint(100) + 1 + rint(100) + 1) / 2
+        return rn <= displayed
+      }
+      function critRate(a, d) {
+        let bonus = a.displayCls === 'Swordmaster' || a.displayCls === 'Berserker' ? 15 : 0
+        return clamp(floor((a.weapon.crit || 0) + a.stats.skl / 2 + bonus - d.stats.lck), 0, 100)
+      }
+      function triangleClass(a, d) {
+        if (!a?.weapon || !d?.weapon) return 'hitNeu'
+        const wt = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
+        return wt > 0 ? 'hitAdv' : wt < 0 ? 'hitDis' : 'hitNeu'
+      }
+      function combatPreviewHTML(actor, target) {
+        if (!actor || !target || actor.hp <= 0 || target.hp <= 0 || actor.weapon?.staff) return ''
+        const hit = displayedHit(actor, target),
+          crit = critRate(actor, target),
+          dmg = rawDamage(actor, target),
+          hits = (canDouble(actor, target) ? 2 : 1) * (actor.weapon?.brave ? 2 : 1)
+        return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div>${dmg} dmg (x${hits})</div>`
+      }
+      function classAbbrev(cls) {
+        const map = {
+          Lord: 'Lord',
+          'Blade Lord': 'BladeLord',
+          Mercenary: 'Merc',
+          Hero: 'Hero',
+          Myrmidon: 'Myrm',
+          Swordmaster: 'SwrdMstr',
+          Knight: 'Knight',
+          General: 'General',
+          Cavalier: 'Caval',
+          Paladin: 'Paladin',
+          Pegasus: 'Pegasus',
+          'Falcon Knight': 'Falcon',
+          Fighter: 'Fighter',
+          Warrior: 'Warrior',
+          Archer: 'Archer',
+          Sniper: 'Sniper',
+          Mage: 'Mage',
+          Monk: 'Monk',
+          Sage: 'Sage',
+          Cleric: 'Cleric',
+          Bishop: 'Bishop',
+          Shaman: 'Shaman',
+          Druid: 'Druid',
+          Wyvern: 'Wyvern',
+          'Wyvern Lord': 'WyvLord',
+        }
+        return map[cls] || String(cls).slice(0, 7)
+      }
+      // prettier-ignore
+      const BOSS_NAMES_BY_CLASS = {
+        Lord: ['Lundgren'],
+        'Blade Lord': ['Lundgren'],
+        Mercenary: ['Saar', 'Carjiga'],
+        Hero: ['Linus', 'Caellach', 'Aias'],
+        Myrmidon: ['Glass', 'Lloyd', 'Carlyle'],
+        Swordmaster: ['Lloyd', 'Carlyle'],
+        Knight: ['Wire', 'Boies', 'Breguet'],
+        General: ['Darin', 'Tirado', 'Vigarde', 'Bauker'],
+        Cavalier: ['Murray', 'Cameron'],
+        Paladin: ['Eagler', 'Pascal', 'Orson'],
+        Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
+        Warrior: ['Oleg', 'Brendan'],
+        Archer: ['Uhai'],
+        Sniper: ['Uhai'],
+        Mage: ['Aion', 'Pablo', 'Selena'],
+        Monk: ['Kenneth', 'Riev'],
+        Sage: ['Sonia', 'Limstella', 'Pablo'],
+        Cleric: ['Kenneth', 'Riev'],
+        Bishop: ['Kenneth', 'Riev'],
+        Shaman: ['Novala', 'Lyon', 'Teodor'],
+        Druid: ['Nergal', 'Teodor'],
+        Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter'],
+        'Wyvern Lord': ['Vaida', 'Glen', 'Valter'],
+      }
+      function bossNameFor(u) {
+        const list = BOSS_NAMES_BY_CLASS[u.displayCls] || BOSS_NAMES_BY_CLASS[u.cls]
+        return list ? list[rint(list.length)] : null
+      }
+      function enemyDisplayName(u) {
+        const bossName = u.bossTier ? bossNameFor(u) : null
+        if (bossName) return bossName
+        return classAbbrev(u.displayCls)
+      }
+      function canDouble(a, d) {
+        return attackSpeed(a) - attackSpeed(d) >= 4
+      }
+      function healAmount(a) {
+        return Math.max(1, (a.weapon.mt || 10) + floor(a.stats.str / 2))
+      }
+      function fortifyAmount(a) {
+        return Math.max(1, a.stats.str)
+      }
+      function staffEffect(w) {
+        return w?.staff ? w.effect || 'heal' : null
+      }
+      function isStatusStaff(w) {
+        const fx = staffEffect(w)
+        return fx === 'sleep' || fx === 'berserk'
+      }
+      function statusName(fx) {
+        return { sleep: 'Sleep', berserk: 'Berserk' }[fx] || ''
+      }
+      function statusLabel(u) {
+        return statusName(u.status)
+      }
+      function applyStatus(u, fx) {
+        u.status = fx
+      }
+      function clearUnitStatus(u) {
+        delete u.status
+      }
+
+      function strikeResult(a, d, suffix = '') {
+        const dh = displayedHit(a, d),
+          cr = critRate(a, d),
+          dmg = rawDamage(a, d)
+        if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix }
+        const crit = rint(100) + 1 <= cr,
+          finalDmg = crit ? dmg * 3 : dmg
+        const before = d.hp
+        d.hp = Math.max(0, d.hp - finalDmg)
+        return { hit: true, crit, damage: before - d.hp, dh, cr, suffix }
+      }
+      function performStrike(a, d, log, suffix = '') {
+        const r = strikeResult(a, d, suffix)
+        if (!r.hit) {
+          logLine(log, `${a.name}${suffix} attacks ${d.name}: miss (${r.dh}% displayed).`, 'miss')
+          return r
+        }
+        logLine(log, `${a.name}${suffix} hits ${d.name} for ${r.damage}${r.crit ? ' CRIT' : ''}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit ? 'crit' : 'hit')
+        if (d.hp <= 0) logLine(log, `${d.name} falls.`, 'death')
+        return r
+      }
+      function expectedDamage(a, d) {
+        if (!a || !d || a.hp <= 0 || d.hp <= 0 || a.weapon.staff) return 0
+        const hit = displayedHit(a, d) / 100,
+          crit = critRate(a, d) / 100,
+          dmg = rawDamage(a, d)
+        const strikes = canDouble(a, d) ? 2 : 1
+        return hit * dmg * (1 + 2 * crit) * strikes
+      }
+      function avgExpectedDamage(a, foes) {
+        const live = foes.filter((x) => x.hp > 0)
+        if (!live.length) return 0
+        return live.reduce((sum, d) => sum + expectedDamage(a, d), 0) / live.length
+      }
+      function chooseEnemyTarget() {
+        const live = player.filter((x) => x.hp > 0)
+        if (!live.length) return null
+        const roll = rnd()
+        if (roll < 0.4) return [...live].sort((a, b) => a.hp - b.hp || a.maxHp - b.maxHp)[0]
+        if (roll < 0.8) return [...live].sort((a, b) => avgExpectedDamage(b, enemy) - avgExpectedDamage(a, enemy))[0]
+        return pick(live)
+      }
+      function chooseStatusStaffTarget(actor, foes) {
+        const live = foes.filter((x) => x.hp > 0)
+        const unstated = live.filter((x) => !x.status)
+        const targets = unstated.length ? unstated : live
+        if (!targets.length) return null
+        if (rnd() < 0.65) return [...targets].sort((a, b) => displayedHit(actor, b) - displayedHit(actor, a))[0]
+        return pick(targets)
+      }
+      function lowestInjured(allies) {
+        const injured = allies.filter((x) => x.hp > 0 && x.hp < x.maxHp)
+        return injured.sort((a, b) => a.hp - b.hp)[0] || null
+      }
+      function sleep(ms) {
+        return new Promise((res) => setTimeout(res, ms))
+      }
+      function spriteEl(u) {
+        return document.querySelector(`.combatant[data-id="${u.id}"]`)
+      }
+      function clearHighlights() {
+        document.querySelectorAll('.combatant').forEach((el) => el.classList.remove('active', 'target', 'selectable', 'striking'))
+      }
+      function setStatus(msg) {
+        const el = $('combatStatus')
+        el.textContent = msg
+        el.classList.toggle('hidden', !msg)
+      }
+      function updateUnitVisual(u) {
+        const el = spriteEl(u)
+        if (!el) return
+        const pct = Math.max(0, (100 * u.hp) / u.maxHp)
+        const bar = el.querySelector('.hpbar>i'),
+          hp = el.querySelector('.hpText')
+        if (bar) bar.style.width = pct + '%'
+        if (hp) hp.textContent = `${u.hp}/${u.maxHp}`
+        el.classList.toggle('dead', u.hp <= 0)
+      }
+      function floatText(u, text, cls) {
+        const el = spriteEl(u)
+        if (!el) return
+        const n = document.createElement('div')
+        n.className = 'floatText ' + cls
+        n.textContent = text
+        el.appendChild(n)
+        setTimeout(() => n.remove(), 650)
+      }
+      function selectTarget(actor, targets, prompt) {
+        activePreviewActor = actor
+        renderTeams()
+        setStatus(prompt || `${actor.name}'s turn: choose a target.`)
+        const ae = spriteEl(actor)
+        if (ae) ae.classList.add('active')
+        return new Promise((resolve) => {
+          targets.forEach((t) => {
+            const el = spriteEl(t)
+            if (!el) return
+            el.classList.add('selectable')
+            el.onclick = () => {
+              document.querySelectorAll('.combatant').forEach((ex) => {
+                ex.classList.remove('selectable')
+                ex.onclick = null
+              })
+              activePreviewActor = null
+              renderTeams()
+              resolve(t)
+            }
+          })
+        })
+      }
+      function nextLivingIndex(team, start) {
+        for (let offset = 0; offset < team.length; offset++) {
+          const idx = (start + offset) % team.length
+          if (team[idx]?.hp > 0) return idx
+        }
+        return -1
+      }
+      async function animateStrike(actor, target, result) {
+        clearHighlights()
+        const ae = spriteEl(actor),
+          te = spriteEl(target)
+        if (ae) ae.classList.add('active')
+        if (te) te.classList.add('target')
+        await sleep(300)
+        if (ae) ae.classList.add('striking')
+        if (result.hit) {
+          floatText(target, `-${result.damage}${result.crit ? '!' : ''}`, 'damage')
+        } else {
+          floatText(target, 'MISS', 'missText')
+        }
+        updateUnitVisual(target)
+        renderSideCards()
+        await sleep(300)
+        if (ae) ae.classList.remove('striking')
+        if (target.hp <= 0) updateUnitVisual(target)
+      }
+      async function animateHeal(actor, target, amt) {
+        clearHighlights()
+        const ae = spriteEl(actor),
+          te = spriteEl(target)
+        if (ae) ae.classList.add('active')
+        if (te) te.classList.add('target')
+        await sleep(300)
+        target.hp = Math.min(target.maxHp, target.hp + amt)
+        floatText(target, `+${amt}`, 'healing')
+        updateUnitVisual(target)
+        renderSideCards()
+        logLine(null, `${actor.name} heals ${target.name} for ${amt}.`, 'heal')
+        await sleep(300)
+      }
+      async function animateFortify(actor, targets, amt) {
+        clearHighlights()
+        const ae = spriteEl(actor)
+        if (ae) ae.classList.add('active')
+        await sleep(300)
+        let total = 0
+        targets.forEach((t) => {
+          const healed = Math.min(t.maxHp - t.hp, amt)
+          if (healed <= 0) return
+          t.hp += healed
+          total += healed
+          floatText(t, `+${healed}`, 'healing')
+          updateUnitVisual(t)
+        })
+        renderSideCards()
+        logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal')
+        await sleep(450)
+      }
+      function staffStatusResult(a, d) {
+        const dh = displayedHit(a, d)
+        return { hit: trueHitRoll(dh), dh, effect: staffEffect(a.weapon) }
+      }
+      async function animateStatusStaff(actor, target, result) {
+        clearHighlights()
+        const ae = spriteEl(actor),
+          te = spriteEl(target)
+        if (ae) ae.classList.add('active')
+        if (te) te.classList.add('target')
+        await sleep(300)
+        if (result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'missText')
+        else floatText(target, 'MISS', 'missText')
+        updateUnitVisual(target)
+        renderSideCards()
+        await sleep(350)
+      }
+      async function animateWait(actor, msg, cls = 'miss') {
+        clearHighlights()
+        const ae = spriteEl(actor)
+        if (ae) ae.classList.add('active')
+        setStatus(msg)
+        logLine(null, msg, cls)
+        floatText(actor, 'WAIT', 'missText')
+        await sleep(600)
+      }
+      async function resolveStaffTurn(actor, allies, foes, forcedTarget = null) {
+        const fx = staffEffect(actor.weapon)
+        if (fx === 'fortify') {
+          const targets = allies.filter((x) => x.hp > 0 && x.hp < x.maxHp)
+          if (targets.length) {
+            await animateFortify(actor, targets, fortifyAmount(actor))
+            return
+          }
+          await animateWait(actor, `${actor.name} waits; no ally needs Fortify.`)
+          return
+        }
+        if (fx === 'sleep' || fx === 'berserk') {
+          const t = forcedTarget || chooseStatusStaffTarget(actor, foes)
+          if (!t) {
+            await animateWait(actor, `${actor.name} waits; no status target is available.`)
+            return
+          }
+          const r = staffStatusResult(actor, t)
+          if (r.hit) {
+            applyStatus(t, fx)
+            logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: ${statusName(fx)} lands (${r.dh}% displayed).`, 'hit')
+          } else logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: miss (${r.dh}% displayed).`, 'miss')
+          await animateStatusStaff(actor, t, r)
+          return
+        }
+        const t = forcedTarget || lowestInjured(allies)
+        if (t) {
+          await animateHeal(actor, t, Math.min(t.maxHp - t.hp, healAmount(actor)))
+          return
+        }
+        await animateWait(actor, `${actor.name} waits; no ally to heal.`)
+      }
+      async function consumeTurnStatus(actor, allies, foes) {
+        if (!actor.status) return false
+        const fx = actor.status
+        clearUnitStatus(actor)
+        renderTeams()
+        if (fx === 'sleep') {
+          await animateWait(actor, `${actor.name} is asleep and waits.`)
+          return true
+        }
+        if (fx === 'berserk') {
+          const targets = [...allies, ...foes].filter((x) => x.hp > 0 && x !== actor)
+          if (actor.weapon.staff || !targets.length) {
+            await animateWait(actor, `${actor.name} is berserk, but cannot attack.`)
+            return true
+          }
+          const target = pick(targets)
+          setStatus(`${actor.name} is berserk and attacks ${target.name}!`)
+          logLine(null, `${actor.name} is berserk and attacks ${target.name}!`, 'crit')
+          await resolveActorTurn(actor, allies, foes, target)
+          return true
+        }
+        return false
+      }
+      async function resolveActorTurn(actor, allies, foes, forcedTarget = null, stavesExhausted = false) {
+        if (!actor || actor.hp <= 0) return
+        if (actor.weapon.staff) {
+          if (stavesExhausted) {
+            await animateWait(actor, `${actor.name}'s staff is out of uses after ${STAFF_EXHAUST_ROUND_LIMIT} combat rounds.`)
+            return
+          }
+          await resolveStaffTurn(actor, allies, foes, forcedTarget)
+          return
+        }
+        const targets = foes.filter((x) => x.hp > 0)
+        if (!targets.length) return
+        const target = forcedTarget || pick(targets)
+        const rounds = canDouble(actor, target) ? 2 : 1
+        const braveStrikes = actor.weapon?.brave ? 2 : 1
+        for (let round = 0; round < rounds && target.hp > 0; round++) {
+          for (let b = 0; b < braveStrikes && target.hp > 0; b++) {
+            const suffix = round > 0 ? ' follows up' : b > 0 ? ' strikes again' : ''
+            let r = strikeResult(actor, target, suffix)
+            if (!r.hit) logLine(null, `${actor.name}${suffix} attacks ${target.name}: miss (${r.dh}% displayed).`, 'miss')
+            else {
+              logLine(
+                null,
+                `${actor.name}${suffix} hits ${target.name} for ${r.damage}${r.crit ? ' CRIT' : ''}. ${target.name} HP ${target.hp}/${target.maxHp}.`,
+                r.crit ? 'crit' : 'hit'
+              )
+              if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
+            }
+            await animateStrike(actor, target, r)
+            if (actor.weapon?.drain && r.hit && r.damage > 0) {
+              const before = actor.hp
+              actor.hp = Math.min(actor.maxHp, actor.hp + r.damage)
+              const healed = actor.hp - before
+              if (healed > 0) {
+                floatText(actor, `+${healed}`, 'healing')
+                updateUnitVisual(actor)
+                renderSideCards()
+              }
+            }
+          }
+        }
+      }
+
+      // ---------- state ----------
+      let chosen = [],
+        player = [],
+        enemy = [],
+        battle = 0,
+        awaitingReward = false,
+        battleRunning = false,
+        filter = 'all',
+        activePreviewActor = null,
+        nextEnemyMarkerId = null
+      const $ = (id) => document.getElementById(id)
+      function randomRoster() {
+        const pool = [...BASES],
+          out = []
+        for (let i = 0; i < 5; i++) {
+          const wantStaff = rnd() < 0.125
+          let candidates = pool.map((b, idx) => ({ b, idx }))
+          if (wantStaff) {
+            const staffers = candidates.filter((x) => x.b.weaponType === 'staff')
+            if (staffers.length) candidates = staffers
+          }
+          const picked = pick(candidates)
+          out.push(picked.b.name)
+          pool.splice(picked.idx, 1)
+        }
+        return out
+      }
+      function padCell(v, w = 3) {
+        return String(v).padStart(w, ' ')
+      }
+      function growthCompareHTML(b) {
+        const s = b.stats,
+          g = b.growths
+        const baseLine = `Bases   HP ${padCell(s.hp)}  Str ${padCell(s.str)}  Skl ${padCell(s.skl)}  Spd ${padCell(s.spd)}  Lck ${padCell(s.lck)}  Def ${padCell(s.def)}  Res ${padCell(s.res)}`
+        const growLine = `Growths HP ${padCell(g.hp)}% Str ${padCell(g.str)}% Skl ${padCell(g.skl)}% Spd ${padCell(g.spd)}% Lck ${padCell(g.lck)}% Def ${padCell(g.def)}% Res ${padCell(g.res)}%`
+        return `<div class="statCompare">${baseLine}
+${growLine}</div>`
+      }
+      function renderDraft() {
+        $('rosterCount').textContent = chosen.length
+        $('draftHint').textContent = 'Rolled roster: ' + chosen.join(', ') + '.'
+        $('startBtn').disabled = chosen.length !== 5
+        const list = $('draftList')
+        list.innerHTML = ''
+        chosen
+          .map((n) => BASES.find((b) => b.name === n))
+          .forEach((b) => {
+            const c = CLASSES[b.cls]
+            const el = document.createElement('div')
+            el.className = 'card unitCard selected'
+            const lvlNote = b.startOffset ? ` · starts +${b.startOffset} levels` : ' · starts Lv 1'
+            el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType}${lvlNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
+            list.appendChild(el)
+          })
+      }
+      function weaponStatHTML(w) {
+        if (!w) return ''
+        const fx = staffEffect(w)
+        const labels = w.staff
+          ? fx === 'heal'
+            ? [
+                ['Heal', w.mt],
+                ['Wt', w.wt],
+                ['Type', 'Staff'],
+              ]
+            : fx === 'fortify'
+              ? [
+                  ['Heal', 'Mag'],
+                  ['Wt', w.wt],
+                  ['Type', 'Staff'],
+                ]
+              : [
+                  ['Fx', statusName(fx)],
+                  ['Hit', w.hit],
+                  ['Wt', w.wt],
+                  ['Type', 'Staff'],
+                ]
+          : [
+              ['Mt', w.mt],
+              ['Hit', w.hit],
+              ['Crit', w.crit || 0],
+              ['Wt', w.wt],
+              ['Type', w.type],
+            ]
+        const eff = []
+        if (w.reaver) eff.push('Reaver')
+        if (w.brave) eff.push('Brave')
+        if (w.effective) eff.push('Eff')
+        if (w.pierceRes) eff.push('Pierce')
+        if (w.drain) eff.push('Drain')
+        if (eff.length) labels.push(['Fx', eff.join('/')])
+        return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
+      }
+      function statHTML(s) {
+        return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'].map((k) => `<span><b>${k.toUpperCase()}</b> ${s[k]}</span>`).join('')
+      }
+      function unitCard(u) {
+        const wt = u.weapon ? ` · ${u.weapon.name}` : ''
+        const st = statusLabel(u)
+        const status = st ? ` · ${st}` : ''
+        const portrait = portraitImgForUnit(u)
+        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted ? ' promoted' : ''}${wt}${status}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
+      }
+
+      function renderSideCards() {
+        $('playerTeam').innerHTML = player.map(unitCard).join('')
+        $('enemyTeam').innerHTML = enemy.map(unitCard).join('')
+      }
+      function updateNextEnemyMarker(startIndex = 0) {
+        const idx = nextLivingIndex(enemy, startIndex)
+        nextEnemyMarkerId = idx >= 0 ? enemy[idx].id : null
+      }
+      function renderTeams() {
+        $('battleNo').textContent = battle
+        $('rosterCount').textContent = player.length || chosen.length
+        renderSideCards()
+        $('blueSprites').innerHTML = player.map((u) => spriteMini(u, false)).join('')
+        $('redSprites').innerHTML = enemy.map((u) => spriteMini(u, true)).join('')
+      }
+      function spriteMini(u, isEnemy = false) {
+        const preview = isEnemy ? combatPreviewHTML(activePreviewActor, u) : ''
+        const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
+        const boss = u.bossTier === 'major' ? ' <div class="bossTag">SUPER BOSS</div>' : u.bossTier === 'mini' ? ' <div class="bossTag">BOSS</div>' : ''
+        const st = statusLabel(u)
+        const status = st ? ` ${st}` : ''
+        const next =
+          isEnemy && u.id === nextEnemyMarkerId && u.hp > 0
+            ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'
+            : ''
+        const hpLine = isEnemy ? `L${u.lvl} - ${u.hp}/${u.maxHp}` : `${u.hp}/${u.maxHp}`
+        return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+      }
+      function logLine(logEl, msg, cls = '') {
+        const p = document.createElement('p')
+        p.className = cls
+        p.textContent = msg
+        ;(logEl || $('log')).prepend(p)
+      }
+      function startRun() {
+        player = chosen.map((n) =>
+          freshFromBase(
+            BASES.find((b) => b.name === n),
+            false,
+            1,
+            false
+          )
+        )
+        $('draftScreen').classList.add('hidden')
+        $('gameScreen').classList.remove('hidden')
+        renderTeams()
+        beginNextBattle()
+      }
+      function generateEnemy() {
+        battle++
+        const baseInternal = clamp(1 + battle * 2, 1, 40)
+        const bossTier = battle % 5 === 0 ? 'major' : battle % 2 === 0 ? 'mini' : null
+        enemy = []
+        const pool = [...BASES]
+        for (let i = 0; i < 5; i++) {
+          const b = pool.splice(rint(pool.length), 1)[0] || pick(BASES)
+          const isBossSlot = i === 0 && bossTier
+          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === 'major' ? 6 : 4) : 0), 1, 40)
+          const promoted = internal > 20
+          const lvl = promoted ? internal - 20 : internal
+          const e = freshFromBase(b, true, lvl, promoted)
+          e.bossTier = isBossSlot ? bossTier : null
+          e.palette = 'red'
+          e.team = 'red'
+          e.weapon = enemyWeaponFor(e, e.bossTier)
+          e.name = enemyDisplayName(e)
+          e.hp = e.maxHp
+          enemy.push(e)
+        }
+        activePreviewActor = null
+        nextEnemyMarkerId = null
+        $('log').innerHTML = ''
+        setStatus('')
+        const msg =
+          bossTier === 'major' ? 'Major boss fight: slot 1 is +6 levels with silver+ gear.' : bossTier === 'mini' ? 'Mini-boss fight: slot 1 is +4 levels.' : 'Standard enemy team.'
+        logLine(null, `Battle ${battle}: ${msg}`, bossTier ? 'crit' : 'hit')
+        renderTeams()
+      }
+      function beginNextBattle() {
+        if (battleRunning || awaitingReward) return
+        generateEnemy()
+        runBattle()
+      }
+      // prettier-ignore
+      const enemyNames = ['Bandit', 'Raider', 'Arena', 'Fang', 'Knight', 'Nomad', 'Mage', 'Rogue', 'Wyvern', 'Merc']
+      async function runBattle() {
+        if (battleRunning || !enemy.length) return
+        battleRunning = true
+        let actions = 0,
+          side = 'player',
+          pIdx = 0,
+          eIdx = 0,
+          staffExhaustionLogged = false
+        updateNextEnemyMarker(eIdx)
+        renderTeams()
+        while (player.some((x) => x.hp > 0) && enemy.some((x) => x.hp > 0) && actions < 300) {
+          const stavesExhausted = actions >= STAFF_EXHAUST_ROUND_LIMIT
+          if (stavesExhausted && !staffExhaustionLogged) {
+            logLine(null, `Staves run out of uses after ${STAFF_EXHAUST_ROUND_LIMIT} combat rounds.`, 'miss')
+            staffExhaustionLogged = true
+          }
+          if (side === 'player') {
+            pIdx = nextLivingIndex(player, pIdx)
+            updateNextEnemyMarker(eIdx)
+            renderTeams()
+            if (pIdx !== -1) {
+              const actor = player[pIdx]
+              clearHighlights()
+              const ae = spriteEl(actor)
+              if (ae) ae.classList.add('active')
+              if (await consumeTurnStatus(actor, player, enemy)) {
+                pIdx = (pIdx + 1) % player.length
+                actions++
+                side = 'enemy'
+                continue
+              }
+              let target = null
+              if (actor.weapon.staff && !stavesExhausted) {
+                if (isStatusStaff(actor.weapon))
+                  target = await selectTarget(
+                    actor,
+                    enemy.filter((x) => x.hp > 0),
+                    `${actor.name}'s turn: choose an enemy for ${actor.weapon.name}.`
+                  )
+                else setStatus(`${actor.name} looks for an ally to heal.`)
+              } else if (actor.weapon.staff) {
+                setStatus(`${actor.name}'s staff is out of uses.`)
+              } else {
+                target = await selectTarget(
+                  actor,
+                  enemy.filter((x) => x.hp > 0),
+                  `${actor.name}'s turn: choose an enemy to attack.`
+                )
+              }
+              setStatus(`${actor.name} acts.`)
+              await resolveActorTurn(actor, player, enemy, target, stavesExhausted)
+              pIdx = (pIdx + 1) % player.length
+              actions++
+            }
+            side = 'enemy'
+          } else {
+            eIdx = nextLivingIndex(enemy, eIdx)
+            if (eIdx !== -1) {
+              const actor = enemy[eIdx]
+              nextEnemyMarkerId = actor.id
+              renderTeams()
+              if (await consumeTurnStatus(actor, enemy, player)) {
+                eIdx = (eIdx + 1) % enemy.length
+                updateNextEnemyMarker(eIdx)
+                renderTeams()
+                actions++
+                side = 'player'
+                continue
+              }
+              const target = actor.weapon.staff ? (!stavesExhausted && isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, player) : null) : chooseEnemyTarget()
+              if (target) setStatus(`${actor.name} targets ${target.name}.`)
+              await resolveActorTurn(actor, enemy, player, target, stavesExhausted)
+              eIdx = (eIdx + 1) % enemy.length
+              updateNextEnemyMarker(eIdx)
+              renderTeams()
+              actions++
+            }
+            side = 'player'
+          }
+        }
+        clearHighlights()
+        setStatus('')
+        nextEnemyMarkerId = null
+        renderTeams()
+        battleRunning = false
+        if (player.some((x) => x.hp > 0)) {
+          logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal')
+          advanceTwoLevels(player)
+          player.forEach((u) => {
+            u.hp = u.maxHp
+            clearUnitStatus(u)
+          })
+          renderTeams()
+          if (battle >= 20) {
+            showWin()
+          } else showRewards()
+        } else {
+          logLine(null, `Defeat on battle ${battle}.`, 'death')
+          showGameOver()
+        }
+      }
+      function showRewards() {
+        awaitingReward = true
+        const rewards = makeRewards()
+        let html = `<h2>Choose a reward</h2><div class="small">Pick exactly one. Weapon rewards equip immediately; stat boosters are consumed immediately. No roster swaps.</div><div class="rewardGrid">`
+        rewards.forEach((r, i) => {
+          html += `<div class="choice"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
+        })
+        html += '</div>'
+        showModal(html)
+        document.querySelectorAll('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(rewards[+btn.dataset.i])))
+      }
+      function weaponSummary(w) {
+        const fx = staffEffect(w)
+        if (fx === 'heal') return `staff, Heal ${w.mt}`
+        if (fx === 'fortify') return 'staff, heals all allies by Mag'
+        if (fx === 'sleep' || fx === 'berserk') return `staff, ${statusName(fx)}, Hit ${w.hit}`
+        return `${w.type}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}`
+      }
+      function weaponReward() {
+        const candidates = player.filter((u) => u.hp > 0 && WEAPONS.some((w) => allowedWeapons(u).includes(w.type)))
+        const itemUnit = pick(candidates.length ? candidates : player)
+        const opts = WEAPONS.filter((w) => allowedWeapons(itemUnit).includes(w.type))
+        const item = cloneWeapon(pick(opts.length ? opts : WEAPONS))
+        return { type: 'item', title: `Equip ${item.name}`, desc: `Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.`, unit: itemUnit, item }
+      }
+      function makeRewards() {
+        const a = weaponReward()
+        let b = weaponReward()
+        let guard = 0
+        while (b.unit === a.unit && b.item.name === a.item.name && guard++ < 10) b = weaponReward()
+        const boost = boostReward()
+        return [a, b, boost]
+      }
+      function boostReward() {
+        if (Math.random() < 0.22)
+          return { type: 'boost', stat: 'level', amt: 1, title: 'Use Tome of Knowledge', desc: 'Immediately gives a chosen unit +1 level. Promotion and level caps are respected.' }
+        const stat = pick(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'])
+        const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
+        return { type: 'boost', title: `Use ${boosterName(stat)}`, desc: `Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+      }
+      function boosterName(stat) {
+        return {
+          hp: 'Angelic Robe',
+          str: 'Energy Ring',
+          skl: 'Secret Book',
+          spd: 'Speedwings',
+          lck: 'Goddess Icon',
+          def: 'Dragonshield',
+          res: 'Talisman',
+          level: 'Tome of Knowledge',
+        }[stat]
+      }
+      function applyReward(r) {
+        if (r.type === 'item') {
+          r.unit.weapon = r.item
+          closeModal()
+          afterReward(`${r.unit.name} equipped ${r.item.name}.`)
+        }
+        if (r.type === 'boost') chooseBoostTarget(r)
+      }
+      function levelLabel(u) {
+        return `${u.promoted ? 'P' : ''}L${u.lvl}`
+      }
+      function chooseBoostTarget(r) {
+        let html = `<h2>${boosterName(r.stat)}: choose target</h2>`
+        player.forEach((u, i) => {
+          const before = r.stat === 'level' ? levelLabel(u) : u.stats[r.stat]
+          const after = r.stat === 'level' ? (u.promoted && u.lvl >= 20 ? levelLabel(u) : '+1 level') : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
+          const label = r.stat === 'level' ? 'Level' : r.stat.toUpperCase()
+          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-t="${i}">Use</button></div>`
+        })
+        showModal(html)
+        document.querySelectorAll('[data-t]').forEach(
+          (btn) =>
+            (btn.onclick = () => {
+              const u = player[+btn.dataset.t]
+              if (r.stat === 'level') {
+                const gained = levelUp(u, true)
+                u.hp = u.maxHp
+                closeModal()
+                afterReward(gained ? `${u.name} studied the Tome of Knowledge and gained a level.` : `${u.name} is already at the level cap.`)
+                return
+              }
+              u.stats[r.stat] = Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
+              if (r.stat === 'hp') {
+                u.maxHp = u.stats.hp
+                u.hp = u.maxHp
+              }
+              closeModal()
+              afterReward(`${u.name} used ${boosterName(r.stat)}.`)
+            })
+        )
+      }
+      function afterReward(msg) {
+        awaitingReward = false
+        logLine(null, msg, 'heal')
+        renderTeams()
+        beginNextBattle()
+      }
+      function showWin() {
+        showModal(`<h2>Run complete</h2><p>Your team survived 20 battles! Congratulations!</p><button onclick="location.reload()" class="primary">New run</button>`)
+      }
+      function showGameOver() {
+        showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p><button onclick="location.reload()" class="primary">Try again</button>`)
+      }
+      function showModal(html) {
+        $('modalBody').innerHTML = html
+        $('modal').classList.remove('hidden')
+      }
+      function closeModal() {
+        $('modal').classList.add('hidden')
+        $('modalBody').innerHTML = ''
+      }
+
+      chosen = randomRoster()
+      $('rerollBtn').onclick = () => {
+        chosen = randomRoster()
+        renderDraft()
+      }
+      $('startBtn').onclick = startRun
+      $('resetBtn').onclick = () => location.reload()
+      renderDraft()
+    </script>
+  </body>
 </html>
