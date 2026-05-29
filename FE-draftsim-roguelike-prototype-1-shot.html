@@ -131,6 +131,9 @@
         gap: 9px;
         align-items: start;
       }
+      .unitCard > div {
+        min-width: 0;
+      }
       .unitCard.selected {
         outline: 2px solid #fbbf24;
       }
@@ -216,6 +219,40 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
+      }
+      .draftSlots {
+        display: grid;
+        gap: 12px;
+        margin-top: 10px;
+      }
+      .draftSlot {
+        border-top: 1px solid #334155;
+        padding-top: 10px;
+      }
+      .draftChoices {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .draftChoice {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 9px;
+        background: rgba(30, 41, 59, 0.78);
+        text-align: left;
+        font-weight: 400;
+      }
+      .draftChoice:hover {
+        border-color: #64748b;
+      }
+      .draftChoice.selected {
+        border-color: #fbbf24;
+        background: rgba(146, 64, 14, 0.34);
+      }
+      .draftChoice .statCompare {
+        white-space: pre-wrap;
       }
       .arena {
         display: grid;
@@ -550,6 +587,9 @@
         .teamGrid {
           grid-template-columns: 1fr;
         }
+        .draftChoices {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -567,15 +607,15 @@
       </div>
 
       <div id="draftScreen" class="panel">
-        <h2>Random starting roster</h2>
+        <h2>Draft starting roster</h2>
         <div class="small">
-          Five units are rolled automatically and start with iron/basic weapons. Most begin at level 1; low-growth units may begin 2 or 4 levels higher. Reaching level 21 promotes
-          and resets to promoted level 1.
+          Choose one unit for each roster slot from three offers. Slot 1 is the party leader and starts with +4 levels. After locking the roster, choose one free reward before
+          battle 1.
         </div>
-        <div id="draftList" class="teamGrid"></div>
+        <div id="draftList" class="draftSlots"></div>
         <div class="row space" style="margin-top: 10px">
           <div id="draftHint" class="small"></div>
-          <div class="row"><button id="rerollBtn">Reroll roster</button><button id="startBtn" class="primary">Start run</button></div>
+          <div class="row"><button id="rerollBtn">Reroll offers</button><button id="startBtn" class="primary">Start run</button></div>
         </div>
       </div>
 
@@ -623,7 +663,7 @@
     </div>
 
     <script>
-      // Version: 2026-05-29 femp-assets-support-plus-weapons.
+      // Version: 2026-05-30 opening-draft-boss-cycle-rewards-expanded-roster.
 
       'use strict'
       // ---------- deterministic-ish utilities ----------
@@ -1122,6 +1162,7 @@ U('Karla','Myrmidon','sword',   {bTotal:46,hp:20,str:7,skl:12,spd:12,lck:8,def:4
 
 U('Oswin','Knight','lance',     {bTotal:46,hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
 U('Wallace','Knight','lance',   {bTotal:41,hp:28,str:10,skl:6,spd:5,lck:6,def:12,res:2,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
+U('Amelia','Knight','lance',    {bTotal:29,hp:18,str:5,skl:4,spd:4,lck:6,def:7,res:3,con:9},    {hp:60,str:40,skl:45,spd:40,lck:50,def:30,res:15,gTotal:280},'red'),
 
 U('Sain','Cavalier','lance',    {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
 U('Kent','Cavalier','sword',    {bTotal:27,hp:20,str:6,skl:6,spd:7,lck:2,def:5,res:1,con:9},    {hp:85,str:40,skl:50,spd:45,lck:20,def:25,res:25,gTotal:290},'red'),
@@ -1135,6 +1176,7 @@ U('Farina','Pegasus','lance',   {bTotal:41,hp:18,str:7,skl:8,spd:9,lck:7,def:5,r
 
 U('Heath','Wyvern','lance',     {bTotal:40,hp:24,str:10,skl:7,spd:7,lck:7,def:8,res:1,con:9},   {hp:80,str:50,skl:50,spd:45,lck:20,def:30,res:20,gTotal:295},'red'),
 U('Vaida','Wyvern','lance',     {bTotal:43,hp:27,str:11,skl:8,spd:8,lck:4,def:10,res:2,con:12}, {hp:80,str:45,skl:35,spd:30,lck:25,def:25,res:15,gTotal:255},'purple',2),
+U('Haar','Wyvern','axe',        {bTotal:42,hp:28,str:12,skl:9,spd:6,lck:3,def:10,res:2,con:13}, {hp:80,str:45,skl:45,spd:35,lck:15,def:35,res:10,gTotal:265},'gold',2),
 
 U('Dorcas','Fighter','axe',     {bTotal:26,hp:30,str:7,skl:7,spd:6,lck:3,def:3,res:0,con:14},   {hp:80,str:60,skl:40,spd:20,lck:45,def:25,res:15,gTotal:285},'gold'),
 U('Bartre','Fighter','axe',     {bTotal:25,hp:29,str:9,skl:5,spd:3,lck:4,def:4,res:0,con:13},   {hp:85,str:50,skl:35,spd:40,lck:30,def:30,res:25,gTotal:295},'red'),
@@ -1162,10 +1204,11 @@ U('Lucius','Monk','light',      {bTotal:32,hp:18,str:7,skl:6,spd:10,lck:2,def:1,
 U('Renault','Monk','light',     {bTotal:38,hp:22,str:7,skl:8,spd:7,lck:4,def:5,res:7,con:9},    {hp:60,str:40,skl:40,spd:35,lck:30,def:25,res:45,gTotal:275},'red'),
 U('Artur','Monk','light',       {bTotal:30,hp:19,str:6,skl:6,spd:8,lck:2,def:2,res:6,con:6},    {hp:55,str:50,skl:50,spd:40,lck:25,def:15,res:55,gTotal:290},'gold'),
 U('Riev','Monk','light',        {bTotal:36,hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},    {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60,gTotal:280},'purple'),
+U('Saul','Monk','light',        {bTotal:28,hp:20,str:5,skl:6,spd:7,lck:2,def:2,res:6,con:6},    {hp:60,str:40,skl:45,spd:45,lck:15,def:15,res:50,gTotal:270},'green'),
 
 U('Canas','Shaman','dark',      {bTotal:47,hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
 U('Knoll','Shaman','dark',      {bTotal:28,hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
-U('Ewan','Shaman','dark',       {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:45,skl:40,spd:35,lck:50,def:15,res:40,gTotal:275},'red'),
+U('Ewan','Shaman','dark',       {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:50,skl:45,spd:40,lck:50,def:10,res:40,gTotal:285},'red'),
 U('Lyon','Shaman','dark',       {bTotal:35,hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},    {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55,gTotal:300},'purple'),
 U('Niime','Shaman','dark',      {bTotal:42,hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},   {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45,gTotal:230},'purple',4),
 
@@ -1294,7 +1337,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       function enemyWeaponFor(u, tier) {
         const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
         if (!opts.length) return u.weapon
-        if (tier === 'major') {
+        if (tier === BOSS_TIER_SUPER) {
           const silver = opts.filter(
             (w) =>
               w.name.startsWith('Silver') ||
@@ -1328,7 +1371,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
           }
           return chosen
         }
-        if (tier === 'mini') {
+        if (tier === BOSS_TIER_REGULAR) {
           const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
           return cloneWeapon((good.length ? good : opts).sort((a, b) => weaponScore(b) - weaponScore(a))[0])
         }
@@ -1799,6 +1842,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
 
       // ---------- state ----------
       let chosen = [],
+        draftOptions = [],
         player = [],
         enemy = [],
         battle = 0,
@@ -1807,22 +1851,37 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         filter = 'all',
         activePreviewActor = null,
         nextEnemyMarkerId = null
+      const ROSTER_SIZE = 5,
+        DRAFT_CHOICES_PER_SLOT = 3,
+        LEADER_BONUS_LEVELS = 4,
+        BOSS_TIER_REGULAR = 'regular',
+        BOSS_TIER_SUPER = 'super'
       const $ = (id) => document.getElementById(id)
-      function randomRoster() {
+      function selectedRosterCount() {
+        return chosen.filter(Boolean).length
+      }
+      function emptyRosterChoices() {
+        return Array(ROSTER_SIZE).fill(null)
+      }
+      function randomDraftOptions() {
         const pool = [...BASES],
-          out = []
-        for (let i = 0; i < 5; i++) {
-          const wantStaff = rnd() < 0.125
-          let candidates = pool.map((b, idx) => ({ b, idx }))
-          if (wantStaff) {
-            const staffers = candidates.filter((x) => x.b.weaponType === 'staff')
-            if (staffers.length) candidates = staffers
+          slots = []
+        for (let slot = 0; slot < ROSTER_SIZE; slot++) {
+          const offers = []
+          for (let choice = 0; choice < DRAFT_CHOICES_PER_SLOT; choice++) {
+            const wantStaff = choice === 0 && rnd() < 0.125
+            let candidates = pool.map((b, idx) => ({ b, idx }))
+            if (wantStaff) {
+              const staffers = candidates.filter((x) => x.b.weaponType === 'staff')
+              if (staffers.length) candidates = staffers
+            }
+            const picked = pick(candidates)
+            offers.push(picked.b.name)
+            pool.splice(picked.idx, 1)
           }
-          const picked = pick(candidates)
-          out.push(picked.b.name)
-          pool.splice(picked.idx, 1)
+          slots.push(offers)
         }
-        return out
+        return slots
       }
       function padCell(v, w = 3) {
         return String(v).padStart(w, ' ')
@@ -1836,21 +1895,40 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
 ${growLine}</div>`
       }
       function renderDraft() {
-        $('rosterCount').textContent = chosen.length
-        $('draftHint').textContent = 'Rolled roster: ' + chosen.join(', ') + '.'
-        $('startBtn').disabled = chosen.length !== 5
+        const selectedCount = selectedRosterCount()
+        $('rosterCount').textContent = selectedCount
+        $('draftHint').textContent =
+          selectedCount === ROSTER_SIZE
+            ? 'Roster locked: ' + chosen.join(', ') + '.'
+            : `Choose ${ROSTER_SIZE - selectedCount} more unit${ROSTER_SIZE - selectedCount === 1 ? '' : 's'}.`
+        $('startBtn').disabled = selectedCount !== ROSTER_SIZE
         const list = $('draftList')
         list.innerHTML = ''
-        chosen
-          .map((n) => BASES.find((b) => b.name === n))
-          .forEach((b) => {
-            const c = CLASSES[b.cls]
-            const el = document.createElement('div')
-            el.className = 'card unitCard selected'
-            const lvlNote = b.startOffset ? ` · starts +${b.startOffset} levels` : ' · starts Lv 1'
-            el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType}${lvlNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
-            list.appendChild(el)
-          })
+        draftOptions.forEach((slot, slotIndex) => {
+          const slotEl = document.createElement('section')
+          slotEl.className = 'draftSlot'
+          const isLeaderSlot = slotIndex === 0
+          const slotTitle = isLeaderSlot ? `Slot ${slotIndex + 1}: Leader` : `Slot ${slotIndex + 1}`
+          slotEl.innerHTML = `<div class="row space"><h3>${slotTitle}</h3><span class="badge">${isLeaderSlot ? `+${LEADER_BONUS_LEVELS} levels` : 'Normal start'}</span></div><div class="draftChoices"></div>`
+          const choices = slotEl.querySelector('.draftChoices')
+          slot
+            .map((n) => BASES.find((b) => b.name === n))
+            .forEach((b) => {
+              const c = CLASSES[b.cls]
+              const el = document.createElement('button')
+              el.type = 'button'
+              el.className = `draftChoice unitCard ${chosen[slotIndex] === b.name ? 'selected' : ''}`
+              const personalNote = b.startOffset ? ` · personal +${b.startOffset} levels` : ''
+              const leaderNote = isLeaderSlot ? ` · leader +${LEADER_BONUS_LEVELS}` : ''
+              el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType}${personalNote}${leaderNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
+              el.onclick = () => {
+                chosen[slotIndex] = b.name
+                renderDraft()
+              }
+              choices.appendChild(el)
+            })
+          list.appendChild(slotEl)
+        })
       }
       function weaponStatHTML(w) {
         if (!w) return ''
@@ -1897,8 +1975,9 @@ ${growLine}</div>`
         const wt = u.weapon ? ` · ${u.weapon.name}` : ''
         const st = statusLabel(u)
         const status = st ? ` · ${st}` : ''
+        const leader = u.isLeader ? ' · Leader' : ''
         const portrait = portraitImgForUnit(u)
-        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted ? ' promoted' : ''}${wt}${status}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
+        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted ? ' promoted' : ''}${leader}${wt}${status}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
       }
 
       function renderSideCards() {
@@ -1911,15 +1990,15 @@ ${growLine}</div>`
       }
       function renderTeams() {
         $('battleNo').textContent = battle
-        $('rosterCount').textContent = player.length || chosen.length
+        $('rosterCount').textContent = player.length || selectedRosterCount()
         renderSideCards()
-        $('blueSprites').innerHTML = player.map((u) => spriteMini(u, false)).join('')
-        $('redSprites').innerHTML = enemy.map((u) => spriteMini(u, true)).join('')
+        $('blueSprites').innerHTML = player.map((u) => combatantSpriteSlot(u, false)).join('')
+        $('redSprites').innerHTML = enemy.map((u) => combatantSpriteSlot(u, true)).join('')
       }
-      function spriteMini(u, isEnemy = false) {
+      function combatantSpriteSlot(u, isEnemy = false) {
         const preview = isEnemy ? combatPreviewHTML(activePreviewActor, u) : ''
         const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
-        const boss = u.bossTier === 'major' ? ' <div class="bossTag">SUPER BOSS</div>' : u.bossTier === 'mini' ? ' <div class="bossTag">BOSS</div>' : ''
+        const boss = u.bossTier === BOSS_TIER_SUPER ? ' <div class="bossTag">SUPER BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
         const st = statusLabel(u)
         const status = st ? ` ${st}` : ''
         const next =
@@ -1936,29 +2015,39 @@ ${growLine}</div>`
         ;(logEl || $('log')).prepend(p)
       }
       function startRun() {
-        player = chosen.map((n) =>
-          freshFromBase(
+        if (selectedRosterCount() !== ROSTER_SIZE) return
+        player = chosen.map((n, i) => {
+          const u = freshFromBase(
             BASES.find((b) => b.name === n),
             false,
-            1,
+            1 + (i === 0 ? LEADER_BONUS_LEVELS : 0),
             false
           )
-        )
+          u.isLeader = i === 0
+          return u
+        })
         $('draftScreen').classList.add('hidden')
         $('gameScreen').classList.remove('hidden')
         renderTeams()
-        beginNextBattle()
+        logLine(null, `${player[0].name} leads the party and starts at ${levelLabel(player[0])}.`, 'heal')
+        showRewards(true)
+      }
+      function bossTierForBattle(n) {
+        const cycle = ((n - 1) % 5) + 1
+        if (cycle === 5) return BOSS_TIER_SUPER
+        if (cycle === 3) return BOSS_TIER_REGULAR
+        return null
       }
       function generateEnemy() {
         battle++
         const baseInternal = clamp(1 + battle * 2, 1, 40)
-        const bossTier = battle % 5 === 0 ? 'major' : battle % 2 === 0 ? 'mini' : null
+        const bossTier = bossTierForBattle(battle)
         enemy = []
         const pool = [...BASES]
         for (let i = 0; i < 5; i++) {
           const b = pool.splice(rint(pool.length), 1)[0] || pick(BASES)
           const isBossSlot = i === 0 && bossTier
-          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === 'major' ? 6 : 4) : 0), 1, 40)
+          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_SUPER ? 6 : 4) : 0), 1, 40)
           const promoted = internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
@@ -1975,7 +2064,11 @@ ${growLine}</div>`
         $('log').innerHTML = ''
         setStatus('')
         const msg =
-          bossTier === 'major' ? 'Major boss fight: slot 1 is +6 levels with silver+ gear.' : bossTier === 'mini' ? 'Mini-boss fight: slot 1 is +4 levels.' : 'Standard enemy team.'
+          bossTier === BOSS_TIER_SUPER
+            ? 'Super boss fight: slot 1 is +6 levels with silver+ gear.'
+            : bossTier === BOSS_TIER_REGULAR
+              ? 'Regular boss fight: slot 1 is +4 levels.'
+              : 'Standard enemy team.'
         logLine(null, `Battle ${battle}: ${msg}`, bossTier ? 'crit' : 'hit')
         renderTeams()
       }
@@ -2087,10 +2180,20 @@ ${growLine}</div>`
           showGameOver()
         }
       }
-      function showRewards() {
+      function showRewards(opening = false) {
         awaitingReward = true
-        const rewards = makeRewards()
-        let html = `<h2>Choose a reward</h2><div class="small">Pick exactly one. Weapon rewards equip immediately; stat boosters are consumed immediately. No roster swaps.</div><div class="rewardGrid">`
+        const bossTier = opening ? null : bossTierForBattle(battle)
+        const rewards = makeRewards(bossTier)
+        const title = opening ? 'Choose an opening reward' : 'Choose a reward'
+        let desc = opening
+          ? 'Pick one free reward before battle 1. Weapon rewards equip immediately; stat boosters are consumed immediately.'
+          : 'Pick exactly one. Weapon rewards equip immediately; stat boosters are consumed immediately. No roster swaps.'
+        if (bossTier)
+          desc +=
+            bossTier === BOSS_TIER_SUPER
+              ? ' Super boss weapon rewards are stronger and offer four weapon choices.'
+              : ' Regular boss weapon rewards are rolled from stronger weapons.'
+        let html = `<h2>${title}</h2><div class="small">${desc}</div><div class="rewardGrid">`
         rewards.forEach((r, i) => {
           html += `<div class="choice"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
         })
@@ -2105,20 +2208,34 @@ ${growLine}</div>`
         if (fx === 'sleep' || fx === 'berserk') return `staff, ${statusName(fx)}, Hit ${w.hit}`
         return `${w.type}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}`
       }
-      function weaponReward() {
-        const candidates = player.filter((u) => u.hp > 0 && WEAPONS.some((w) => allowedWeapons(u).includes(w.type)))
+      function isGoodRewardWeapon(w) {
+        return !w.name.startsWith('Iron') && w.name !== 'Heal Staff'
+      }
+      function rewardWeaponPool(u, goodOnly = false) {
+        const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
+        if (!goodOnly) return opts
+        const good = opts.filter(isGoodRewardWeapon)
+        return good.length ? good : opts
+      }
+      function weaponReward(goodOnly = false) {
+        const candidates = player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
         const itemUnit = pick(candidates.length ? candidates : player)
-        const opts = WEAPONS.filter((w) => allowedWeapons(itemUnit).includes(w.type))
+        const opts = rewardWeaponPool(itemUnit, goodOnly)
         const item = cloneWeapon(pick(opts.length ? opts : WEAPONS))
         return { type: 'item', title: `Equip ${item.name}`, desc: `Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.`, unit: itemUnit, item }
       }
-      function makeRewards() {
-        const a = weaponReward()
-        let b = weaponReward()
-        let guard = 0
-        while (b.unit === a.unit && b.item.name === a.item.name && guard++ < 10) b = weaponReward()
+      function makeRewards(bossTier = null) {
+        const weaponCount = bossTier === BOSS_TIER_SUPER ? 4 : 2
+        const goodOnly = !!bossTier
+        const weaponRewards = []
+        for (let i = 0; i < weaponCount; i++) {
+          let next = weaponReward(goodOnly),
+            guard = 0
+          while (weaponRewards.some((r) => r.unit === next.unit && r.item.name === next.item.name) && guard++ < 20) next = weaponReward(goodOnly)
+          weaponRewards.push(next)
+        }
         const boost = boostReward()
-        return [a, b, boost]
+        return [...weaponRewards, boost]
       }
       function boostReward() {
         if (Math.random() < 0.22)
@@ -2201,9 +2318,11 @@ ${growLine}</div>`
         $('modalBody').innerHTML = ''
       }
 
-      chosen = randomRoster()
+      draftOptions = randomDraftOptions()
+      chosen = emptyRosterChoices()
       $('rerollBtn').onclick = () => {
-        chosen = randomRoster()
+        draftOptions = randomDraftOptions()
+        chosen = emptyRosterChoices()
         renderDraft()
       }
       $('startBtn').onclick = startRun
