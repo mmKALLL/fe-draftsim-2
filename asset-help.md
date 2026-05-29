@@ -33,15 +33,17 @@ The prototype checks these paths for side-panel portraits:
 ./assets/femp/portraits/<character>.gif
 ./assets/femp/portraits/<character>.webp
 
+If a player character portrait is missing, the UI falls back to the class-based generic portrait paths below, then to enemy-portraits/generic, then to the generated placeholder.
+
 Portraits should be cropped to the top-left portrait rectangle from the standard mug sheet. For the vanilla 128x112 sheets in this project, that means a 96x80 crop from x=0, y=0. The UI preserves proportions and zooms them to cover the portrait slot height.
 
-Enemy side-panel portraits use class-based files instead of character-name files:
+Class-based generic side-panel portraits use these paths:
 
 ./assets/femp/enemy-portraits/<class>.png
 ./assets/femp/enemy-portraits/<class>.gif
 ./assets/femp/enemy-portraits/<class>.webp
 
-If a promoted enemy file is missing, the UI falls back to the base class enemy portrait, then to enemy-portraits/generic, then to the generated placeholder. It does not fall back to the player character portrait.
+If a promoted class file is missing, the UI falls back to the base class portrait, then to enemy-portraits/generic, then to the generated placeholder. Enemies and bosses do not fall back to player character portraits.
 
 Named bosses check this folder first:
 
@@ -75,6 +77,8 @@ merc
 merc_promoted
 myrm
 myrm_promoted
+thief
+thief_promoted
 knight
 knight_promoted
 cavalier
