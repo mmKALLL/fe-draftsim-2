@@ -290,79 +290,86 @@ const WEAPONS = [
   {name:'Lightning', type:'light', mt:4, hit:95, wt:6, crit:5, magic:true},
   {name:'Shine', type:'light', mt:6, hit:90, wt:8, crit:8, magic:true},
   {name:'Divine', type:'light', mt:8, hit:85, wt:12, crit:10, magic:true},
+  {name:'Aura', type:'light', mt:12, hit:80, wt:15, crit:15, magic:true},
+  {name:'Aureola', type:'light', mt:18, hit:85, wt:14, crit:5, magic:true},
   {name:'Flux', type:'dark', mt:7, hit:80, wt:8, crit:0, magic:true},
   {name:'Luna', type:'dark', mt:0, hit:95, wt:12, crit:20, magic:true, pierceRes:true},
   {name:'Nosferatu', type:'dark', mt:10, hit:70, wt:14, crit:0, magic:true, drain:true},
-  {name:'Heal Staff', type:'staff', mt:10, hit:100, wt:0, crit:0, staff:true, magic:true},
-  {name:'Mend Staff', type:'staff', mt:20, hit:100, wt:0, crit:0, staff:true, magic:true}
+  {name:'Fenrir', type:'dark', mt:15, hit:70, wt:18, crit:0, magic:true},
+  {name:'Ereshkigal', type:'dark', mt:20, hit:95, wt:12, crit:0, magic:true},
+  {name:'Heal Staff', type:'staff', mt:10, hit:100, wt:0, crit:0, staff:true, magic:true, effect:'heal'},
+  {name:'Mend Staff', type:'staff', mt:20, hit:100, wt:0, crit:0, staff:true, magic:true, effect:'heal'},
+  {name:'Sleep Staff', type:'staff', mt:0, hit:65, wt:0, crit:0, staff:true, magic:true, effect:'sleep'},
+  {name:'Berserk Staff', type:'staff', mt:0, hit:55, wt:0, crit:0, staff:true, magic:true, effect:'berserk'},
+  {name:'Fortify Staff', type:'staff', mt:0, hit:100, wt:0, crit:0, staff:true, magic:true, effect:'fortify'}
 ]
 const BASES = [
   // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data.
-  U('Lyn','Lord','sword',{hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},           {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30},'blue'),
-  U('Eliwood','Lord','sword',{hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},       {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35},'red'),
-  U('Hector','Lord','axe',{hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},         {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25},'green'),
-  U('Raven','Mercenary','sword',{hp:25,str:8,skl:11,spd:13,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15},'purple'),
-  U('Guy','Myrmidon','sword',{hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},     {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25},'gold'),
-  U('Karel','Myrmidon','sword',{hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},   {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20},'red'),
-  U('Harken','Mercenary','sword',{hp:24,str:9,skl:9,spd:10,lck:4,def:7,res:2,con:11}, {hp:80,str:45,skl:45,spd:35,lck:35,def:30,res:25},'blue'),
+  U('Lyn','Lord','sword',        {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
+  U('Eliwood','Lord','sword',    {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
+  U('Hector','Lord','axe',       {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25,gTotal:335},'green'),
+  U('Raven','Mercenary','sword', {bTotal:40,hp:25,str:8,skl:11,spd:13,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
+  U('Guy','Myrmidon','sword',    {bTotal:38,hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},  {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25,gTotal:310},'gold'),
+  U('Karel','Myrmidon','sword',  {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},  {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20,gTotal:280},'red'),
+  U('Harken','Mercenary','sword',{bTotal:41,hp:24,str:9,skl:9,spd:10,lck:4,def:7,res:2,con:11},  {hp:80,str:45,skl:45,spd:35,lck:35,def:30,res:25,gTotal:295},'blue'),
 
-  U('Oswin','Knight','lance',{hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14},    {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30},'blue'),
-  U('Sain','Cavalier','lance',{hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},      {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20},'green'),
-  U('Florina','Pegasus','lance',{hp:17,str:5,skl:7,spd:9,lck:7,def:4,res:4,con:4},    {hp:60,str:40,skl:50,spd:55,lck:50,def:15,res:35},'blue'),
-  U('Fiora','Pegasus','lance',{hp:19,str:6,skl:8,spd:10,lck:6,def:5,res:5,con:5},     {hp:70,str:35,skl:60,spd:50,lck:30,def:20,res:50},'purple'),
-  U('Heath','Wyvern','lance',{hp:24,str:10,skl:7,spd:7,lck:7,def:8,res:1,con:9},      {hp:80,str:50,skl:50,spd:45,lck:20,def:30,res:20},'red'),
-  U('Kent','Cavalier','sword',{hp:20,str:6,skl:6,spd:7,lck:2,def:5,res:1,con:9},      {hp:85,str:40,skl:50,spd:45,lck:20,def:25,res:25},'red'),
-  U('Lowen','Cavalier','lance',{hp:23,str:7,skl:5,spd:7,lck:3,def:7,res:0,con:10},    {hp:90,str:30,skl:30,spd:30,lck:50,def:40,res:30},'green'),
+  U('Oswin','Knight','lance',    {bTotal:46,hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
+  U('Sain','Cavalier','lance',   {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
+  U('Florina','Pegasus','lance', {bTotal:36,hp:17,str:5,skl:7,spd:9,lck:7,def:4,res:4,con:4},    {hp:60,str:40,skl:50,spd:55,lck:50,def:15,res:35,gTotal:305},'blue'),
+  U('Fiora','Pegasus','lance',   {bTotal:40,hp:19,str:6,skl:8,spd:10,lck:6,def:5,res:5,con:5},   {hp:70,str:35,skl:60,spd:50,lck:30,def:20,res:50,gTotal:315},'purple'),
+  U('Heath','Wyvern','lance',    {bTotal:40,hp:24,str:10,skl:7,spd:7,lck:7,def:8,res:1,con:9},   {hp:80,str:50,skl:50,spd:45,lck:20,def:30,res:20,gTotal:295},'red'),
+  U('Kent','Cavalier','sword',   {bTotal:27,hp:20,str:6,skl:6,spd:7,lck:2,def:5,res:1,con:9},    {hp:85,str:40,skl:50,spd:45,lck:20,def:25,res:25,gTotal:290},'red'),
+  U('Lowen','Cavalier','lance',  {bTotal:29,hp:23,str:7,skl:5,spd:7,lck:3,def:7,res:0,con:10},   {hp:90,str:30,skl:30,spd:30,lck:50,def:40,res:30,gTotal:300},'green'),
 
-  U('Dorcas','Fighter','axe',{hp:30,str:7,skl:7,spd:6,lck:3,def:3,res:0,con:14},      {hp:80,str:60,skl:40,spd:20,lck:45,def:25,res:15},'gold'),
-  U('Bartre','Fighter','axe',{hp:29,str:9,skl:5,spd:3,lck:4,def:4,res:0,con:13},      {hp:85,str:50,skl:35,spd:40,lck:30,def:30,res:25},'red'),
-  U('Geitz','Fighter','axe',{hp:27,str:10,skl:8,spd:8,lck:5,def:6,res:1,con:13},      {hp:85,str:50,skl:40,spd:40,lck:40,def:20,res:20},'green'),
-  U('Garcia','Fighter','axe',{hp:28,str:8,skl:7,spd:6,lck:3,def:5,res:0,con:13},      {hp:80,str:65,skl:40,spd:30,lck:40,def:25,res:15},'gold'),
-  U('Ross','Fighter','axe',{hp:22,str:6,skl:4,spd:5,lck:8,def:4,res:1,con:8},         {hp:70,str:50,skl:35,spd:30,lck:40,def:25,res:20},'blue'),
+  U('Dorcas','Fighter','axe',    {bTotal:26,hp:30,str:7,skl:7,spd:6,lck:3,def:3,res:0,con:14},   {hp:80,str:60,skl:40,spd:20,lck:45,def:25,res:15,gTotal:285},'gold'),
+  U('Bartre','Fighter','axe',    {bTotal:25,hp:29,str:9,skl:5,spd:3,lck:4,def:4,res:0,con:13},   {hp:85,str:50,skl:35,spd:40,lck:30,def:30,res:25,gTotal:295},'red'),
+  U('Geitz','Fighter','axe',     {bTotal:38,hp:27,str:10,skl:8,spd:8,lck:5,def:6,res:1,con:13},  {hp:85,str:50,skl:40,spd:40,lck:40,def:20,res:20,gTotal:295},'green'),
+  U('Garcia','Fighter','axe',    {bTotal:29,hp:28,str:8,skl:7,spd:6,lck:3,def:5,res:0,con:13},   {hp:80,str:65,skl:40,spd:30,lck:40,def:25,res:15,gTotal:295},'gold'),
+  U('Ross','Fighter','axe',      {bTotal:28,hp:22,str:6,skl:4,spd:5,lck:8,def:4,res:1,con:8},    {hp:70,str:50,skl:35,spd:30,lck:40,def:25,res:20,gTotal:270},'blue'),
 
-  U('Rebecca','Archer','bow',{hp:17,str:4,skl:5,spd:6,lck:4,def:3,res:1,con:5},       {hp:60,str:40,skl:50,spd:60,lck:50,def:15,res:30},'green'),
-  U('Wil','Archer','bow',{hp:20,str:6,skl:5,spd:5,lck:6,def:5,res:0,con:6},           {hp:75,str:50,skl:50,spd:40,lck:40,def:20,res:25},'blue'),
-  U('Louise','Archer','bow',{hp:19,str:7,skl:9,spd:9,lck:7,def:4,res:4,con:6},        {hp:60,str:35,skl:45,spd:40,lck:55,def:20,res:30},'purple'),
-  U('Neimi','Archer','bow',{hp:17,str:4,skl:6,spd:7,lck:5,def:3,res:2,con:5},         {hp:55,str:45,skl:50,spd:60,lck:50,def:15,res:35},'red'),
-  U('Innes','Archer','bow',{hp:21,str:8,skl:10,spd:10,lck:6,def:5,res:3,con:7},       {hp:75,str:40,skl:45,spd:45,lck:45,def:20,res:25},'gold'),
+  U('Rebecca','Archer','bow',    {bTotal:23,hp:17,str:4,skl:5,spd:6,lck:4,def:3,res:1,con:5},    {hp:60,str:40,skl:50,spd:60,lck:50,def:15,res:30,gTotal:305},'green'),
+  U('Wil','Archer','bow',        {bTotal:27,hp:20,str:6,skl:5,spd:5,lck:6,def:5,res:0,con:6},    {hp:75,str:50,skl:50,spd:40,lck:40,def:20,res:25,gTotal:300},'blue'),
+  U('Louise','Archer','bow',     {bTotal:40,hp:19,str:7,skl:9,spd:9,lck:7,def:4,res:4,con:6},    {hp:60,str:35,skl:45,spd:40,lck:55,def:20,res:30,gTotal:285},'purple'),
+  U('Neimi','Archer','bow',      {bTotal:27,hp:17,str:4,skl:6,spd:7,lck:5,def:3,res:2,con:5},    {hp:55,str:45,skl:50,spd:60,lck:50,def:15,res:35,gTotal:310},'red'),
+  U('Innes','Archer','bow',      {bTotal:42,hp:21,str:8,skl:10,spd:10,lck:6,def:5,res:3,con:7},  {hp:75,str:40,skl:45,spd:45,lck:45,def:20,res:25,gTotal:295},'gold'),
 
-  U('Erk','Mage','anima',{hp:17,str:5,skl:6,spd:7,lck:3,def:2,res:4,con:5},           {hp:65,str:40,skl:40,spd:50,lck:30,def:20,res:40},'purple'),
-  U('Nino','Mage','anima',{hp:15,str:3,skl:4,spd:8,lck:8,def:2,res:5,con:3},          {hp:55,str:50,skl:55,spd:60,lck:45,def:15,res:50},'green'),
-  U('Pent','Mage','anima',{hp:22,str:8,skl:9,spd:10,lck:7,def:4,res:7,con:7},         {hp:70,str:35,skl:40,spd:40,lck:40,def:30,res:45},'blue'),
-  U('Lute','Mage','anima',{hp:17,str:6,skl:6,spd:7,lck:8,def:3,res:5,con:3},          {hp:45,str:65,skl:30,spd:45,lck:45,def:15,res:40},'purple'),
-  U('Saleh','Mage','anima',{hp:23,str:8,skl:8,spd:8,lck:5,def:5,res:6,con:8},         {hp:70,str:40,skl:40,spd:40,lck:30,def:25,res:45},'gold'),
+  U('Erk','Mage','anima',        {bTotal:27,hp:17,str:5,skl:6,spd:7,lck:3,def:2,res:4,con:5},    {hp:65,str:40,skl:40,spd:50,lck:30,def:20,res:40,gTotal:285},'purple'),
+  U('Nino','Mage','anima',       {bTotal:30,hp:15,str:3,skl:4,spd:8,lck:8,def:2,res:5,con:3},    {hp:55,str:50,skl:55,spd:60,lck:45,def:15,res:50,gTotal:330},'green'),
+  U('Pent','Mage','anima',       {bTotal:45,hp:22,str:8,skl:9,spd:10,lck:7,def:4,res:7,con:7},   {hp:70,str:35,skl:40,spd:40,lck:40,def:30,res:45,gTotal:300},'blue'),
+  U('Lute','Mage','anima',       {bTotal:35,hp:17,str:6,skl:6,spd:7,lck:8,def:3,res:5,con:3},    {hp:45,str:65,skl:30,spd:45,lck:45,def:15,res:40,gTotal:285},'purple'),
+  U('Saleh','Mage','anima',      {bTotal:40,hp:23,str:8,skl:8,spd:8,lck:5,def:5,res:6,con:8},    {hp:70,str:40,skl:40,spd:40,lck:30,def:25,res:45,gTotal:290},'gold'),
 
-  U('Lucius','Cleric','light',{hp:18,str:7,skl:6,spd:10,lck:2,def:1,res:6,con:6},     {hp:55,str:60,skl:50,spd:40,lck:20,def:10,res:60},'blue'),
-  U('Renault','Cleric','light',{hp:22,str:7,skl:8,spd:7,lck:4,def:5,res:7,con:9},     {hp:60,str:40,skl:40,spd:35,lck:30,def:25,res:45},'red'),
-  U('Artur','Cleric','light',{hp:19,str:6,skl:6,spd:8,lck:2,def:2,res:6,con:6},       {hp:55,str:50,skl:50,spd:40,lck:25,def:15,res:55},'gold'),
-  U('Riev','Cleric','light',{hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},        {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60},'purple'),
+  U('Lucius','Cleric','light',   {bTotal:32,hp:18,str:7,skl:6,spd:10,lck:2,def:1,res:6,con:6},   {hp:55,str:60,skl:50,spd:40,lck:20,def:10,res:60,gTotal:295},'blue'),
+  U('Renault','Cleric','light',  {bTotal:38,hp:22,str:7,skl:8,spd:7,lck:4,def:5,res:7,con:9},    {hp:60,str:40,skl:40,spd:35,lck:30,def:25,res:45,gTotal:275},'red'),
+  U('Artur','Cleric','light',    {bTotal:30,hp:19,str:6,skl:6,spd:8,lck:2,def:2,res:6,con:6},    {hp:55,str:50,skl:50,spd:40,lck:25,def:15,res:55,gTotal:290},'gold'),
+  U('Riev','Cleric','light',     {bTotal:36,hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},    {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60,gTotal:280},'purple'),
 
-  U('Serra','Cleric','staff',{hp:17,str:2,skl:5,spd:8,lck:6,def:2,res:5,con:4},       {hp:50,str:50,skl:30,spd:40,lck:60,def:15,res:55},'gold'),
-  U('Priscilla','Cleric','staff',{hp:16,str:3,skl:6,spd:8,lck:7,def:3,res:6,con:4},   {hp:45,str:40,skl:50,spd:40,lck:65,def:15,res:50},'red'),
-  U('Moulder','Cleric','staff',{hp:20,str:4,skl:6,spd:6,lck:2,def:4,res:5,con:9},     {hp:70,str:40,skl:50,spd:40,lck:20,def:25,res:25},'blue'),
-  U('Natasha','Cleric','staff',{hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},     {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55},'green'),
+  U('Canas','Shaman','dark',     {bTotal:47,hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
+  U('Knoll','Shaman','dark',     {bTotal:28,hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
+  U('Ewan','Shaman','dark',      {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:45,skl:40,spd:35,lck:50,def:15,res:40,gTotal:275},'red'),
+  U('Lyon','Shaman','dark',      {bTotal:35,hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},    {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55,gTotal:300},'purple'),
 
-  U('Canas','Shaman','dark',{hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},       {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45},'purple'),
-  U('Knoll','Shaman','dark',{hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},        {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45},'blue'),
-  U('Ewan','Shaman','dark',{hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},         {hp:50,str:45,skl:40,spd:35,lck:50,def:15,res:40},'red'),
-  U('Lyon','Shaman','dark',{hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},         {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55},'purple'),
+  U('Serra','Cleric','staff',    {bTotal:28,hp:17,str:2,skl:5,spd:8,lck:6,def:2,res:5,con:4},    {hp:50,str:50,skl:30,spd:40,lck:60,def:15,res:55,gTotal:300},'gold'),
+  U('Priscilla','Cleric','staff',{bTotal:33,hp:16,str:3,skl:6,spd:8,lck:7,def:3,res:6,con:4},    {hp:45,str:40,skl:50,spd:40,lck:65,def:15,res:50,gTotal:305},'red'),
+  U('Moulder','Cleric','staff',  {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,res:5,con:9},    {hp:70,str:40,skl:50,spd:40,lck:20,def:25,res:25,gTotal:270},'blue'),
+  U('Natasha','Cleric','staff',  {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
 
   // More FE7/FE8-inspired units for a broader, less swingy random pool. No FE8 skill systems are implemented.
-  U('Marcus','Cavalier','lance',{hp:25,str:8,skl:8,spd:7,lck:5,def:9,res:6,con:11},   {hp:65,str:30,skl:50,spd:25,lck:30,def:15,res:35},'gold',4),
-  U('Isadora','Cavalier','sword',{hp:21,str:7,skl:8,spd:10,lck:6,def:6,res:6,con:6},  {hp:75,str:30,skl:35,spd:50,lck:45,def:20,res:25},'red',2),
-  U('Wallace','Knight','lance',{hp:28,str:10,skl:6,spd:5,lck:6,def:12,res:2,con:13},  {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35},'blue',4),
-  U('Vaida','Wyvern','lance',{hp:27,str:11,skl:8,spd:8,lck:4,def:10,res:2,con:12},    {hp:80,str:45,skl:35,spd:30,lck:25,def:25,res:15},'purple',2),
-  U('Farina','Pegasus','lance',{hp:18,str:7,skl:8,spd:9,lck:7,def:5,res:5,con:5},     {hp:75,str:50,skl:45,spd:45,lck:45,def:25,res:30},'green'),
-  U('Rath','Archer','bow',{hp:22,str:7,skl:7,spd:8,lck:5,def:5,res:2,con:7},          {hp:80,str:50,skl:40,spd:50,lck:30,def:25,res:25},'blue'),
-  U('Dart','Fighter','axe',{hp:25,str:8,skl:5,spd:8,lck:3,def:6,res:1,con:10},        {hp:70,str:65,skl:20,spd:60,lck:35,def:20,res:15},'red'),
-  U('Hawkeye','Fighter','axe',{hp:28,str:10,skl:8,spd:6,lck:7,def:8,res:3,con:16},    {hp:50,str:40,skl:30,spd:25,lck:40,def:20,res:35},'gold',4),
-  U('Matthew','Myrmidon','sword',{hp:18,str:4,skl:6,spd:10,lck:3,def:3,res:0,con:7},  {hp:75,str:30,skl:40,spd:70,lck:50,def:25,res:20},'green'),
-  U('Legault','Myrmidon','sword',{hp:20,str:6,skl:8,spd:11,lck:6,def:5,res:2,con:9},  {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25},'purple',2),
-  U('Jaffar','Myrmidon','sword',{hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20},'red',4),
-  U('Karla','Myrmidon','sword',{hp:20,str:7,skl:10,spd:12,lck:8,def:4,res:3,con:7},   {hp:60,str:25,skl:45,spd:55,lck:40,def:10,res:20},'blue',2),
-  U('Athos','Mage','anima',{hp:24,str:10,skl:10,spd:8,lck:5,def:6,res:10,con:9},      {hp:40,str:30,skl:30,spd:20,lck:25,def:20,res:40},'gold',4),
-  U('Niime','Shaman','dark',{hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},       {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45},'purple',4),
-  U('L’Arachel','Cleric','staff',{hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},   {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50},'gold')
+  U('Marcus','Cavalier','lance', {bTotal:43,hp:25,str:8,skl:8,spd:7,lck:5,def:9,res:6,con:11},   {hp:65,str:30,skl:50,spd:25,lck:30,def:15,res:35,gTotal:250},'gold',4),
+  U('Isadora','Cavalier','sword',{bTotal:43,hp:21,str:7,skl:8,spd:10,lck:6,def:6,res:6,con:6},   {hp:75,str:30,skl:35,spd:50,lck:45,def:20,res:25,gTotal:280},'red',2),
+  U('Wallace','Knight','lance',  {bTotal:41,hp:28,str:10,skl:6,spd:5,lck:6,def:12,res:2,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
+  U('Vaida','Wyvern','lance',    {bTotal:43,hp:27,str:11,skl:8,spd:8,lck:4,def:10,res:2,con:12}, {hp:80,str:45,skl:35,spd:30,lck:25,def:25,res:15,gTotal:255},'purple',2),
+  U('Farina','Pegasus','lance',  {bTotal:41,hp:18,str:7,skl:8,spd:9,lck:7,def:5,res:5,con:5},    {hp:75,str:50,skl:45,spd:45,lck:45,def:25,res:30,gTotal:315},'green'),
+  U('Rath','Archer','bow',       {bTotal:34,hp:22,str:7,skl:7,spd:8,lck:5,def:5,res:2,con:7},    {hp:80,str:50,skl:40,spd:50,lck:30,def:25,res:25,gTotal:300},'blue'),
+  U('Dart','Fighter','axe',      {bTotal:31,hp:25,str:8,skl:5,spd:8,lck:3,def:6,res:1,con:10},   {hp:70,str:65,skl:20,spd:60,lck:35,def:20,res:15,gTotal:285},'red'),
+  U('Hawkeye','Fighter','axe',   {bTotal:42,hp:28,str:10,skl:8,spd:6,lck:7,def:8,res:3,con:16},  {hp:50,str:40,skl:30,spd:25,lck:40,def:20,res:35,gTotal:240},'gold',4),
+  U('Matthew','Myrmidon','sword',{bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,res:0,con:7},   {hp:75,str:30,skl:40,spd:70,lck:50,def:25,res:20,gTotal:310},'green'),
+  U('Legault','Myrmidon','sword',{bTotal:38,hp:20,str:6,skl:8,spd:11,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
+  U('Jaffar','Myrmidon','sword', {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
+  U('Karla','Myrmidon','sword',  {bTotal:44,hp:20,str:7,skl:10,spd:12,lck:8,def:4,res:3,con:7},  {hp:60,str:25,skl:45,spd:55,lck:40,def:10,res:20,gTotal:255},'blue',2),
+  U('Athos','Mage','anima',      {bTotal:49,hp:24,str:10,skl:10,spd:8,lck:5,def:6,res:10,con:9}, {hp:40,str:30,skl:30,spd:20,lck:25,def:20,res:40,gTotal:205},'gold',4),
+  U('Niime','Shaman','dark',     {bTotal:42,hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},   {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45,gTotal:230},'purple',4),
+  U('L’Arachel','Cleric','staff',{bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
 ];
 function U(name, cls, weaponType, stats, growths, palette, startOffset=0){return {name, cls, weaponType, stats, growths, palette, startOffset};}
 function promote(u, showLog=true){
@@ -395,7 +402,7 @@ function advanceTwoLevels(units){
   units.forEach(u=>{ for(let i=0;i<2;i++) levelUp(u,true); u.hp=u.maxHp; });
 }
 function freshFromBase(base, enemy=false, targetLevel=1, promoted=false){
-  const c=CLASSES[base.cls], u={id:Math.random().toString(36).slice(2), name:base.name, baseName:base.name, cls:base.cls, displayCls:base.cls, weaponType:base.weaponType, palette: enemy?'red':base.palette, kind:c.kind, lvl:1, promoted:false, stats:{...base.stats}, growths:{...base.growths}, caps:{...c.caps}, team:enemy?'red':'blue', isEnemy:enemy, startOffset:base.startOffset||0};
+  const c=CLASSES[base.cls], u={id:Math.random().toString(36).slice(2), name:base.name, baseName:base.name, cls:base.cls, displayCls:base.cls, weaponType:base.weaponType, palette: enemy?'red':base.palette, kind:c.kind, lvl:1, promoted:false, stats:{...base.stats}, growths:{...base.growths}, caps:{...c.caps}, team:enemy?'red':'blue', isEnemy:enemy, startOffset:base.startOffset||0, status:null};
   u.weapon = startingWeapon(u.weaponType); u.maxHp=u.stats.hp; u.hp=u.maxHp;
   const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset||0);
   const internalLevel = clamp(requestedInternalLevel,1,40);
@@ -412,12 +419,15 @@ function allowedWeapons(u){
   if(u.promoted){ if(['Lord','Mercenary','Myrmidon'].includes(u.cls)) base.push('sword'); if(u.cls==='Fighter') base.push('bow'); if(u.cls==='Archer') base.push('bow'); if(u.cls==='Mage') base.push('anima','staff'); if(u.cls==='Cleric') base.push('light','staff'); if(u.cls==='Shaman') base.push('dark','staff'); if(u.cls==='Cavalier') base.push('sword','lance','axe'); if(u.cls==='Knight') base.push('sword','lance','axe'); }
   return [...new Set(base)];
 }
-function weaponScore(w){ return (w.mt||0)*3 + (w.hit||0)/10 + (w.crit||0)/2 - (w.wt||0)/3 + (w.pierceRes?12:0) + (w.brave?18:0) + (w.reaver?5:0) + (w.effective?8:0) + (w.drain?10:0) + (w.staff?4:0); }
+function weaponScore(w){
+  const staffFx={sleep:18, berserk:24, fortify:70}[w.effect]||0;
+  return (w.mt||0)*3 + (w.hit||0)/10 + (w.crit||0)/2 - (w.wt||0)/3 + (w.pierceRes?12:0) + (w.brave?18:0) + (w.reaver?5:0) + (w.effective?8:0) + (w.drain?10:0) + (w.staff?4:0) + staffFx;
+}
 function enemyWeaponFor(u,tier){
   const opts=WEAPONS.filter(w=>allowedWeapons(u).includes(w.type));
   if(!opts.length) return u.weapon;
   if(tier==='major'){
-    const silver=opts.filter(w=>w.name.startsWith('Silver') || ['Regal Blade','Brave Sword','Brave Lance','Brave Axe','Brave Bow','Excalibur','Fimbulvetr','Divine','Luna','Nosferatu','Elfire','Shine','Mend Staff'].includes(w.name));
+    const silver=opts.filter(w=>w.name.startsWith('Silver') || ['Regal Blade','Brave Sword','Brave Lance','Brave Axe','Brave Bow','Excalibur','Fimbulvetr','Aureola','Aura','Ereshkigal','Fenrir','Divine','Luna','Nosferatu','Elfire','Shine','Fortify Staff','Berserk Staff','Mend Staff'].includes(w.name));
     const chosen=cloneWeapon((silver.length?silver:opts).sort((a,b)=>weaponScore(b)-weaponScore(a))[0]);
     if(!chosen.staff){ chosen.name = chosen.name.includes('+') ? chosen.name : chosen.name + '+'; chosen.mt += 2; chosen.hit += 5; }
     return chosen;
@@ -471,7 +481,7 @@ function combatPreviewHTML(actor,target){
   return `<div><span class="${triangleClass(actor,target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div>${dmg} dmg (x${hits})</div>`;
 }
 function classAbbrev(cls){
-  const map={'Lord':'Lord','Blade Lord':'Blade','Mercenary':'Merc','Hero':'Hero','Myrmidon':'Myrm','Swordmaster':'SwrdMstr','Knight':'Knight','General':'General','Cavalier':'Caval','Paladin':'Paladin','Pegasus':'Pegasus','Falcon Knight':'Falcon','Fighter':'Fighter','Warrior':'Warrior','Archer':'Archer','Sniper':'Sniper','Mage':'Mage','Sage':'Sage','Cleric':'Cleric','Bishop':'Bishop','Shaman':'Shaman','Druid':'Druid','Wyvern':'Wyvern','Wyvern Lord':'WyvLord'};
+  const map={'Lord':'Lord','Blade Lord':'BladeLord','Mercenary':'Merc','Hero':'Hero','Myrmidon':'Myrm','Swordmaster':'SwrdMstr','Knight':'Knight','General':'General','Cavalier':'Caval','Paladin':'Paladin','Pegasus':'Pegasus','Falcon Knight':'Falcon','Fighter':'Fighter','Warrior':'Warrior','Archer':'Archer','Sniper':'Sniper','Mage':'Mage','Sage':'Sage','Cleric':'Cleric','Bishop':'Bishop','Shaman':'Shaman','Druid':'Druid','Wyvern':'Wyvern','Wyvern Lord':'WyvLord'};
   return map[cls] || String(cls).slice(0,7);
 }
 const BOSS_NAMES_BY_CLASS={
@@ -509,6 +519,13 @@ function enemyDisplayName(u){
 }
 function canDouble(a,d){ return attackSpeed(a)-attackSpeed(d)>=4; }
 function healAmount(a){ return Math.max(1,(a.weapon.mt||10)+floor(a.stats.str/2)); }
+function fortifyAmount(a){ return Math.max(1,a.stats.str); }
+function staffEffect(w){ return w?.staff ? (w.effect || 'heal') : null; }
+function isStatusStaff(w){ const fx=staffEffect(w); return fx==='sleep' || fx==='berserk'; }
+function statusName(fx){ return ({sleep:'Sleep', berserk:'Berserk'})[fx] || ''; }
+function statusLabel(u){ return statusName(u.status); }
+function applyStatus(u,fx){ u.status=fx; }
+function clearUnitStatus(u){ delete u.status; }
 
 function strikeResult(a,d,suffix=''){
   const dh=displayedHit(a,d), cr=critRate(a,d), dmg=rawDamage(a,d);
@@ -541,6 +558,14 @@ function chooseEnemyTarget(){
   if(roll<0.4) return [...live].sort((a,b)=>a.hp-b.hp || a.maxHp-b.maxHp)[0];
   if(roll<0.8) return [...live].sort((a,b)=>avgExpectedDamage(b,enemy)-avgExpectedDamage(a,enemy))[0];
   return pick(live);
+}
+function chooseStatusStaffTarget(actor, foes){
+  const live=foes.filter(x=>x.hp>0);
+  const unstated=live.filter(x=>!x.status);
+  const targets=unstated.length ? unstated : live;
+  if(!targets.length) return null;
+  if(rnd()<0.65) return [...targets].sort((a,b)=>displayedHit(actor,b)-displayedHit(actor,a))[0];
+  return pick(targets);
 }
 function lowestInjured(allies){
   const injured=allies.filter(x=>x.hp>0 && x.hp<x.maxHp);
@@ -615,13 +640,87 @@ async function animateHeal(actor,target,amt){
   logLine(null, `${actor.name} heals ${target.name} for ${amt}.`, 'heal');
   await sleep(300);
 }
+async function animateFortify(actor,targets,amt){
+  clearHighlights();
+  const ae=spriteEl(actor); if(ae) ae.classList.add('active');
+  await sleep(300);
+  let total=0;
+  targets.forEach(t=>{
+    const healed=Math.min(t.maxHp-t.hp,amt);
+    if(healed<=0) return;
+    t.hp+=healed; total+=healed;
+    floatText(t, `+${healed}`, 'healing');
+    updateUnitVisual(t);
+  });
+  renderSideCards();
+  logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal');
+  await sleep(450);
+}
+function staffStatusResult(a,d){
+  const dh=displayedHit(a,d);
+  return {hit:trueHitRoll(dh), dh, effect:staffEffect(a.weapon)};
+}
+async function animateStatusStaff(actor,target,result){
+  clearHighlights();
+  const ae=spriteEl(actor), te=spriteEl(target);
+  if(ae) ae.classList.add('active');
+  if(te) te.classList.add('target');
+  await sleep(300);
+  if(result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'missText');
+  else floatText(target, 'MISS', 'missText');
+  updateUnitVisual(target);
+  renderSideCards();
+  await sleep(350);
+}
+async function animateWait(actor,msg,cls='miss'){
+  clearHighlights();
+  const ae=spriteEl(actor); if(ae) ae.classList.add('active');
+  setStatus(msg); logLine(null,msg,cls);
+  floatText(actor, 'WAIT', 'missText');
+  await sleep(600);
+}
+async function resolveStaffTurn(actor, allies, foes, forcedTarget=null){
+  const fx=staffEffect(actor.weapon);
+  if(fx==='fortify'){
+    const targets=allies.filter(x=>x.hp>0 && x.hp<x.maxHp);
+    if(targets.length){ await animateFortify(actor,targets,fortifyAmount(actor)); return; }
+    await animateWait(actor, `${actor.name} waits; no ally needs Fortify.`);
+    return;
+  }
+  if(fx==='sleep' || fx==='berserk'){
+    const t=forcedTarget || chooseStatusStaffTarget(actor,foes);
+    if(!t){ await animateWait(actor, `${actor.name} waits; no status target is available.`); return; }
+    const r=staffStatusResult(actor,t);
+    if(r.hit){ applyStatus(t,fx); logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: ${statusName(fx)} lands (${r.dh}% displayed).`, 'hit'); }
+    else logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: miss (${r.dh}% displayed).`, 'miss');
+    await animateStatusStaff(actor,t,r);
+    return;
+  }
+  const t=forcedTarget || lowestInjured(allies);
+  if(t){ await animateHeal(actor,t,Math.min(t.maxHp-t.hp,healAmount(actor))); return; }
+  await animateWait(actor, `${actor.name} waits; no ally to heal.`);
+}
+async function consumeTurnStatus(actor, allies, foes){
+  if(!actor.status) return false;
+  const fx=actor.status; clearUnitStatus(actor); renderTeams();
+  if(fx==='sleep'){ await animateWait(actor, `${actor.name} is asleep and waits.`); return true; }
+  if(fx==='berserk'){
+    const targets=[...allies,...foes].filter(x=>x.hp>0 && x!==actor);
+    if(actor.weapon.staff || !targets.length){
+      await animateWait(actor, `${actor.name} is berserk, but cannot attack.`);
+      return true;
+    }
+    const target=pick(targets);
+    setStatus(`${actor.name} is berserk and attacks ${target.name}!`);
+    logLine(null, `${actor.name} is berserk and attacks ${target.name}!`, 'crit');
+    await resolveActorTurn(actor,allies,foes,target);
+    return true;
+  }
+  return false;
+}
 async function resolveActorTurn(actor, allies, foes, forcedTarget=null){
   if(!actor || actor.hp<=0) return;
-  if(actor.weapon.staff){
-    const t=forcedTarget || lowestInjured(allies);
-    if(t){ await animateHeal(actor,t,Math.min(t.maxHp-t.hp,healAmount(actor))); return; }
-    clearHighlights(); const ae=spriteEl(actor); if(ae) ae.classList.add('active'); setStatus(`${actor.name} has no ally to heal.`); logLine(null, `${actor.name} waits; no ally to heal.`, 'miss'); await sleep(600); return;
-  }
+  if(actor.weapon.staff){ await resolveStaffTurn(actor,allies,foes,forcedTarget); return; }
   const targets=foes.filter(x=>x.hp>0); if(!targets.length) return;
   const target=forcedTarget || pick(targets);
   const rounds = canDouble(actor,target) ? 2 : 1;
@@ -682,8 +781,11 @@ function renderDraft(){
 }
 function weaponStatHTML(w){
   if(!w) return '';
+  const fx=staffEffect(w);
   const labels=w.staff
-    ? [['Heal', w.mt], ['Hit', w.hit], ['Wt', w.wt], ['Type', 'Staff']]
+    ? (fx==='heal' ? [['Heal', w.mt], ['Wt', w.wt], ['Type', 'Staff']]
+      : fx==='fortify' ? [['Heal', 'Mag'], ['Wt', w.wt], ['Type', 'Staff']]
+      : [['Fx', statusName(fx)], ['Hit', w.hit], ['Wt', w.wt], ['Type', 'Staff']])
     : [['Mt', w.mt], ['Hit', w.hit], ['Crit', w.crit||0], ['Wt', w.wt], ['Type', w.type]];
   const eff=[]; if(w.reaver) eff.push('Reaver'); if(w.brave) eff.push('Brave'); if(w.effective) eff.push('Eff'); if(w.pierceRes) eff.push('Pierce'); if(w.drain) eff.push('Drain');
   if(eff.length) labels.push(['Fx', eff.join('/')]);
@@ -692,8 +794,10 @@ function weaponStatHTML(w){
 function statHTML(s){return ['hp','str','skl','spd','lck','def','res','con'].map(k=>`<span><b>${k.toUpperCase()}</b> ${s[k]}</span>`).join('');}
 function unitCard(u){
   const wt=u.weapon?` · ${u.weapon.name}`:'';
+  const st=statusLabel(u);
+  const status=st?` · ${st}`:'';
   const portrait=portraitImgForUnit(u);
-  return `<div class="card unitCard ${u.hp<=0?'dead':''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted?' promoted':''}${wt}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${100*u.hp/u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff?'--':hitRate(u,{weapon:{type:'none'},stats:{lck:0,spd:0,con:99}})} · Avo ${avoid(u)} · Crit ${u.weapon.staff?'--':floor((u.weapon.crit||0)+u.stats.skl/2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`;
+  return `<div class="card unitCard ${u.hp<=0?'dead':''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted?' promoted':''}${wt}${status}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${100*u.hp/u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff?'--':hitRate(u,{weapon:{type:'none'},stats:{lck:0,spd:0,con:99}})} · Avo ${avoid(u)} · Crit ${u.weapon.staff?'--':floor((u.weapon.crit||0)+u.stats.skl/2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`;
 }
 
 function renderSideCards(){
@@ -713,9 +817,11 @@ function spriteMini(u,isEnemy=false){
   const preview=isEnemy ? combatPreviewHTML(activePreviewActor,u) : '';
   const previewClass=preview ? 'combatPreview' : 'combatPreview empty';
   const boss=u.bossTier==='major'?' <span class="bossTag">BOSS</span>':u.bossTier==='mini'?' <span class="bossTag">MINI</span>':'';
+  const st=statusLabel(u);
+  const status=st?` ${st}`:'';
   const next=isEnemy && u.id===nextEnemyMarkerId && u.hp>0 ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>' : '';
   const hpLine = isEnemy ? `L${u.lvl} - ${u.hp}/${u.maxHp}` : `${u.hp}/${u.maxHp}`;
-  return `<div class="combatSlot"><div class="combatant ${u.hp<=0?'dead':''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}</div><div class="hpbar"><i style="width:${100*u.hp/u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`;
+  return `<div class="combatSlot"><div class="combatant ${u.hp<=0?'dead':''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${100*u.hp/u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`;
 }
 function logLine(logEl,msg,cls=''){ const p=document.createElement('p'); p.className=cls; p.textContent=msg; (logEl||$('log')).prepend(p); }
 function startRun(){ player=chosen.map(n=>freshFromBase(BASES.find(b=>b.name===n),false,1,false)); $('draftScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); renderTeams(); beginNextBattle(); }
@@ -762,9 +868,11 @@ async function runBattle(){
       updateNextEnemyMarker(eIdx); renderTeams();
       if(pIdx!==-1){
         const actor=player[pIdx]; clearHighlights(); const ae=spriteEl(actor); if(ae) ae.classList.add('active');
+        if(await consumeTurnStatus(actor,player,enemy)){ pIdx=(pIdx+1)%player.length; actions++; side='enemy'; continue; }
         let target=null;
         if(actor.weapon.staff){
-          setStatus(`${actor.name} looks for an ally to heal.`);
+          if(isStatusStaff(actor.weapon)) target=await selectTarget(actor, enemy.filter(x=>x.hp>0), `${actor.name}'s turn: choose an enemy for ${actor.weapon.name}.`);
+          else setStatus(`${actor.name} looks for an ally to heal.`);
         } else {
           target=await selectTarget(actor, enemy.filter(x=>x.hp>0), `${actor.name}'s turn: choose an enemy to attack.`);
         }
@@ -777,7 +885,8 @@ async function runBattle(){
       eIdx=nextLivingIndex(enemy,eIdx);
       if(eIdx!==-1){
         const actor=enemy[eIdx]; nextEnemyMarkerId=actor.id; renderTeams();
-        const target=actor.weapon.staff?null:chooseEnemyTarget();
+        if(await consumeTurnStatus(actor,enemy,player)){ eIdx=(eIdx+1)%enemy.length; updateNextEnemyMarker(eIdx); renderTeams(); actions++; side='player'; continue; }
+        const target=actor.weapon.staff ? (isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor,player) : null) : chooseEnemyTarget();
         if(target) setStatus(`${actor.name} targets ${target.name}.`);
         await resolveActorTurn(actor,enemy,player,target);
         eIdx=(eIdx+1)%enemy.length; updateNextEnemyMarker(eIdx); renderTeams(); actions++;
@@ -786,18 +895,25 @@ async function runBattle(){
     }
   }
   clearHighlights(); setStatus(''); nextEnemyMarkerId=null; renderTeams(); battleRunning=false;
-  if(player.some(x=>x.hp>0)){ logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal'); advanceTwoLevels(player); player.forEach(u=>u.hp=u.maxHp); renderTeams(); if(battle>=20){ showWin(); } else showRewards(); }
+  if(player.some(x=>x.hp>0)){ logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal'); advanceTwoLevels(player); player.forEach(u=>{u.hp=u.maxHp; clearUnitStatus(u);}); renderTeams(); if(battle>=20){ showWin(); } else showRewards(); }
   else { logLine(null, `Defeat on battle ${battle}.`, 'death'); showGameOver(); }
 }
 function showRewards(){ awaitingReward=true; const rewards=makeRewards(); let html=`<h2>Choose a reward</h2><div class="small">Pick exactly one. Weapon rewards equip immediately; stat boosters are consumed immediately. No roster swaps.</div><div class="rewardGrid">`;
   rewards.forEach((r,i)=>{ html+=`<div class="choice"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`; }); html+='</div>'; showModal(html); document.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>applyReward(rewards[+btn.dataset.i]));
 }
+function weaponSummary(w){
+  const fx=staffEffect(w);
+  if(fx==='heal') return `staff, Heal ${w.mt}`;
+  if(fx==='fortify') return 'staff, heals all allies by Mag';
+  if(fx==='sleep' || fx==='berserk') return `staff, ${statusName(fx)}, Hit ${w.hit}`;
+  return `${w.type}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}`;
+}
 function weaponReward(){
-  const candidates=player.filter(u=>u.hp>0 && !u.weapon.staff);
+  const candidates=player.filter(u=>u.hp>0 && WEAPONS.some(w=>allowedWeapons(u).includes(w.type)));
   const itemUnit=pick(candidates.length?candidates:player);
-  const opts=WEAPONS.filter(w=>allowedWeapons(itemUnit).includes(w.type)&&!w.staff);
-  const item=cloneWeapon(pick(opts.length?opts:WEAPONS.filter(w=>!w.staff)));
-  return {type:'item', title:`Equip ${item.name}`, desc:`Give ${item.name} (${item.type}, Mt ${item.mt}, Hit ${item.hit}, Wt ${item.wt}, Crit ${item.crit}) to ${itemUnit.name}.`, unit:itemUnit, item};
+  const opts=WEAPONS.filter(w=>allowedWeapons(itemUnit).includes(w.type));
+  const item=cloneWeapon(pick(opts.length?opts:WEAPONS));
+  return {type:'item', title:`Equip ${item.name}`, desc:`Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.`, unit:itemUnit, item};
 }
 function makeRewards(){
   const a=weaponReward(); let b=weaponReward();
