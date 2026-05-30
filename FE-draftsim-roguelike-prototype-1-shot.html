@@ -665,7 +665,7 @@
     </div>
 
     <script>
-      // Version: 2026-05-30 opening-draft-random-pick.
+      // Version: 2026-05-30 lord-map-sprite-overrides.
 
       'use strict'
       // ---------- deterministic-ish utilities ----------
@@ -824,6 +824,11 @@
         Niime: 'niime',
         Athos: 'athos',
       }
+      const CUSTOM_MAP_SPRITE_STEMS = {
+        Lyn: 'lyn',
+        Eliwood: 'eliwood',
+        Hector: 'hector',
+      }
       function assetSlug(s = '') {
         return String(s)
           .toLowerCase()
@@ -868,6 +873,10 @@
       }
       function portraitFileStem(name) {
         return FEMP_NAME_OVERRIDES[name] || assetSlug(name)
+      }
+      function customMapSpriteStem(u) {
+        const label = u.baseName || u.name
+        return CUSTOM_MAP_SPRITE_STEMS[label] || null
       }
       function battleFileStem(kind) {
         const map = {
@@ -954,9 +963,15 @@
         const stem = battleFileStem(u.kind)
         const promotedStem = u.promoted ? `${stem}_promoted` : stem
         const teamFolder = u.team === 'red' ? 'map/red' : 'map/blue'
+        const customStem = customMapSpriteStem(u)
+        const customPromotedStem = customStem && u.promoted ? `${customStem}_promoted` : null
         const paths = [
+          ...(customPromotedStem ? assetPathVariants(teamFolder, customPromotedStem) : []),
+          ...(customStem ? assetPathVariants(teamFolder, customStem) : []),
           ...assetPathVariants(teamFolder, promotedStem),
           ...assetPathVariants(teamFolder, stem),
+          ...(customPromotedStem ? assetPathVariants('map/blue', customPromotedStem) : []),
+          ...(customStem ? assetPathVariants('map/blue', customStem) : []),
           ...assetPathVariants('map/blue', promotedStem),
           ...assetPathVariants('map/blue', stem),
           ...assetPathVariants('battle', promotedStem),
@@ -966,6 +981,7 @@
       }
 
       // ---------- game data: close FE7 starting archetypes, compact roster ----------
+
       // prettier-ignore
       const CLASSES = {
         Lord: {
@@ -1083,6 +1099,7 @@
         Shaman: [],
         Druid: [],
       }
+      // Weapon data
       // prettier-ignore
       const WEAPONS = [
         { name: 'Iron Sword', type: 'sword', mt: 5, hit: 90, wt: 5, crit: 0, magic: false },
@@ -1149,7 +1166,7 @@
       ]
       // prettier-ignore
       const BASES = [
-        // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data.
+        // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
 U('Lyn','Lord','sword',         {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
 U('Eliwood','Lord','sword',     {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
 U('Hector','Lord','axe',        {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25,gTotal:335},'green'),
@@ -1162,7 +1179,7 @@ U('Karel','Myrmidon','sword',   {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4
 U('Karla','Myrmidon','sword',   {bTotal:46,hp:20,str:7,skl:12,spd:12,lck:8,def:4,res:3,con:7},  {hp:60,str:25,skl:45,spd:55,lck:40,def:10,res:20,gTotal:255},'blue',2),
 
 U('Matthew','Thief','sword',    {bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,res:0,con:7},   {hp:75,str:30,skl:40,spd:70,lck:50,def:25,res:20,gTotal:310},'green'),
-U('Legault','Thief','sword',    {bTotal:38,hp:20,str:6,skl:8,spd:11,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
+U('Legault','Thief','sword',    {bTotal:37,hp:20,str:6,skl:8,spd:10,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
 U('Jaffar','Thief','sword',     {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
 
 U('Oswin','Knight','lance',     {bTotal:46,hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
@@ -1260,7 +1277,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
               .filter((k) => u.stats[k] > before[k])
               .map((k) => k.toUpperCase())
               .join(', ') || 'no stats'
-          logLine(null, `${u.name} reached Lv ${u.lvl}${u.promoted ? ' promoted' : ''}: ${gains}.`, 'heal')
+          logLine(null, `${u.name} reached Lv ${u.lvl}${u.promoted ? ' (promoted)' : ''}: ${gains}.`, 'heal')
         }
         return true
       }
@@ -1927,7 +1944,7 @@ ${growLine}</div>`
               const el = document.createElement('button')
               el.type = 'button'
               el.className = `draftChoice unitCard ${chosen[slotIndex] === b.name ? 'selected' : ''}`
-              const personalNote = b.startOffset ? ` · personal +${b.startOffset} levels` : ''
+              const personalNote = b.startOffset ? ` · starts with +${b.startOffset} levels` : ''
               el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType}${personalNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
               el.onclick = () => {
                 chosen[slotIndex] = b.name
@@ -2055,12 +2072,14 @@ ${growLine}</div>`
           const promoted = internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
+          e.maxHp = isBossSlot ? floor(e.maxHp * 1.25) : e.maxHp
           e.bossTier = isBossSlot ? bossTier : null
           e.palette = 'red'
           e.team = 'red'
           e.weapon = enemyWeaponFor(e, e.bossTier)
           e.name = enemyDisplayName(e)
           e.hp = e.maxHp
+          e.lvl = internal + Math.ceil(b.startOffset / 2)
           enemy.push(e)
         }
         activePreviewActor = null
@@ -2069,7 +2088,7 @@ ${growLine}</div>`
         setStatus('')
         const msg =
           bossTier === BOSS_TIER_SUPER
-            ? 'Super boss fight: slot 1 is +6 levels with silver+ gear.'
+            ? 'Super boss fight: slot 1 is +6 levels with silver gear or better.'
             : bossTier === BOSS_TIER_REGULAR
               ? 'Regular boss fight: slot 1 is +4 levels.'
               : 'Standard enemy team.'

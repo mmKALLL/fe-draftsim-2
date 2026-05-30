@@ -63,6 +63,15 @@ The center combat area checks these paths for animated map sprite sheets:
 ./assets/femp/map/red/<class>.gif
 ./assets/femp/map/red/<class>.webp
 
+Some named units can override their class map sprite before the class fallback is checked. Current character map sprite override stems are:
+
+lyn
+lyn_promoted
+eliwood
+eliwood_promoted
+hector
+hector_promoted
+
 Names are expected to be lowercase and simplified. The code converts character names to lowercase slugs, so:
 
 L'Arachel or L’Arachel -> larachel
