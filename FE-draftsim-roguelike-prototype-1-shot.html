@@ -559,6 +559,46 @@
       .rewardMeta {
         margin-top: 4px;
       }
+      .consumablePanel {
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 8px;
+        margin: 8px 0 10px;
+        background: rgba(15, 23, 42, 0.62);
+      }
+      .consumablePanel h3 {
+        margin: 0;
+      }
+      .consumableSlots {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .consumableSlot {
+        min-width: 0;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 7px;
+        background: #111827;
+      }
+      .consumableSlot.empty {
+        color: #64748b;
+        border-style: dashed;
+      }
+      .consumableSlot .name {
+        font-size: 12px;
+      }
+      .consumableSlot button {
+        width: 100%;
+        padding: 5px 6px;
+        margin-top: 6px;
+        font-size: 12px;
+      }
+      .turnAction {
+        width: 100%;
+        margin-top: 8px;
+      }
       .pill {
         display: inline-block;
         border-radius: 999px;
@@ -618,7 +658,10 @@
           <div class="small">FEMP-compatible asset hooks, FE7-inspired mechanics, richer weapons, animated round-robin arena loop.</div>
         </div>
         <div class="row">
-          <span class="badge">Battle <span><span id="battleNo">0</span>/20</span></span><span class="badge">Roster <span><span id="rosterCount">0</span>/5</span></span
+          <span class="badge"
+            >Battle <span><span id="battleNo">0</span>/20</span></span
+          ><span class="badge"
+            >Roster <span><span id="rosterCount">0</span>/5</span></span
           ><span class="badge">Seed <b id="seedLabel"></b></span>
         </div>
       </div>
@@ -663,16 +706,14 @@
               <div id="redSprites" class="spriteRow"></div>
             </div>
           </div>
+          <div id="consumablePanel" class="consumablePanel"></div>
           <h3 style="margin-top: 10px">Combat log</h3>
           <div id="log" class="log"></div>
         </main>
         <aside class="panel">
           <h2>Enemy team</h2>
           <div id="enemyTeam"></div>
-          <div class="footer">
-            Tip: click a unit card to inspect its exact stats. A battle ends when one team has no living units. Player turns require choosing an enemy target. Defeated slots are
-            skipped; player and enemy rotations advance independently.
-          </div>
+          <div class="footer">A battle ends when one team has no living units.</div>
         </aside>
       </div>
     </div>
@@ -682,7 +723,7 @@
     </div>
 
     <script>
-      // Version: 2026-05-30 phase-1-strategy-fixes.
+      // Version: 2026-05-30 phase-2-consumables.
 
       'use strict'
       // ---------- deterministic-ish utilities ----------
@@ -1213,6 +1254,38 @@
         })
       }
       prepareWeaponData()
+      // Consumable data
+      // prettier-ignore
+      const CONSUMABLES = [
+        { id: 'vulnerary', name: 'Vulnerary', tier: 'normal', effect: 'heal', amount: 10, desc: 'Restores 10 HP to one living ally.' },
+        { id: 'concoction', name: 'Concoction', tier: 'uncommon', effect: 'heal', amount: 20, desc: 'Restores 20 HP to one living ally.' },
+        { id: 'elixir', name: 'Elixir', tier: 'rare', effect: 'fullHeal', desc: 'Fully restores one living ally.' },
+        { id: 'restore_draught', name: 'Restore Draught', tier: 'uncommon', effect: 'restore', desc: 'Clears Sleep or Berserk from one living ally.' },
+        { id: 'hp_tonic', name: 'HP Tonic', tier: 'normal', effect: 'buff', stat: 'hp', amount: 5, desc: 'Grants HP +5 for the current battle.' },
+        { id: 'power_tonic', name: 'Power Tonic', tier: 'normal', effect: 'buff', stat: 'str', amount: 2, desc: 'Grants Str +2 for the current battle.' },
+        { id: 'skill_tonic', name: 'Skill Tonic', tier: 'normal', effect: 'buff', stat: 'skl', amount: 2, desc: 'Grants Skl +2 for the current battle.' },
+        { id: 'speed_tonic', name: 'Speed Tonic', tier: 'normal', effect: 'buff', stat: 'spd', amount: 2, desc: 'Grants Spd +2 for the current battle.' },
+        { id: 'luck_tonic', name: 'Luck Tonic', tier: 'normal', effect: 'buff', stat: 'lck', amount: 2, desc: 'Grants Lck +2 for the current battle.' },
+        { id: 'defense_tonic', name: 'Defense Tonic', tier: 'uncommon', effect: 'buff', stat: 'def', amount: 2, desc: 'Grants Def +2 for the current battle.' },
+        { id: 'resistance_tonic', name: 'Resistance Tonic', tier: 'uncommon', effect: 'buff', stat: 'res', amount: 2, desc: 'Grants Res +2 for the current battle.' },
+        { id: 'power_draught', name: 'Power Draught', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 5, desc: 'Grants Str +5 until that unit finishes its next action.' },
+        { id: 'skill_draught', name: 'Skill Draught', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 5, desc: 'Grants Skl +5 until that unit finishes its next action.' },
+        { id: 'speed_draught', name: 'Speed Draught', tier: 'uncommon', effect: 'turnBuff', stat: 'spd', amount: 5, desc: 'Grants Spd +5 until that unit finishes its next action.' },
+        { id: 'luck_draught', name: 'Luck Draught', tier: 'uncommon', effect: 'turnBuff', stat: 'lck', amount: 5, desc: 'Grants Lck +5 until that unit finishes its next action.' },
+        { id: 'guard_draught', name: 'Guard Draught', tier: 'rare', effect: 'turnBuff', stat: 'def', amount: 5, desc: 'Grants Def +5 until that unit finishes its next action.' },
+        { id: 'ward_draught', name: 'Ward Draught', tier: 'rare', effect: 'turnBuff', stat: 'res', amount: 5, desc: 'Grants Res +5 until that unit finishes its next action.' },
+      ]
+      const CONSUMABLE_TIER_WEIGHTS = {
+        normal: [
+          ['normal', 60],
+          ['uncommon', 30],
+          ['rare', 10],
+        ],
+        good: [
+          ['uncommon', 70],
+          ['rare', 30],
+        ],
+      }
       // prettier-ignore
       const BASES = [
         // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
@@ -1374,6 +1447,15 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       function cloneWeapon(w) {
         return { ...w }
       }
+      function cloneConsumable(item) {
+        return item ? { ...item } : null
+      }
+      function consumableById(id) {
+        return CONSUMABLES.find((item) => item.id === id)
+      }
+      function startingConsumables() {
+        return [cloneConsumable(consumableById('vulnerary')), cloneConsumable(consumableById('speed_tonic')), null]
+      }
       function allowedWeapons(u) {
         const base = [u.weaponType]
         if (u.promoted) {
@@ -1510,8 +1592,8 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         return rn <= displayed
       }
       function critRate(a, d) {
-        let bonus = ['Swordmaster', 'Assassin', 'Berserker'].includes(a.displayCls) ? 15 : 0
-        return clamp(floor((a.weapon.crit || 0) + a.stats.skl / 2 + bonus - d.stats.lck), 0, 100)
+        let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
+        return clamp(floor((a.weapon.crit || 0) + a.stats.skl / 2 + a.stats.lck / 2 + bonus - d.stats.lck), 0, 100)
       }
       function triangleClass(a, d) {
         if (!a?.weapon || !d?.weapon) return 'hitNeu'
@@ -1630,6 +1712,71 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         if (w.drain) labels.push('Drain')
         return labels
       }
+      function temporaryBuffLabel(u) {
+        const battleBuffs = Object.entries(u.tempBuffs || {})
+          .filter(([, amt]) => amt > 0)
+          .map(([stat, amt]) => `${stat.toUpperCase()}+${amt}`)
+        const turnBuffs = Object.entries(u.turnBuffs || {})
+          .filter(([, amt]) => amt > 0)
+          .map(([stat, amt]) => `${stat.toUpperCase()}+${amt} turn`)
+        const buffs = [...battleBuffs, ...turnBuffs]
+        if (!buffs.length) return ''
+        return buffs.join(', ')
+      }
+      function clearBuffBucket(u, bucketName) {
+        for (const [stat, amt] of Object.entries(u[bucketName] || {})) {
+          u.stats[stat] = Math.max(0, u.stats[stat] - amt)
+          if (stat === 'hp') {
+            u.maxHp = u.stats.hp
+            u.hp = Math.min(u.hp, u.maxHp)
+          }
+        }
+        u[bucketName] = {}
+      }
+      function clearTemporaryBuffs(units) {
+        units.forEach((u) => {
+          clearBuffBucket(u, 'turnBuffs')
+          clearBuffBucket(u, 'tempBuffs')
+          u.maxHp = u.stats.hp
+          u.hp = Math.min(u.hp, u.maxHp)
+        })
+      }
+      function clearTurnBuffs(u) {
+        clearBuffBucket(u, 'turnBuffs')
+      }
+      function consumableSummary(item) {
+        if (!item) return ''
+        return item.desc || ''
+      }
+      function consumableTargets(item, team = player) {
+        if (!item) return []
+        const living = team.filter((u) => u.hp > 0)
+        if (item.effect === 'heal' || item.effect === 'fullHeal') return living.filter((u) => u.hp < u.maxHp)
+        if (item.effect === 'restore') return living.filter((u) => !!u.status)
+        if (item.effect === 'buff' || item.effect === 'turnBuff') {
+          const bucketName = item.effect === 'turnBuff' ? 'turnBuffs' : 'tempBuffs'
+          return living.filter((u) => (u[bucketName]?.[item.stat] || 0) < item.amount && u.stats[item.stat] < capStat(u, item.stat))
+        }
+        return []
+      }
+      function hasUsableConsumable(actor) {
+        return !!actor && consumables.some((item) => item && consumableTargets(item).length)
+      }
+      function applyStatBuff(u, stat, amount, bucketName = 'tempBuffs') {
+        u[bucketName] = u[bucketName] || {}
+        const current = u[bucketName][stat] || 0
+        const requested = Math.max(0, amount - current)
+        const room = Math.max(0, capStat(u, stat) - u.stats[stat])
+        const gained = Math.min(requested, room)
+        if (gained <= 0) return 0
+        u.stats[stat] += gained
+        u[bucketName][stat] = current + gained
+        if (stat === 'hp') {
+          u.maxHp = u.stats.hp
+          u.hp = Math.min(u.maxHp, u.hp + gained)
+        }
+        return gained
+      }
       function applyStatus(u, fx) {
         u.status = fx
       }
@@ -1722,7 +1869,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         n.className = 'floatText ' + cls
         n.textContent = text
         el.appendChild(n)
-        setTimeout(() => n.remove(), 650)
+        setTimeout(() => n.remove(), cls.includes('damage') ? 950 : 650)
       }
       function selectTarget(actor, targets, prompt) {
         activePreviewActor = actor
@@ -1751,6 +1898,46 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
             el.classList.add('selectable')
             el.onclick = () => finish(t)
           })
+        })
+      }
+      function selectPlayerAction(actor, targets, prompt, defaultLabel = '') {
+        activePreviewActor = actor
+        activeConsumableActor = actor
+        renderTeams()
+        setStatus(prompt || `${actor.name}'s turn: choose an action.`)
+        const ae = spriteEl(actor)
+        if (ae) ae.classList.add('active')
+        return new Promise((resolve) => {
+          let settled = false
+          const finish = (action) => {
+            if (settled) return
+            settled = true
+            document.querySelectorAll('.combatant').forEach((ex) => {
+              ex.classList.remove('selectable')
+              ex.onclick = null
+            })
+            pendingTargetCancel = null
+            pendingConsumableAction = null
+            pendingDefaultAction = null
+            pendingDefaultLabel = ''
+            activePreviewActor = null
+            activeConsumableActor = null
+            renderTeams()
+            resolve(action)
+          }
+          pendingTargetCancel = () => finish({ type: 'cancel' })
+          pendingConsumableAction = (slot) => finish({ type: 'consumable', slot })
+          if (defaultLabel) {
+            pendingDefaultLabel = defaultLabel
+            pendingDefaultAction = () => finish({ type: 'default' })
+          }
+          targets.forEach((t) => {
+            const el = spriteEl(t)
+            if (!el) return
+            el.classList.add('selectable')
+            el.onclick = () => finish({ type: 'target', target: t })
+          })
+          renderConsumables()
         })
       }
       function nextLivingIndex(team, start) {
@@ -1810,6 +1997,55 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         renderSideCards()
         logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal')
         await sleep(450)
+      }
+      async function animateConsumable(actor, target, item) {
+        clearHighlights()
+        const ae = spriteEl(actor),
+          te = spriteEl(target)
+        if (ae) ae.classList.add('active')
+        if (te) te.classList.add('target')
+        await sleep(300)
+        if (item.effect === 'heal' || item.effect === 'fullHeal') {
+          const amount = item.effect === 'fullHeal' ? target.maxHp - target.hp : Math.min(target.maxHp - target.hp, item.amount)
+          target.hp = Math.min(target.maxHp, target.hp + amount)
+          floatText(target, `+${amount}`, 'healing')
+          updateUnitVisual(target)
+          logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} recovers ${amount} HP.`, 'heal')
+        } else if (item.effect === 'buff' || item.effect === 'turnBuff') {
+          const bucketName = item.effect === 'turnBuff' ? 'turnBuffs' : 'tempBuffs'
+          const gained = applyStatBuff(target, item.stat, item.amount, bucketName)
+          const duration = item.effect === 'turnBuff' ? 'until its next action ends' : 'for this battle'
+          floatText(target, `${item.stat.toUpperCase()}+${gained}`, 'healing')
+          logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} gains ${item.stat.toUpperCase()} +${gained} ${duration}.`, 'heal')
+        } else if (item.effect === 'restore') {
+          const status = statusName(target.status)
+          clearUnitStatus(target)
+          floatText(target, 'RESTORE', 'healing')
+          logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${status || 'status'} cleared.`, 'heal')
+        }
+        renderSideCards()
+        await sleep(350)
+      }
+      async function useConsumableFromSlot(slot, actor) {
+        const item = consumables[slot]
+        if (!item) {
+          setStatus('That consumable slot is empty.')
+          return false
+        }
+        const targets = consumableTargets(item)
+        if (!targets.length) {
+          setStatus(`${item.name} has no valid target right now.`)
+          return false
+        }
+        const target = await selectTarget(actor, targets, `${actor.name} uses ${item.name}: choose an ally.`)
+        if (!target) {
+          setStatus(`${actor.name} holds onto ${item.name}.`)
+          return false
+        }
+        await animateConsumable(actor, target, item)
+        consumables[slot] = null
+        renderTeams()
+        return true
       }
       function staffStatusResult(a, d) {
         const dh = displayedHit(a, d)
@@ -1940,17 +2176,24 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         draftOptions = [],
         player = [],
         enemy = [],
+        consumables = [],
         battle = 0,
         gold = 0,
         awaitingReward = false,
         battleRunning = false,
         filter = 'all',
         activePreviewActor = null,
+        activeConsumableActor = null,
         nextEnemyMarkerId = null,
-        pendingTargetCancel = null
+        pendingTargetCancel = null,
+        pendingConsumableAction = null,
+        pendingDefaultAction = null,
+        pendingDefaultLabel = ''
       const ROSTER_SIZE = 5,
         DRAFT_CHOICES_PER_SLOT = 3,
         LEADER_BONUS_LEVELS = 4,
+        CONSUMABLE_SLOTS = 3,
+        CONSUMABLE_REWARD_CHANCE = 0.3,
         BOSS_TIER_REGULAR = 'regular',
         BOSS_TIER_SUPER = 'super'
       const $ = (id) => document.getElementById(id)
@@ -2067,11 +2310,36 @@ ${growLine}</div>`
         const st = statusLabel(u)
         const status = st ? ` · ${st}` : ''
         const leader = u.isLeader ? ' · Leader' : ''
+        const buffs = temporaryBuffLabel(u)
+        const buffText = buffs ? ` · ${buffs}` : ''
         const portrait = portraitImgForUnit(u)
-        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted ? ' promoted' : ''}${leader}${wt}${status}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
+        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted ? ' promoted' : ''}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
       }
 
+      function renderConsumables() {
+        const panel = $('consumablePanel')
+        if (!panel) return
+        const actor = activeConsumableActor?.hp > 0 ? activeConsumableActor : null
+        const filled = consumables.filter(Boolean).length
+        const slots = Array.from({ length: CONSUMABLE_SLOTS }, (_, i) => consumables[i] || null)
+        const slotHtml = slots
+          .map((item, i) => {
+            if (!item) return `<div class="consumableSlot empty"><div class="small">Slot ${i + 1}</div><div>Empty</div></div>`
+            const targets = actor ? consumableTargets(item) : []
+            const canUse = !!(actor && pendingConsumableAction && targets.length)
+            const title = canUse ? `Use ${item.name}` : actor ? 'No valid target right now' : 'Usable on player turns'
+            return `<div class="consumableSlot"><div class="small">${weaponTierLabel(item.tier)}</div><div class="name">${item.name}</div><div class="small">${consumableSummary(item)}</div><button data-use-consumable="${i}" title="${htmlAttr(title)}"${canUse ? '' : ' disabled'}>Use</button></div>`
+          })
+          .join('')
+        const defaultButton = pendingDefaultAction ? `<button class="turnAction" data-default-action>${pendingDefaultLabel}</button>` : ''
+        const activeNote = actor ? `<div class="small">Active: ${actor.name}</div>` : ''
+        panel.innerHTML = `<div class="row space"><h3>Consumables</h3><span class="badge">${filled}/${CONSUMABLE_SLOTS}</span></div>${activeNote}<div class="consumableSlots">${slotHtml}</div>${defaultButton}`
+        panel.querySelectorAll('[data-use-consumable]').forEach((btn) => (btn.onclick = () => pendingConsumableAction?.(+btn.dataset.useConsumable)))
+        const defaultBtn = panel.querySelector('[data-default-action]')
+        if (defaultBtn) defaultBtn.onclick = () => pendingDefaultAction?.()
+      }
       function renderSideCards() {
+        renderConsumables()
         $('playerTeam').innerHTML = player.map(unitCard).join('')
         $('enemyTeam').innerHTML = enemy.map(unitCard).join('')
       }
@@ -2117,6 +2385,7 @@ ${growLine}</div>`
           u.isLeader = i === 0
           return u
         })
+        consumables = startingConsumables()
         $('draftScreen').classList.add('hidden')
         $('gameScreen').classList.remove('hidden')
         renderTeams()
@@ -2210,6 +2479,7 @@ ${growLine}</div>`
               const ae = spriteEl(actor)
               if (ae) ae.classList.add('active')
               if (await consumeTurnStatus(actor, player, enemy)) {
+                clearTurnBuffs(actor)
                 pIdx = (pIdx + 1) % player.length
                 actions++
                 side = 'enemy'
@@ -2217,24 +2487,42 @@ ${growLine}</div>`
               }
               let target = null
               if (actor.weapon.staff && !stavesExhausted) {
-                if (isStatusStaff(actor.weapon))
-                  target = await selectTarget(
+                if (isStatusStaff(actor.weapon)) {
+                  const action = await selectPlayerAction(
                     actor,
                     enemy.filter((x) => x.hp > 0),
-                    `${actor.name}'s turn: choose an enemy for ${actor.weapon.name}.`
+                    `${actor.name}'s turn: choose an enemy for ${actor.weapon.name}, or use a consumable.`
                   )
-                else setStatus(`${actor.name} looks for an ally to heal.`)
+                  if (action?.type === 'consumable') {
+                    await useConsumableFromSlot(action.slot, actor)
+                    continue
+                  }
+                  target = action?.target || null
+                } else setStatus(`${actor.name} looks for an ally to heal.`)
               } else if (actor.weapon.staff) {
-                setStatus(`${actor.name}'s staff is out of uses.`)
+                if (hasUsableConsumable(actor)) {
+                  const action = await selectPlayerAction(actor, [], `${actor.name}'s staff is out of uses. Use a consumable or end turn.`, 'End turn')
+                  if (action?.type === 'consumable') {
+                    await useConsumableFromSlot(action.slot, actor)
+                    continue
+                  }
+                  setStatus(`${actor.name}'s staff is out of uses.`)
+                } else setStatus(`${actor.name}'s staff is out of uses.`)
               } else {
-                target = await selectTarget(
+                const action = await selectPlayerAction(
                   actor,
                   enemy.filter((x) => x.hp > 0),
-                  `${actor.name}'s turn: choose an enemy to attack.`
+                  `${actor.name}'s turn: choose an enemy to attack, or use a consumable.`
                 )
+                if (action?.type === 'consumable') {
+                  await useConsumableFromSlot(action.slot, actor)
+                  continue
+                }
+                target = action?.target || null
               }
               setStatus(`${actor.name} acts.`)
               await resolveActorTurn(actor, player, enemy, target, stavesExhausted)
+              clearTurnBuffs(actor)
               pIdx = (pIdx + 1) % player.length
               actions++
             }
@@ -2246,6 +2534,7 @@ ${growLine}</div>`
               nextEnemyMarkerId = actor.id
               renderTeams()
               if (await consumeTurnStatus(actor, enemy, player)) {
+                clearTurnBuffs(actor)
                 eIdx = (eIdx + 1) % enemy.length
                 updateNextEnemyMarker(eIdx)
                 renderTeams()
@@ -2256,6 +2545,7 @@ ${growLine}</div>`
               const target = actor.weapon.staff ? (!stavesExhausted && isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, player) : null) : chooseEnemyTarget()
               if (target) setStatus(`${actor.name} targets ${target.name}.`)
               await resolveActorTurn(actor, enemy, player, target, stavesExhausted)
+              clearTurnBuffs(actor)
               eIdx = (eIdx + 1) % enemy.length
               updateNextEnemyMarker(eIdx)
               renderTeams()
@@ -2271,6 +2561,7 @@ ${growLine}</div>`
         battleRunning = false
         if (player.some((x) => x.hp > 0)) {
           logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal')
+          clearTemporaryBuffs(player)
           advanceTwoLevels(player)
           player.forEach((u) => {
             u.hp = u.maxHp
@@ -2288,11 +2579,11 @@ ${growLine}</div>`
       function showRewards(opening = false) {
         awaitingReward = true
         const bossTier = opening ? null : bossTierForBattle(battle)
-        const rewards = makeRewards(bossTier)
+        const rewards = makeRewards(bossTier, opening)
         const title = opening ? 'Choose an opening reward' : 'Choose a reward'
         let desc = opening
-          ? 'Pick one free reward before battle 1. Weapon rewards equip immediately; stat boosters are consumed immediately.'
-          : 'Pick exactly one. Weapon rewards equip immediately; stat boosters are consumed immediately. No roster swaps.'
+          ? 'Pick one free reward before battle 1. Weapons equip immediately, stat boosters are consumed immediately, and consumables fill a party item slot.'
+          : 'Pick exactly one. Weapons equip immediately, stat boosters are consumed immediately, and consumables fill a party item slot.'
         if (bossTier)
           desc +=
             bossTier === BOSS_TIER_SUPER
@@ -2300,7 +2591,7 @@ ${growLine}</div>`
               : ' Regular boss weapon rewards are rolled from stronger weapons.'
         let html = `<h2>${title}</h2><div class="small">${desc}</div><div class="rewardGrid">`
         rewards.forEach((r, i) => {
-          const rewardClass = r.type === 'item' ? ` reward-${r.item.tier || 'normal'}` : ''
+          const rewardClass = r.item?.tier ? ` reward-${r.item.tier || 'normal'}` : ''
           html += `<div class="choice${rewardClass}"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
         })
         html += '</div>'
@@ -2334,14 +2625,35 @@ ${growLine}</div>`
         }
         return weights[weights.length - 1][0]
       }
+      function completedRewardFights() {
+        return Math.max(0, battle)
+      }
+      function rewardTierWeights(weightSet, goodOnly = false) {
+        if (goodOnly) return weightSet.good
+        const fights = completedRewardFights()
+        return weightSet.normal.map(([tier, weight]) => {
+          if (tier === 'uncommon') return [tier, weight + fights * 2]
+          if (tier === 'rare') return [tier, weight + fights]
+          return [tier, weight]
+        })
+      }
       function pickRewardWeapon(opts, goodOnly = false) {
-        const weights = goodOnly ? WEAPON_TIER_WEIGHTS.good : WEAPON_TIER_WEIGHTS.normal
+        const weights = rewardTierWeights(WEAPON_TIER_WEIGHTS, goodOnly)
         for (let i = 0; i < 8; i++) {
           const tier = weightedTier(weights)
           const tierOpts = opts.filter((w) => w.tier === tier)
           if (tierOpts.length) return pick(tierOpts)
         }
         return pick(opts)
+      }
+      function pickRewardConsumable(goodOnly = false) {
+        const weights = rewardTierWeights(CONSUMABLE_TIER_WEIGHTS, goodOnly)
+        for (let i = 0; i < 8; i++) {
+          const tier = weightedTier(weights)
+          const tierOpts = CONSUMABLES.filter((item) => item.tier === tier)
+          if (tierOpts.length) return cloneConsumable(pick(tierOpts))
+        }
+        return cloneConsumable(pick(CONSUMABLES))
       }
       function weaponReward(goodOnly = false) {
         const candidates = player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
@@ -2358,14 +2670,34 @@ ${growLine}</div>`
           item,
         }
       }
-      function makeRewards(bossTier = null) {
+      function firstEmptyConsumableSlot() {
+        return consumables.findIndex((item) => !item)
+      }
+      function consumableInventoryFull() {
+        return firstEmptyConsumableSlot() === -1
+      }
+      function consumableReward(goodOnly = false) {
+        const item = pickRewardConsumable(goodOnly)
+        const slotText = consumableInventoryFull() ? 'Inventory full: choose a slot to replace.' : 'Stored in the first empty consumable slot.'
+        const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · ${slotText}</div>`
+        return { type: 'consumable', title: `Take ${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
+      }
+      function sameReward(a, b) {
+        if (a.type !== b.type) return false
+        if (a.type === 'item') return a.unit === b.unit && a.item.name === b.item.name
+        if (a.type === 'consumable') return a.item.id === b.item.id
+        return false
+      }
+      function makeRewards(bossTier = null, opening = false) {
         const weaponCount = bossTier === BOSS_TIER_SUPER ? 2 : 2
         const goodOnly = bossTier === BOSS_TIER_SUPER
+        const allowConsumables = opening || !bossTier
         const weaponRewards = []
         for (let i = 0; i < weaponCount; i++) {
-          let next = weaponReward(goodOnly),
+          let next = allowConsumables && rnd() < CONSUMABLE_REWARD_CHANCE ? consumableReward(goodOnly) : weaponReward(goodOnly),
             guard = 0
-          while (weaponRewards.some((r) => r.unit === next.unit && r.item.name === next.item.name) && guard++ < 20) next = weaponReward(goodOnly)
+          while (weaponRewards.some((r) => sameReward(r, next)) && guard++ < 20)
+            next = allowConsumables && rnd() < CONSUMABLE_REWARD_CHANCE ? consumableReward(goodOnly) : weaponReward(goodOnly)
           weaponRewards.push(next)
         }
         const boost = boostReward()
@@ -2390,11 +2722,41 @@ ${growLine}</div>`
           level: 'Tome of Knowledge',
         }[stat]
       }
+      function storeConsumable(item, slot = firstEmptyConsumableSlot()) {
+        const targetSlot = slot >= 0 ? slot : 0
+        consumables[targetSlot] = cloneConsumable(item)
+        renderTeams()
+        return targetSlot
+      }
+      function chooseConsumableReplacement(r) {
+        let html = `<h2>${r.item.name}: choose slot</h2><div class="small">${consumableSummary(r.item)}</div>`
+        consumables.forEach((item, i) => {
+          html += `<div class="choice"><div><h4>Slot ${i + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-replace-consumable="${i}" class="good">Replace</button></div>`
+        })
+        showModal(html)
+        document.querySelectorAll('[data-replace-consumable]').forEach(
+          (btn) =>
+            (btn.onclick = () => {
+              storeConsumable(r.item, +btn.dataset.replaceConsumable)
+              closeModal()
+              afterReward(`Stored ${r.item.name}.`)
+            })
+        )
+      }
       function applyReward(r) {
         if (r.type === 'item') {
           r.unit.weapon = r.item
           closeModal()
           afterReward(`${r.unit.name} equipped ${r.item.name}.`)
+        }
+        if (r.type === 'consumable') {
+          if (consumableInventoryFull()) {
+            chooseConsumableReplacement(r)
+            return
+          }
+          storeConsumable(r.item)
+          closeModal()
+          afterReward(`Stored ${r.item.name}.`)
         }
         if (r.type === 'boost') chooseBoostTarget(r)
       }
