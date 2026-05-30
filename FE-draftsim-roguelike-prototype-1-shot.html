@@ -310,10 +310,12 @@
         const encoded = chain.map(htmlAttr).join('|')
         return `<img class="${cls}" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)">`
       }
-      function assetSheet(cls, primary, fallbacks, fallbackData, alt = '') {
+      function assetSheet(cls, primary, fallbacks, fallbackData, alt = '', opts = {}) {
         const chain = assetChain([primary, ...fallbacks, fallbackData])
         const encoded = chain.map(htmlAttr).join('|')
-        return `<span class="${cls}" style="--frames:1;--sprite-offset:0px;--sprite-distance:64px"><img class="mapSpriteSheet" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)" onload="assetSheetLoaded(this)"></span>`
+        const spriteWidth = opts.spriteWidth || 64,
+          slotHeight = opts.slotHeight || MAP_SPRITE_SLOT_H
+        return `<span class="${cls}" style="--frames:1;--sprite-offset:0px;--sprite-distance:${spriteWidth}px" data-sprite-width="${spriteWidth}" data-sprite-slot-h="${slotHeight}"><img class="mapSpriteSheet" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)" onload="assetSheetLoaded(this)"></span>`
       }
       function assetFallback(img) {
         const chain = (img.dataset.chain || '').split('|')
@@ -328,12 +330,14 @@
       function assetSheetLoaded(img) {
         const wrap = img.closest('.mapSprite')
         if (!wrap || !img.naturalWidth || !img.naturalHeight) return
+        const spriteWidth = Number(wrap.dataset.spriteWidth || 64),
+          slotHeight = Number(wrap.dataset.spriteSlotH || MAP_SPRITE_SLOT_H)
         const ratio = img.naturalHeight / img.naturalWidth
         const frames = Math.max(1, ratio >= 3 ? 3 : Math.round(ratio))
         const frameH = img.naturalHeight / frames
-        const scale = 64 / img.naturalWidth
+        const scale = spriteWidth / img.naturalWidth
         const frameDisplayH = frameH * scale
-        const offset = MAP_SPRITE_SLOT_H - frameDisplayH
+        const offset = slotHeight - frameDisplayH
         wrap.style.setProperty('--frames', String(frames))
         wrap.style.setProperty('--sprite-offset', `${offset}px`)
         wrap.style.setProperty('--sprite-distance', `${frames * frameDisplayH}px`)
@@ -360,20 +364,41 @@
         const promotedStem = u.promoted ? `${stem}_promoted` : stem
         const teamFolder = u.team === 'red' ? 'map/red' : 'map/blue'
         const customStem = customMapSpriteStem(u)
-        const customPromotedStem = customStem && u.promoted ? `${customStem}_promoted` : null
-        const paths = [
-          ...(customPromotedStem ? assetPathVariants(teamFolder, customPromotedStem) : []),
-          ...(customStem ? assetPathVariants(teamFolder, customStem) : []),
-          ...assetPathVariants(teamFolder, promotedStem),
-          ...assetPathVariants(teamFolder, stem),
-          ...(customPromotedStem ? assetPathVariants('map/blue', customPromotedStem) : []),
-          ...(customStem ? assetPathVariants('map/blue', customStem) : []),
-          ...assetPathVariants('map/blue', promotedStem),
-          ...assetPathVariants('map/blue', stem),
-          ...assetPathVariants('battle', promotedStem),
-          ...assetPathVariants('battle', stem),
-        ]
+        const enemyLord = u.isEnemy && u.kind === 'lord'
+        const customPromotedStem = customStem && u.promoted && !enemyLord ? `${customStem}_promoted` : null
+        const paths =
+          enemyLord && customStem
+            ? [...assetPathVariants(teamFolder, customStem), ...assetPathVariants('map/blue', customStem)]
+            : [
+                ...(customPromotedStem ? assetPathVariants(teamFolder, customPromotedStem) : []),
+                ...(customStem ? assetPathVariants(teamFolder, customStem) : []),
+                ...assetPathVariants(teamFolder, promotedStem),
+                ...assetPathVariants(teamFolder, stem),
+                ...(customPromotedStem ? assetPathVariants('map/blue', customPromotedStem) : []),
+                ...(customStem ? assetPathVariants('map/blue', customStem) : []),
+                ...assetPathVariants('map/blue', promotedStem),
+                ...assetPathVariants('map/blue', stem),
+                ...assetPathVariants('battle', promotedStem),
+                ...assetPathVariants('battle', stem),
+              ]
         return assetSheet('battleSprite mapSprite', paths[0], paths.slice(1), fallbackBattle(u.kind, u.team, u.promoted), u.displayCls || u.cls || u.kind)
+      }
+      function mapSpriteForFocus(focus, team = 'red', promoted = false) {
+        const kind = CLASSES[focus.cls]?.kind || 'lord'
+        const stem = battleFileStem(kind)
+        const promotedStem = promoted ? `${stem}_promoted` : stem
+        const teamFolder = team === 'red' ? 'map/red' : 'map/blue'
+        const customStem = team === 'red' && kind === 'lord' ? 'lundgren' : null
+        const customPromotedStem = customStem && promoted ? `${customStem}_promoted` : null
+        const paths = customStem
+          ? [
+              ...(customPromotedStem ? assetPathVariants(teamFolder, customPromotedStem) : []),
+              ...assetPathVariants(teamFolder, customStem),
+              ...(customPromotedStem ? assetPathVariants('map/blue', customPromotedStem) : []),
+              ...assetPathVariants('map/blue', customStem),
+            ]
+          : [...assetPathVariants(teamFolder, promotedStem), ...assetPathVariants(teamFolder, stem), ...assetPathVariants('map/blue', promotedStem), ...assetPathVariants('map/blue', stem), ...assetPathVariants('battle', promotedStem), ...assetPathVariants('battle', stem)]
+        return assetSheet('biomeUnitIcon mapSprite', paths[0], paths.slice(1), fallbackBattle(kind, team, promoted), focusLabel(focus), { spriteWidth: 18, slotHeight: 22 })
       }
 
       // ---------- unit setup and progression ----------
@@ -388,33 +413,53 @@
         u.promoted = true
         u.displayCls = c.promotesTo
         u.lvl = 1
+        u.internalLevel = Math.max(u.internalLevel || 20, 21)
         u.maxHp = u.stats.hp
         u.hp = Math.min(u.hp, u.maxHp)
         if (showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal')
       }
       window.promote = promote
-      function levelUp(u, showLog = true) {
-        if (u.promoted && u.lvl >= 20) return false
-        if (!u.promoted && u.lvl >= 20) {
-          promote(u, showLog)
-          return true
-        }
+      function promotionUnlockedForPlayers() {
+        return battle >= PROMOTION_UNLOCK_AFTER_BATTLE
+      }
+      function promotionUnlockedForEnemies() {
+        return battle > PROMOTION_UNLOCK_AFTER_BATTLE
+      }
+      function currentInternalLevel(u) {
+        return u.internalLevel || (u.promoted ? 20 + u.lvl : u.lvl)
+      }
+      function syncDisplayLevel(u) {
+        const internal = currentInternalLevel(u)
+        u.lvl = u.promoted ? clamp(internal - 20, 1, 20) : clamp(internal, 1, 20)
+      }
+      function applyGrowthLevel(u) {
         const before = { ...u.stats }
-        u.lvl++
         for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']) {
           if (rint(100) + 1 <= u.growths[k]) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
         }
         u.maxHp = u.stats.hp
         u.hp = Math.min(u.hp, u.maxHp)
+        return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].filter((k) => u.stats[k] > before[k])
+      }
+      function advanceInternalLevel(u, allowPromotion, showLog = true) {
+        if (u.promoted && u.lvl >= 20) return false
+        if (!u.promoted && u.lvl >= 20 && allowPromotion) {
+          promote(u, showLog)
+          return true
+        }
+        const gains = applyGrowthLevel(u)
+        u.internalLevel = Math.min(40, currentInternalLevel(u) + 1)
+        syncDisplayLevel(u)
         if (showLog) {
-          const gains =
-            ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
-              .filter((k) => u.stats[k] > before[k])
-              .map((k) => k.toUpperCase())
-              .join(', ') || 'no stats'
-          logLine(null, `${u.name} reached Lv ${u.lvl}${u.promoted ? ' (promoted)' : ''}: ${gains}.`, 'heal')
+          const gainsText = gains.map((k) => k.toUpperCase()).join(', ') || 'no stats'
+          logLine(null, `${u.name} reached ${levelLabel(u)}: ${gainsText}.`, 'heal')
         }
         return true
+      }
+      function levelUp(u, showLog = true) {
+        if (u.promoted && u.lvl >= 20) return false
+        if (!u.promoted && u.lvl >= 20 && !promotionUnlockedForPlayers()) return false
+        return advanceInternalLevel(u, promotionUnlockedForPlayers(), showLog)
       }
       window.levelUp = levelUp
       function advanceTwoLevels(units) {
@@ -435,6 +480,7 @@
             palette: enemy ? 'red' : base.palette,
             kind: c.kind,
             lvl: 1,
+            internalLevel: 1,
             promoted: false,
             stats: { ...base.stats },
             growths: { ...base.growths },
@@ -449,7 +495,7 @@
         u.hp = u.maxHp
         const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset || 0)
         const internalLevel = clamp(requestedInternalLevel, 1, 40)
-        for (let i = 1; i < internalLevel; i++) levelUp(u, false)
+        while (currentInternalLevel(u) < internalLevel) advanceInternalLevel(u, promoted, false)
         u.hp = u.maxHp
         return u
       }
@@ -1359,10 +1405,9 @@
         if (cycle === BIOME_CYCLE_LENGTH) return entry.bossFocus[1]
         return null
       }
-      function biomeUnitIconHTML(focus, bossIndex) {
-        const kind = CLASSES[focus.cls]?.kind || 'lord'
+      function biomeUnitIconHTML(focus, bossIndex, promoted = false) {
         const label = `${bossIndex === 0 ? 'Boss' : 'Biome boss'}: ${focusLabel(focus)}`
-        return `<img class="biomeUnitIcon" src="${svgDataUri(kind, 'red', false)}" alt="${htmlAttr(label)}" title="${htmlAttr(label)}">`
+        return `<span title="${htmlAttr(label)}">${mapSpriteForFocus(focus, 'red', promoted)}</span>`
       }
       function renderBiomeMap() {
         const el = $('biomeMap')
@@ -1378,7 +1423,7 @@
               classes = i < activeIndex ? 'biomeNode done' : i === activeIndex ? 'biomeNode active' : 'biomeNode',
               effects = biomeEffectLabels(biome),
               title = `${biome.name}: ${effects.join(', ')}. Bosses: ${entry.bossFocus.map(focusLabel).join(' / ')}`
-            return `<div class="${classes}" title="${htmlAttr(title)}"><span class="biomeTile biomeTile-${biome.tile}"></span><div class="biomeUnits">${entry.bossFocus.map(biomeUnitIconHTML).join('')}</div><div class="biomeEffects">${effects.map((effect) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div>`
+            return `<div class="${classes}" title="${htmlAttr(title)}"><img class="biomeTile" src="assets/femp/biomes/${htmlAttr(biome.id)}.jpg" alt="" aria-hidden="true"><div class="biomeUnits">${entry.bossFocus.map((focus, bossIndex) => biomeUnitIconHTML(focus, bossIndex, i >= 2)).join('')}</div><div class="biomeInfo"><div class="biomeName">${biome.name}</div><div class="biomeEffects">${effects.map((effect) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div></div>`
           })
           .join('')
       }
@@ -1523,7 +1568,7 @@ ${growLine}</div>`
         const buffs = temporaryBuffLabel(u)
         const buffText = buffs ? ` · ${buffs}` : ''
         const portrait = portraitImgForUnit(u)
-        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} Lv ${u.lvl}${u.promoted ? ' promoted' : ''}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
+        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
       }
 
       function renderConsumables() {
@@ -1621,7 +1666,7 @@ ${growLine}</div>`
           const isBossSlot = i === 0 && bossTier
           const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
           const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : 0), 1, 40)
-          const promoted = internal > 20
+          const promoted = promotionUnlockedForEnemies() && internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
           e.lvl = clamp(lvl + Math.ceil(b.startOffset / 2), 1, 20)
@@ -1960,7 +2005,7 @@ ${growLine}</div>`
       }
       function boostReward() {
         if (Math.random() < 0.22)
-          return { type: 'boost', stat: 'level', amt: 1, title: 'Use Tome of Knowledge', desc: 'Immediately gives a chosen unit +1 level. Promotion and level caps are respected.' }
+          return { type: 'boost', stat: 'level', amt: 1, title: 'Use Tome of Knowledge', desc: 'Immediately gives a chosen unit +1 level. Promotion timing and level caps are respected.' }
         const stat = pick(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'])
         const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
         return { type: 'boost', title: `${boosterName(stat)}`, desc: `Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
@@ -1978,7 +2023,7 @@ ${growLine}</div>`
         }[stat]
       }
       function canApplyBoost(r, u) {
-        if (r.stat === 'level') return !(u.promoted && u.lvl >= 20)
+        if (r.stat === 'level') return !(u.promoted && u.lvl >= 20) && (u.promoted || u.lvl < 20 || promotionUnlockedForPlayers())
         return u.stats[r.stat] < capStat(u, r.stat)
       }
       function applyBoostToUnit(r, u) {
@@ -2270,13 +2315,13 @@ ${growLine}</div>`
         if (r.type === 'boost') chooseBoostTarget(r)
       }
       function levelLabel(u) {
-        return `${u.promoted ? 'P' : ''}L${u.lvl}`
+        return `L${u.lvl}`
       }
       function chooseBoostTarget(r) {
         let html = `<h2>${boosterName(r.stat)}: choose target</h2>`
         player.forEach((u, i) => {
           const before = r.stat === 'level' ? levelLabel(u) : u.stats[r.stat]
-          const after = r.stat === 'level' ? (u.promoted && u.lvl >= 20 ? levelLabel(u) : '+1 level') : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
+          const after = r.stat === 'level' ? (canApplyBoost(r, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
           const label = r.stat === 'level' ? 'Level' : r.stat.toUpperCase()
           html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-t="${i}">Use</button></div>`
         })
