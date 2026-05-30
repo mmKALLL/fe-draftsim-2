@@ -397,7 +397,14 @@
               ...(customPromotedStem ? assetPathVariants('map/blue', customPromotedStem) : []),
               ...assetPathVariants('map/blue', customStem),
             ]
-          : [...assetPathVariants(teamFolder, promotedStem), ...assetPathVariants(teamFolder, stem), ...assetPathVariants('map/blue', promotedStem), ...assetPathVariants('map/blue', stem), ...assetPathVariants('battle', promotedStem), ...assetPathVariants('battle', stem)]
+          : [
+              ...assetPathVariants(teamFolder, promotedStem),
+              ...assetPathVariants(teamFolder, stem),
+              ...assetPathVariants('map/blue', promotedStem),
+              ...assetPathVariants('map/blue', stem),
+              ...assetPathVariants('battle', promotedStem),
+              ...assetPathVariants('battle', stem),
+            ]
         return assetSheet('biomeUnitIcon mapSprite', paths[0], paths.slice(1), fallbackBattle(kind, team, promoted), focusLabel(focus), { spriteWidth: 18, slotHeight: 22 })
       }
 
@@ -414,6 +421,13 @@
         u.displayCls = c.promotesTo
         u.lvl = 1
         u.internalLevel = Math.max(u.internalLevel || 20, 21)
+        if (u.isLeader && !u.isEnemy) {
+          while (currentInternalLevel(u) < 20 + LEADER_PROMOTION_LEVEL) {
+            applyGrowthLevel(u)
+            u.internalLevel = Math.min(40, currentInternalLevel(u) + 1)
+          }
+        }
+        syncDisplayLevel(u)
         u.maxHp = u.stats.hp
         u.hp = Math.min(u.hp, u.maxHp)
         if (showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal')
@@ -1255,7 +1269,7 @@
             else {
               logLine(
                 null,
-                `${actor.name}${suffix} hits ${target.name} for ${r.damage}${r.crit ? ' CRIT' : ''}. ${target.name} HP ${target.hp}/${target.maxHp}.`,
+                `${actor.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${target.name} for ${r.damage}. ${target.name} HP ${target.hp}/${target.maxHp}.`,
                 r.crit ? 'crit' : 'hit'
               )
               if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
@@ -2005,7 +2019,13 @@ ${growLine}</div>`
       }
       function boostReward() {
         if (Math.random() < 0.22)
-          return { type: 'boost', stat: 'level', amt: 1, title: 'Use Tome of Knowledge', desc: 'Immediately gives a chosen unit +1 level. Promotion timing and level caps are respected.' }
+          return {
+            type: 'boost',
+            stat: 'level',
+            amt: 1,
+            title: 'Use Tome of Knowledge',
+            desc: 'Immediately gives a chosen unit +1 level. Promotion timing and level caps are respected.',
+          }
         const stat = pick(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'])
         const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
         return { type: 'boost', title: `${boosterName(stat)}`, desc: `Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
