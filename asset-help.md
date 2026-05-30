@@ -72,6 +72,11 @@ eliwood_promoted
 hector
 hector_promoted
 
+Enemy lords always use the custom Lundgren-style red Eliwood map sprite, including promoted enemy lords:
+
+lundgren
+lundgren_promoted
+
 Names are expected to be lowercase and simplified. The code converts character names to lowercase slugs, so:
 
 L'Arachel or L’Arachel -> larachel

@@ -391,6 +391,9 @@
       }
       .floatText.damage {
         color: #fca5a5;
+        top: 10px;
+        font-size: 2em;
+        animation-duration: 0.9s;
       }
       .floatText.healing {
         color: #86efac;
@@ -542,6 +545,17 @@
         margin: 8px 0;
         background: #111827;
       }
+      .choice.reward-uncommon {
+        border-color: #3b82f6;
+        box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
+      }
+      .choice.reward-rare {
+        border-color: #fbbf24;
+        box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.32);
+      }
+      .rewardMeta {
+        margin-top: 4px;
+      }
       .pill {
         display: inline-block;
         border-radius: 999px;
@@ -665,7 +679,7 @@
     </div>
 
     <script>
-      // Version: 2026-05-30 lord-map-sprite-overrides.
+      // Version: 2026-05-30 phase-1-strategy-fixes.
 
       'use strict'
       // ---------- deterministic-ish utilities ----------
@@ -828,6 +842,7 @@
         Lyn: 'lyn',
         Eliwood: 'eliwood',
         Hector: 'hector',
+        Lundgren: 'lundgren',
       }
       function assetSlug(s = '') {
         return String(s)
@@ -875,6 +890,7 @@
         return FEMP_NAME_OVERRIDES[name] || assetSlug(name)
       }
       function customMapSpriteStem(u) {
+        if (u.isEnemy && u.kind === 'lord') return 'lundgren'
         const label = u.baseName || u.name
         return CUSTOM_MAP_SPRITE_STEMS[label] || null
       }
@@ -1102,68 +1118,97 @@
       // Weapon data
       // prettier-ignore
       const WEAPONS = [
-        { name: 'Iron Sword', type: 'sword', mt: 5, hit: 90, wt: 5, crit: 0, magic: false },
-        { name: 'Slim Sword', type: 'sword', mt: 3, hit: 100, wt: 2, crit: 5, magic: false },
-        { name: 'Steel Sword', type: 'sword', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
-        { name: 'Iron Blade', type: 'sword', mt: 9, hit: 70, wt: 12, crit: 0, magic: false },
-        { name: 'Armourslayer', type: 'sword', mt: 8, hit: 80, wt: 11, crit: 0, magic: false, effective: ['armored'] },
-        { name: 'Longsword', type: 'sword', mt: 6, hit: 85, wt: 11, crit: 0, magic: false, effective: ['mounted'] },
-        { name: 'Killing Edge', type: 'sword', mt: 9, hit: 75, wt: 7, crit: 30, magic: false },
-        { name: 'Lancereaver', type: 'sword', mt: 9, hit: 75, wt: 9, crit: 5, magic: false, reaver: true },
-        { name: 'Brave Sword', type: 'sword', mt: 9, hit: 75, wt: 12, crit: 0, magic: false, brave: true },
-        { name: 'Silver Sword', type: 'sword', mt: 13, hit: 80, wt: 8, crit: 0, magic: false },
-        { name: 'Regal Blade', type: 'sword', mt: 20, hit: 85, wt: 9, crit: 0, magic: false },
+        { name: 'Iron Sword', type: 'sword', rank: 'E', mt: 5, hit: 90, wt: 5, crit: 0, magic: false },
+        { name: 'Slim Sword', type: 'sword', rank: 'E', mt: 3, hit: 100, wt: 2, crit: 5, magic: false },
+        { name: 'Steel Sword', type: 'sword', rank: 'D', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
+        { name: 'Iron Blade', type: 'sword', rank: 'D', mt: 9, hit: 70, wt: 12, crit: 0, magic: false },
+        { name: 'Armourslayer', type: 'sword', rank: 'C', mt: 8, hit: 80, wt: 11, crit: 0, magic: false, effective: ['armored'] },
+        { name: 'Longsword', type: 'sword', rank: 'C', mt: 6, hit: 85, wt: 11, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Killing Edge', type: 'sword', rank: 'C', mt: 9, hit: 75, wt: 7, crit: 30, magic: false },
+        { name: 'Lancereaver', type: 'sword', rank: 'C', mt: 9, hit: 75, wt: 9, crit: 5, magic: false, reaver: true },
+        { name: 'Brave Sword', type: 'sword', rank: 'A', mt: 9, hit: 75, wt: 12, crit: 0, magic: false, brave: true },
+        { name: 'Silver Sword', type: 'sword', rank: 'A', mt: 13, hit: 80, wt: 8, crit: 0, magic: false },
+        { name: 'Regal Blade', type: 'sword', rank: 'S', mt: 20, hit: 85, wt: 9, crit: 0, magic: false },
 
-        { name: 'Iron Lance', type: 'lance', mt: 7, hit: 80, wt: 8, crit: 0, magic: false },
-        { name: 'Slim Lance', type: 'lance', mt: 4, hit: 85, wt: 4, crit: 5, magic: false },
-        { name: 'Steel Lance', type: 'lance', mt: 10, hit: 70, wt: 13, crit: 0, magic: false },
-        { name: 'Heavy Spear', type: 'lance', mt: 9, hit: 70, wt: 14, crit: 0, magic: false, effective: ['armored'] },
-        { name: 'Horseslayer', type: 'lance', mt: 7, hit: 75, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
-        { name: 'Killer Lance', type: 'lance', mt: 10, hit: 70, wt: 9, crit: 30, magic: false },
-        { name: 'Axereaver', type: 'lance', mt: 10, hit: 70, wt: 11, crit: 5, magic: false, reaver: true },
-        { name: 'Brave Lance', type: 'lance', mt: 10, hit: 70, wt: 14, crit: 0, magic: false, brave: true },
-        { name: 'Silver Lance', type: 'lance', mt: 14, hit: 75, wt: 10, crit: 0, magic: false },
+        { name: 'Iron Lance', type: 'lance', rank: 'E', mt: 7, hit: 80, wt: 8, crit: 0, magic: false },
+        { name: 'Slim Lance', type: 'lance', rank: 'E', mt: 4, hit: 85, wt: 4, crit: 5, magic: false },
+        { name: 'Javelin', type: 'lance', rank: 'D', mt: 6, hit: 65, wt: 11, crit: 0, magic: false, speedBonus: 2 },
+        { name: 'Steel Lance', type: 'lance', rank: 'D', mt: 10, hit: 70, wt: 13, crit: 0, magic: false },
+        { name: 'Heavy Spear', type: 'lance', rank: 'C', mt: 9, hit: 70, wt: 14, crit: 0, magic: false, effective: ['armored'] },
+        { name: 'Horseslayer', type: 'lance', rank: 'C', mt: 7, hit: 75, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Killer Lance', type: 'lance', rank: 'C', mt: 10, hit: 70, wt: 9, crit: 30, magic: false },
+        { name: 'Axereaver', type: 'lance', rank: 'C', mt: 10, hit: 70, wt: 11, crit: 5, magic: false, reaver: true },
+        { name: 'Brave Lance', type: 'lance', rank: 'A', mt: 10, hit: 70, wt: 14, crit: 0, magic: false, brave: true },
+        { name: 'Silver Lance', type: 'lance', rank: 'A', mt: 14, hit: 75, wt: 10, crit: 0, magic: false },
 
-        { name: 'Iron Axe', type: 'axe', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
-        { name: 'Steel Axe', type: 'axe', mt: 11, hit: 65, wt: 15, crit: 0, magic: false },
-        { name: 'Hand Axe', type: 'axe', mt: 7, hit: 60, wt: 12, crit: 0, magic: false },
-        { name: 'Hammer', type: 'axe', mt: 10, hit: 55, wt: 15, crit: 0, magic: false, effective: ['armored'] },
-        { name: 'Halberd', type: 'axe', mt: 10, hit: 60, wt: 15, crit: 0, magic: false, effective: ['mounted'] },
-        { name: 'Longaxe', type: 'axe', mt: 8, hit: 65, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
-        { name: 'Killer Axe', type: 'axe', mt: 11, hit: 65, wt: 11, crit: 30, magic: false },
-        { name: 'Swordreaver', type: 'axe', mt: 11, hit: 65, wt: 13, crit: 5, magic: false, reaver: true },
-        { name: 'Swordslayer', type: 'axe', mt: 11, hit: 80, wt: 13, crit: 5, magic: false, reaver: true, effective: ['swordUser'] },
-        { name: 'Brave Axe', type: 'axe', mt: 10, hit: 65, wt: 16, crit: 0, magic: false, brave: true },
-        { name: 'Silver Axe', type: 'axe', mt: 15, hit: 70, wt: 12, crit: 0, magic: false },
+        { name: 'Iron Axe', type: 'axe', rank: 'E', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
+        { name: 'Steel Axe', type: 'axe', rank: 'D', mt: 11, hit: 65, wt: 15, crit: 0, magic: false },
+        { name: 'Hand Axe', type: 'axe', rank: 'D', mt: 7, hit: 60, wt: 12, crit: 0, magic: false, speedBonus: 2 },
+        { name: 'Hammer', type: 'axe', rank: 'C', mt: 10, hit: 55, wt: 15, crit: 0, magic: false, effective: ['armored'] },
+        { name: 'Halberd', type: 'axe', rank: 'C', mt: 10, hit: 60, wt: 15, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Longaxe', type: 'axe', rank: 'C', mt: 8, hit: 65, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
+        { name: 'Killer Axe', type: 'axe', rank: 'C', mt: 11, hit: 65, wt: 11, crit: 30, magic: false },
+        { name: 'Swordreaver', type: 'axe', rank: 'C', mt: 11, hit: 65, wt: 13, crit: 5, magic: false, reaver: true },
+        { name: 'Swordslayer', type: 'axe', rank: 'C', mt: 11, hit: 80, wt: 13, crit: 5, magic: false, reaver: true, effective: ['swordUser'] },
+        { name: 'Brave Axe', type: 'axe', rank: 'A', mt: 10, hit: 65, wt: 16, crit: 0, magic: false, brave: true },
+        { name: 'Silver Axe', type: 'axe', rank: 'A', mt: 15, hit: 70, wt: 12, crit: 0, magic: false },
 
-        { name: 'Iron Bow', type: 'bow', mt: 6, hit: 85, wt: 5, crit: 0, magic: false, effective: ['flying'] },
-        { name: 'Steel Bow', type: 'bow', mt: 9, hit: 70, wt: 9, crit: 0, magic: false, effective: ['flying'] },
-        { name: 'Short Bow', type: 'bow', mt: 5, hit: 85, wt: 3, crit: 10, magic: false, effective: ['flying'] },
-        { name: 'Killer Bow', type: 'bow', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
-        { name: 'Brave Bow', type: 'bow', mt: 10, hit: 70, wt: 12, crit: 0, magic: false, brave: true, effective: ['flying'] },
-        { name: 'Silver Bow', type: 'bow', mt: 13, hit: 75, wt: 6, crit: 0, magic: false, effective: ['flying'] },
+        { name: 'Iron Bow', type: 'bow', rank: 'E', mt: 6, hit: 85, wt: 5, crit: 0, magic: false, effective: ['flying'] },
+        { name: 'Steel Bow', type: 'bow', rank: 'D', mt: 9, hit: 70, wt: 9, crit: 0, magic: false, effective: ['flying'] },
+        { name: 'Short Bow', type: 'bow', rank: 'D', mt: 5, hit: 85, wt: 3, crit: 10, magic: false, speedBonus: 2, effective: ['flying'] },
+        { name: 'Killer Bow', type: 'bow', rank: 'B', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
+        { name: 'Brave Bow', type: 'bow', rank: 'A', mt: 10, hit: 70, wt: 12, crit: 0, magic: false, brave: true, effective: ['flying'] },
+        { name: 'Silver Bow', type: 'bow', rank: 'A', mt: 13, hit: 75, wt: 6, crit: 0, magic: false, effective: ['flying'] },
 
-        { name: 'Fire', type: 'anima', mt: 5, hit: 90, wt: 4, crit: 0, magic: true },
-        { name: 'Thunder', type: 'anima', mt: 8, hit: 80, wt: 6, crit: 5, magic: true },
-        { name: 'Elfire', type: 'anima', mt: 10, hit: 85, wt: 10, crit: 0, magic: true },
-        { name: 'Fimbulvetr', type: 'anima', mt: 12, hit: 80, wt: 12, crit: 0, magic: true },
-        { name: 'Excalibur', type: 'anima', mt: 18, hit: 90, wt: 13, crit: 10, magic: true, effective: ['flying'] },
-        { name: 'Lightning', type: 'light', mt: 4, hit: 95, wt: 6, crit: 5, magic: true },
-        { name: 'Shine', type: 'light', mt: 6, hit: 90, wt: 8, crit: 8, magic: true },
-        { name: 'Divine', type: 'light', mt: 8, hit: 85, wt: 12, crit: 10, magic: true },
-        { name: 'Aura', type: 'light', mt: 12, hit: 80, wt: 15, crit: 15, magic: true },
-        { name: 'Aureola', type: 'light', mt: 18, hit: 85, wt: 14, crit: 5, magic: true },
-        { name: 'Flux', type: 'dark', mt: 7, hit: 80, wt: 8, crit: 0, magic: true },
-        { name: 'Luna', type: 'dark', mt: 0, hit: 95, wt: 12, crit: 20, magic: true, pierceRes: true },
-        { name: 'Nosferatu', type: 'dark', mt: 10, hit: 70, wt: 14, crit: 0, magic: true, drain: true },
-        { name: 'Fenrir', type: 'dark', mt: 15, hit: 70, wt: 18, crit: 0, magic: true },
-        { name: 'Ereshkigal', type: 'dark', mt: 20, hit: 95, wt: 12, crit: 0, magic: true },
-        { name: 'Heal Staff', type: 'staff', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
-        { name: 'Mend Staff', type: 'staff', mt: 20, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
-        { name: 'Sleep Staff', type: 'staff', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
-        { name: 'Berserk Staff', type: 'staff', mt: 0, hit: 55, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
-        { name: 'Fortify Staff', type: 'staff', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
+        { name: 'Fire', type: 'anima', rank: 'E', mt: 5, hit: 90, wt: 4, crit: 0, magic: true },
+        { name: 'Thunder', type: 'anima', rank: 'D', mt: 8, hit: 80, wt: 6, crit: 5, magic: true },
+        { name: 'Elfire', type: 'anima', rank: 'C', mt: 10, hit: 85, wt: 10, crit: 0, magic: true },
+        { name: 'Fimbulvetr', type: 'anima', rank: 'B', mt: 12, hit: 80, wt: 12, crit: 0, magic: true },
+        { name: 'Excalibur', type: 'anima', rank: 'S', mt: 18, hit: 90, wt: 13, crit: 10, magic: true, effective: ['flying'] },
+        { name: 'Lightning', type: 'light', rank: 'E', mt: 4, hit: 95, wt: 6, crit: 5, magic: true },
+        { name: 'Shine', type: 'light', rank: 'D', mt: 6, hit: 90, wt: 8, crit: 8, magic: true },
+        { name: 'Divine', type: 'light', rank: 'C', mt: 8, hit: 85, wt: 12, crit: 10, magic: true },
+        { name: 'Aura', type: 'light', rank: 'A', mt: 12, hit: 80, wt: 15, crit: 15, magic: true },
+        { name: 'Aureola', type: 'light', rank: 'S', mt: 18, hit: 85, wt: 14, crit: 5, magic: true },
+        { name: 'Flux', type: 'dark', rank: 'E', mt: 7, hit: 80, wt: 8, crit: 0, magic: true },
+        { name: 'Luna', type: 'dark', rank: 'C', mt: 0, hit: 95, wt: 12, crit: 20, magic: true, pierceRes: true },
+        { name: 'Nosferatu', type: 'dark', rank: 'C', mt: 10, hit: 70, wt: 14, crit: 0, magic: true, drain: true },
+        { name: 'Fenrir', type: 'dark', rank: 'A', mt: 15, hit: 70, wt: 18, crit: 0, magic: true },
+        { name: 'Ereshkigal', type: 'dark', rank: 'S', mt: 20, hit: 95, wt: 12, crit: 0, magic: true },
+        { name: 'Heal Staff', type: 'staff', rank: 'E', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+        { name: 'Mend Staff', type: 'staff', rank: 'D', mt: 20, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+        { name: 'Sleep Staff', type: 'staff', rank: 'C', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
+        { name: 'Berserk Staff', type: 'staff', rank: 'B', mt: 0, hit: 55, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
+        { name: 'Fortify Staff', type: 'staff', rank: 'A', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
       ]
+      const WEAPON_RANKS = ['E', 'D', 'C', 'B', 'A', 'S']
+      const WEAPON_TIER_WEIGHTS = {
+        normal: [
+          ['normal', 60],
+          ['uncommon', 30],
+          ['rare', 10],
+        ],
+        good: [
+          ['uncommon', 70],
+          ['rare', 30],
+        ],
+      }
+      function weaponTierFromRank(rank) {
+        if (rank === 'A' || rank === 'S') return 'rare'
+        if (rank === 'C' || rank === 'B') return 'uncommon'
+        return 'normal'
+      }
+      function weaponTierLabel(tier) {
+        return tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Normal'
+      }
+      function prepareWeaponData() {
+        WEAPONS.forEach((w) => {
+          const rank = String(w.rank || 'E').toUpperCase()
+          w.rank = WEAPON_RANKS.includes(rank) ? rank : 'E'
+          w.tier = w.tier || weaponTierFromRank(w.rank)
+        })
+      }
+      prepareWeaponData()
       // prettier-ignore
       const BASES = [
         // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
@@ -1230,7 +1275,7 @@ U('Saul','Monk','light',        {bTotal:28,hp:20,str:5,skl:6,spd:7,lck:2,def:2,r
 
 U('Canas','Shaman','dark',      {bTotal:47,hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
 U('Knoll','Shaman','dark',      {bTotal:28,hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
-U('Ewan','Shaman','dark',       {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:50,skl:45,spd:40,lck:50,def:10,res:40,gTotal:285},'red'),
+U('Ewan','Mage','anima',        {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:50,str:50,skl:45,spd:40,lck:50,def:10,res:40,gTotal:285},'red'),
 U('Lyon','Shaman','dark',       {bTotal:35,hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},    {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55,gTotal:300},'purple'),
 U('Niime','Shaman','dark',      {bTotal:42,hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},   {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45,gTotal:230},'purple',4),
 
@@ -1353,6 +1398,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
           (w.effective ? 8 : 0) +
           (w.drain ? 10 : 0) +
           (w.staff ? 4 : 0) +
+          (w.speedBonus || 0) * 4 +
           staffFx
         )
       }
@@ -1427,7 +1473,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       }
       function attackSpeed(u) {
         const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con)
-        return Math.max(0, u.stats.spd - penalty)
+        return Math.max(0, u.stats.spd + (u.weapon?.speedBonus || 0) - penalty)
       }
       function effectiveMt(a, d) {
         const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
@@ -1668,19 +1714,25 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         const ae = spriteEl(actor)
         if (ae) ae.classList.add('active')
         return new Promise((resolve) => {
+          let settled = false
+          const finish = (target) => {
+            if (settled) return
+            settled = true
+            document.querySelectorAll('.combatant').forEach((ex) => {
+              ex.classList.remove('selectable')
+              ex.onclick = null
+            })
+            pendingTargetCancel = null
+            activePreviewActor = null
+            renderTeams()
+            resolve(target)
+          }
+          pendingTargetCancel = () => finish(null)
           targets.forEach((t) => {
             const el = spriteEl(t)
             if (!el) return
             el.classList.add('selectable')
-            el.onclick = () => {
-              document.querySelectorAll('.combatant').forEach((ex) => {
-                ex.classList.remove('selectable')
-                ex.onclick = null
-              })
-              activePreviewActor = null
-              renderTeams()
-              resolve(t)
-            }
+            el.onclick = () => finish(t)
           })
         })
       }
@@ -1872,11 +1924,13 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         player = [],
         enemy = [],
         battle = 0,
+        gold = 0,
         awaitingReward = false,
         battleRunning = false,
         filter = 'all',
         activePreviewActor = null,
-        nextEnemyMarkerId = null
+        nextEnemyMarkerId = null,
+        pendingTargetCancel = null
       const ROSTER_SIZE = 5,
         DRAFT_CHOICES_PER_SLOT = 3,
         LEADER_BONUS_LEVELS = 4,
@@ -1963,24 +2017,29 @@ ${growLine}</div>`
             ? [
                 ['Heal', w.mt],
                 ['Wt', w.wt],
+                ['Rank', w.rank || '?'],
               ]
             : fx === 'fortify'
               ? [
                   ['Heal', 'Mag'],
                   ['Wt', w.wt],
+                  ['Rank', w.rank || '?'],
                 ]
               : [
                   ['Fx', statusName(fx)],
                   ['Hit', w.hit],
                   ['Wt', w.wt],
+                  ['Rank', w.rank || '?'],
                 ]
           : [
               ['Mt', w.mt],
               ['Hit', w.hit],
               ['Crit', w.crit || 0],
               ['Wt', w.wt],
+              ['Rank', w.rank || '?'],
             ]
         const eff = []
+        if (w.speedBonus) eff.push(`Spd +${w.speedBonus}`)
         if (w.reaver) eff.push('Reave')
         if (w.brave) eff.push('Brave')
         if (w.effective) eff.push('Eff')
@@ -2026,7 +2085,7 @@ ${growLine}</div>`
           isEnemy && u.id === nextEnemyMarkerId && u.hp > 0
             ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'
             : ''
-        const hpLine = isEnemy ? `L${u.lvl} - ${u.hp}/${u.maxHp}` : `${u.hp}/${u.maxHp}`
+        const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
         return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
       }
       function logLine(logEl, msg, cls = '') {
@@ -2099,6 +2158,18 @@ ${growLine}</div>`
         if (battleRunning || awaitingReward) return
         generateEnemy()
         runBattle()
+      }
+      function debugWinBattle() {
+        if (!battleRunning || !enemy.some((x) => x.hp > 0)) return
+        enemy.forEach((u) => {
+          u.hp = 0
+          clearUnitStatus(u)
+        })
+        if (pendingTargetCancel) pendingTargetCancel()
+        clearHighlights()
+        setStatus('Debug win: enemy team defeated.')
+        logLine(null, 'Debug hotkey: enemy team defeated.', 'crit')
+        renderTeams()
       }
       // prettier-ignore
       const enemyNames = ['Bandit', 'Raider', 'Arena', 'Fang', 'Knight', 'Nomad', 'Mage', 'Rogue', 'Wyvern', 'Merc']
@@ -2218,7 +2289,8 @@ ${growLine}</div>`
               : ' Regular boss weapon rewards are rolled from stronger weapons.'
         let html = `<h2>${title}</h2><div class="small">${desc}</div><div class="rewardGrid">`
         rewards.forEach((r, i) => {
-          html += `<div class="choice"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
+          const rewardClass = r.type === 'item' ? ` reward-${r.item.tier || 'normal'}` : ''
+          html += `<div class="choice${rewardClass}"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
         })
         html += '</div>'
         showModal(html)
@@ -2226,13 +2298,13 @@ ${growLine}</div>`
       }
       function weaponSummary(w) {
         const fx = staffEffect(w)
-        if (fx === 'heal') return `staff, Heal ${w.mt}`
-        if (fx === 'fortify') return 'staff, heals all allies by Mag'
-        if (fx === 'sleep' || fx === 'berserk') return `staff, ${statusName(fx)}, Hit ${w.hit}`
-        return `${w.type}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}`
+        if (fx === 'heal') return `staff, rank ${w.rank}, Heal ${w.mt}`
+        if (fx === 'fortify') return `staff, rank ${w.rank}, heals all allies by Mag`
+        if (fx === 'sleep' || fx === 'berserk') return `staff, rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}`
+        return `${w.type}, rank ${w.rank}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}${w.speedBonus ? `, Spd +${w.speedBonus}` : ''}`
       }
       function isGoodRewardWeapon(w) {
-        return !w.name.startsWith('Iron') && w.name !== 'Heal Staff'
+        return w.tier !== 'normal'
       }
       function rewardWeaponPool(u, goodOnly = false) {
         const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
@@ -2240,12 +2312,32 @@ ${growLine}</div>`
         const good = opts.filter(isGoodRewardWeapon)
         return good.length ? good : opts
       }
+      function weightedTier(weights) {
+        const total = weights.reduce((sum, [, weight]) => sum + weight, 0)
+        let roll = rnd() * total
+        for (const [tier, weight] of weights) {
+          roll -= weight
+          if (roll <= 0) return tier
+        }
+        return weights[weights.length - 1][0]
+      }
+      function pickRewardWeapon(opts, goodOnly = false) {
+        const weights = goodOnly ? WEAPON_TIER_WEIGHTS.good : WEAPON_TIER_WEIGHTS.normal
+        for (let i = 0; i < 8; i++) {
+          const tier = weightedTier(weights)
+          const tierOpts = opts.filter((w) => w.tier === tier)
+          if (tierOpts.length) return pick(tierOpts)
+        }
+        return pick(opts)
+      }
       function weaponReward(goodOnly = false) {
         const candidates = player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
         const itemUnit = pick(candidates.length ? candidates : player)
         const opts = rewardWeaponPool(itemUnit, goodOnly)
-        const item = cloneWeapon(pick(opts.length ? opts : WEAPONS))
-        return { type: 'item', title: `Equip ${item.name}`, desc: `Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.`, unit: itemUnit, item }
+        const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : WEAPONS, goodOnly))
+        const oldWeapon = itemUnit.weapon ? `${itemUnit.weapon.name} (${weaponSummary(itemUnit.weapon)})` : 'nothing'
+        const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Rank ${item.rank} · Replaces ${oldWeapon}</div>`
+        return { type: 'item', title: `Equip ${item.name}`, desc: `Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.${meta}`, unit: itemUnit, item }
       }
       function makeRewards(bossTier = null) {
         const weaponCount = bossTier === BOSS_TIER_SUPER ? 4 : 2
@@ -2326,11 +2418,17 @@ ${growLine}</div>`
         renderTeams()
         beginNextBattle()
       }
+      function currentScore() {
+        return battle * 1000 + gold
+      }
+      function scoreHTML() {
+        return `<p>Score: <b>${currentScore()}</b> (${battle} × 1000 + ${gold} gold)</p>`
+      }
       function showWin() {
-        showModal(`<h2>Run complete</h2><p>Your team survived 20 battles! Congratulations!</p><button onclick="location.reload()" class="primary">New run</button>`)
+        showModal(`<h2>Run complete</h2><p>Your team survived 20 battles! Congratulations!</p>${scoreHTML()}<button onclick="location.reload()" class="primary">New run</button>`)
       }
       function showGameOver() {
-        showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p><button onclick="location.reload()" class="primary">Try again</button>`)
+        showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="primary">Try again</button>`)
       }
       function showModal(html) {
         $('modalBody').innerHTML = html
@@ -2354,6 +2452,12 @@ ${growLine}</div>`
       }
       $('startBtn').onclick = startRun
       $('resetBtn').onclick = () => location.reload()
+      document.addEventListener('keydown', (e) => {
+        if (e.shiftKey && e.key.toLowerCase() === 'w') {
+          e.preventDefault()
+          debugWinBattle()
+        }
+      })
       renderDraft()
     </script>
   </body>
