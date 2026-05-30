@@ -618,7 +618,7 @@
           <div class="small">FEMP-compatible asset hooks, FE7-inspired mechanics, richer weapons, animated round-robin arena loop.</div>
         </div>
         <div class="row">
-          <span class="badge">Battle <b id="battleNo">0</b>/20</span><span class="badge">Roster <b id="rosterCount">0</b>/5</span
+          <span class="badge">Battle <span><span id="battleNo">0</span>/20</span></span><span class="badge">Roster <span><span id="rosterCount">0</span>/5</span></span
           ><span class="badge">Seed <b id="seedLabel"></b></span>
         </div>
       </div>
@@ -2352,7 +2352,7 @@ ${growLine}</div>`
         const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Replaces ${oldWeapon}</div>`
         return {
           type: 'item',
-          title: `Equip ${item.name} to ${itemUnit.name} (CON: ${itemUnit.con})`,
+          title: `Equip ${item.name} to ${itemUnit.name} (CON: ${itemUnit.stats.con})`,
           desc: `Give ${item.name} (${weaponSummary(item)}).${meta}`,
           unit: itemUnit,
           item,
@@ -2360,7 +2360,7 @@ ${growLine}</div>`
       }
       function makeRewards(bossTier = null) {
         const weaponCount = bossTier === BOSS_TIER_SUPER ? 2 : 2
-        const goodOnly = !!bossTier
+        const goodOnly = bossTier === BOSS_TIER_SUPER
         const weaponRewards = []
         for (let i = 0; i < weaponCount; i++) {
           let next = weaponReward(goodOnly),
