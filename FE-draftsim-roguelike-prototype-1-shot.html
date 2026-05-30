@@ -1659,6 +1659,9 @@ ${growLine}</div>`
         const bossTier = opening ? null : bossTierForBattle(battle)
         const rewards = makeRewards(bossTier, opening)
         const title = opening ? 'Choose an opening reward' : 'Choose a reward'
+        renderRewardSelection(title, rewards)
+      }
+      function renderRewardSelection(title, rewards) {
         const skipReward = rewards.find((r) => r.type === 'gold')
         const choiceRewards = rewards.filter((r) => r.type !== 'gold')
         let html = `<h2>${title}</h2><div class="rewardGrid">`
@@ -1669,7 +1672,7 @@ ${growLine}</div>`
         html += '</div>'
         if (skipReward) html += `<div class="rewardSkipWrap"><button data-skip-reward class="rewardSkip">Skip reward: gain ${goldHTML(skipReward.gold)}</button></div>`
         showModal(html)
-        document.querySelectorAll('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i])))
+        document.querySelectorAll('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i], () => renderRewardSelection(title, rewards))))
         const skipBtn = document.querySelector('[data-skip-reward]')
         if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
       }
@@ -1928,12 +1931,13 @@ ${growLine}</div>`
           consumable: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'consumable'),
           boost: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'boost'),
         }
-        let html = `<div class="shopHeader"><div><h3>Merchant</h3><div class="small">Buy any offers you want, then leave for the next battle.</div></div><div>${goldHTML(gold)}</div></div>`
+        let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need?</h3></div></div>`
         if (message) html += `<div class="notice">${message}</div>`
         html += `<section class="shopSection"><h3>Weapons</h3><div class="shopRow shopWeapons">${groups.weapon.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
         html += `<div class="shopLower"><section class="shopSection"><h3>Consumables</h3><div class="shopRow">${groups.consumable.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
         html += `<section class="shopSection"><h3>Stat Boosters</h3><div class="shopRow">${groups.boost.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section></div>`
-        html += '<div class="row space shopActions"><div></div><button id="leaveShopBtn" class="primary">Leave shop</button></div>'
+        html +=
+          '<div class="row space shopActions"><div class="small">Bought weapons can be equipped to anyone eligible to wield them.</div><button id="leaveShopBtn" class="primary">Leave shop</button></div>'
         setShopOpen(true)
         $('shopScreen').innerHTML = html
         $('shopScreen')
@@ -1945,7 +1949,7 @@ ${growLine}</div>`
         awaitingReward = true
         shopOffers = makeShopOffers()
         renderTeams()
-        renderShop(`Biome boss shop opened. Current gold: ${goldHTML(gold)}.`)
+        renderShop(`Current gold: ${goldHTML(gold)}.`)
       }
       function leaveShop() {
         closeModal()
@@ -2075,11 +2079,12 @@ ${growLine}</div>`
         renderTeams()
         return targetSlot
       }
-      function chooseConsumableReplacement(r) {
+      function chooseConsumableReplacement(r, backToRewards = null) {
         let html = `<h2>${r.item.name}: choose slot</h2><div class="small">${consumableSummary(r.item)}</div>`
         consumables.forEach((item, i) => {
           html += `<div class="choice"><div><h4>Slot ${i + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-replace-consumable="${i}" class="good">Replace</button></div>`
         })
+        if (backToRewards) html += '<button id="backToRewardBtn">Back</button>'
         showModal(html)
         document.querySelectorAll('[data-replace-consumable]').forEach(
           (btn) =>
@@ -2089,8 +2094,10 @@ ${growLine}</div>`
               afterReward(`Stored ${r.item.name}.`)
             })
         )
+        const backBtn = $('backToRewardBtn')
+        if (backBtn && backToRewards) backBtn.onclick = backToRewards
       }
-      function applyReward(r) {
+      function applyReward(r, backToRewards = null) {
         if (r.type === 'item') {
           r.unit.weapon = r.item
           closeModal()
@@ -2098,7 +2105,7 @@ ${growLine}</div>`
         }
         if (r.type === 'consumable') {
           if (consumableInventoryFull()) {
-            chooseConsumableReplacement(r)
+            chooseConsumableReplacement(r, backToRewards)
             return
           }
           storeConsumable(r.item)
