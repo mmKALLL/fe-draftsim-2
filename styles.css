@@ -88,6 +88,10 @@ button.danger {
   background: #7f1d1d;
   border-color: #ef4444;
 }
+button.autoFightToggle.active {
+  background: #166534;
+  border-color: #22c55e;
+}
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -337,6 +341,10 @@ button:disabled {
 }
 .combatPreview .hitNeu {
   color: #e2e8f0;
+}
+.combatPreview .effectiveDamage {
+  color: #86efac;
+  font-weight: 700;
 }
 .combatPreview .critLine {
   color: #e2e8f0;

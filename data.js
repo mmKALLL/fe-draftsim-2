@@ -152,6 +152,7 @@ const WEAPONS = [
   { name: 'Longsword', type: 'sword', rank: 'C', mt: 6, hit: 85, wt: 11, crit: 0, magic: false, effective: ['mounted'] },
   { name: 'Killing Edge', type: 'sword', rank: 'C', mt: 9, hit: 75, wt: 7, crit: 30, magic: false },
   { name: 'Lancereaver', type: 'sword', rank: 'C', mt: 9, hit: 75, wt: 9, crit: 5, magic: false, reaver: true },
+  { name: 'Swordslayer', type: 'sword', rank: 'C', mt: 11, hit: 80, wt: 13, crit: 5, magic: false, effective: ['swordUser'] },
   { name: 'Rune Sword', type: 'sword', rank: 'B', mt: 7, hit: 70, wt: 11, crit: 0, magic: true },
   { name: 'Brave Sword', type: 'sword', rank: 'A', mt: 9, hit: 75, wt: 12, crit: 0, magic: false, brave: true },
   { name: 'Silver Sword', type: 'sword', rank: 'A', mt: 13, hit: 80, wt: 8, crit: 0, magic: false },
@@ -179,7 +180,6 @@ const WEAPONS = [
   { name: 'Longaxe', type: 'axe', rank: 'C', mt: 8, hit: 65, wt: 13, crit: 0, magic: false, effective: ['mounted'] },
   { name: 'Killer Axe', type: 'axe', rank: 'C', mt: 11, hit: 65, wt: 11, crit: 30, magic: false },
   { name: 'Swordreaver', type: 'axe', rank: 'C', mt: 11, hit: 65, wt: 13, crit: 5, magic: false, reaver: true },
-  { name: 'Swordslayer', type: 'axe', rank: 'C', mt: 11, hit: 80, wt: 13, crit: 5, magic: false, reaver: true, effective: ['swordUser'] },
   { name: 'Brave Axe', type: 'axe', rank: 'A', mt: 10, hit: 65, wt: 16, crit: 0, magic: false, brave: true },
   { name: 'Silver Axe', type: 'axe', rank: 'A', mt: 15, hit: 70, wt: 12, crit: 0, magic: false },
 
@@ -251,12 +251,12 @@ const CONSUMABLES = [
   { id: 'luck_tonic', name: 'Luck Tonic', tier: 'normal', effect: 'buff', stat: 'lck', amount: 2, desc: 'Grants Lck +2 for the current battle.' },
   { id: 'guard_tonic', name: 'Guard Tonic', tier: 'uncommon', effect: 'buff', stat: 'def', amount: 2, desc: 'Grants Def +2 for the current battle.' },
   { id: 'ward_tonic', name: 'Ward Tonic', tier: 'uncommon', effect: 'buff', stat: 'res', amount: 2, desc: 'Grants Res +2 for the current battle.' },
-  { id: 'power_potion', name: 'Power Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 5, desc: 'Grants Str +5 until that unit finishes its next action.' },
-  { id: 'skill_potion', name: 'Skill Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 5, desc: 'Grants Skl +5 until that unit finishes its next action.' },
-  { id: 'speed_potion', name: 'Speed Potion', tier: 'rare', effect: 'turnBuff', stat: 'spd', amount: 5, desc: 'Grants Spd +5 until that unit finishes its next action.' },
-  { id: 'luck_potion', name: 'Luck Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'lck', amount: 5, desc: 'Grants Lck +5 until that unit finishes its next action.' },
-  { id: 'guard_potion', name: 'Guard Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 5, desc: 'Grants Def +5 until that unit finishes its next action.' },
-  { id: 'ward_potion', name: 'Ward Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'res', amount: 5, desc: 'Grants Res +5 until that unit finishes its next action.' },
+  { id: 'power_potion', name: 'Power Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 5, desc: 'Grants Str +5 until end of target\'s next turn.' },
+  { id: 'skill_potion', name: 'Skill Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 5, desc: 'Grants Skl +5 until end of target\'s next turn.' },
+  { id: 'speed_potion', name: 'Speed Potion', tier: 'rare', effect: 'turnBuff', stat: 'spd', amount: 5, desc: 'Grants Spd +5 until end of target\'s next turn.' },
+  { id: 'luck_potion', name: 'Luck Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'lck', amount: 5, desc: 'Grants Lck +5 until end of target\'s next turn.' },
+  { id: 'guard_potion', name: 'Guard Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 5, desc: 'Grants Def +5 until end of target\'s next turn.' },
+  { id: 'ward_potion', name: 'Ward Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'res', amount: 5, desc: 'Grants Res +5 until end of target\'s next turn.' },
 ]
 
 // prettier-ignore

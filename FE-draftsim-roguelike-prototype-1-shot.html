@@ -10,8 +10,7 @@
     <div class="wrap">
       <div class="top">
         <div>
-          <h1>GBA Emblem Roguelike Prototype</h1>
-          <div class="small">FEMP-compatible asset hooks, FE7-inspired mechanics, richer weapons, animated round-robin arena loop.</div>
+          <h1>FireRogue: Blazing Sword</h1>
         </div>
         <div class="row">
           <span class="badge"
@@ -48,7 +47,7 @@
         <main class="panel">
           <div class="row space">
             <h2>Arena</h2>
-            <div class="row"><span class="badge">Battles auto-start; choose targets on player turns</span></div>
+            <button id="autoFightBtn" class="autoFightToggle" type="button" aria-pressed="false" disabled>Auto-fight: Off</button>
           </div>
           <div id="combatStatus" class="notice hidden"></div>
           <div id="arena" class="arena">
@@ -555,7 +554,7 @@
       function isWeaponEffective(w, d) {
         if (!w?.effective) return false
         const tags = unitTags(d)
-        return w.effective.some((e) => tags.includes(e) || (e === 'swordUser' && allowedWeapons(d).includes('sword')))
+        return w.effective.some((e) => (e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)))
       }
       function triangle(a, b, aw = null, bw = null) {
         const beats = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
@@ -618,8 +617,9 @@
         const hit = displayedHit(actor, target),
           crit = critRate(actor, target),
           dmg = rawDamage(actor, target),
-          hits = (canDouble(actor, target) ? 2 : 1) * (actor.weapon?.brave ? 2 : 1)
-        return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div>${dmg} dmg (x${hits})</div>`
+          hits = (canDouble(actor, target) ? 2 : 1) * (actor.weapon?.brave ? 2 : 1),
+          dmgClass = isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : ''
+        return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div class="${dmgClass}">${dmg} dmg (x${hits})</div>`
       }
       function classAbbrev(cls) {
         const map = {
@@ -693,8 +693,8 @@
         if (w.halfDef) labels.push('Ignores half Def')
         if (w.poison) labels.push('Poison')
         if (w.effective?.length) {
-          const names = w.effective.map((e) => ({ armored: 'armored', mounted: 'mounted', flying: 'flying', swordUser: 'sword users' })[e] || e)
-          labels.push(`Effective: ${names.join('/')}`)
+          const names = w.effective.map((e) => ({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' })[e] || e)
+          labels.push(`Eff: ${names.join('/')}`)
         }
         if (w.pierceRes) labels.push('Ignores Res')
         if (w.drain) labels.push('Drain')
@@ -812,13 +812,23 @@
         if (!live.length) return 0
         return live.reduce((sum, d) => sum + expectedDamage(a, d), 0) / live.length
       }
-      function chooseEnemyTarget() {
-        const live = player.filter((x) => x.hp > 0)
+      function chooseAITarget(targets, opposingTeam) {
+        const live = targets.filter((x) => x.hp > 0)
         if (!live.length) return null
         const roll = rnd()
         if (roll < 0.4) return [...live].sort((a, b) => a.hp - b.hp || a.maxHp - b.maxHp)[0]
-        if (roll < 0.8) return [...live].sort((a, b) => avgExpectedDamage(b, enemy) - avgExpectedDamage(a, enemy))[0]
+        if (roll < 0.8) return [...live].sort((a, b) => avgExpectedDamage(b, opposingTeam) - avgExpectedDamage(a, opposingTeam))[0]
         return pick(live)
+      }
+      function chooseEnemyTarget() {
+        return chooseAITarget(player, enemy)
+      }
+      function autoFightTargetFor(actor, allies, foes, stavesExhausted = false) {
+        if (actor.weapon.staff) {
+          if (stavesExhausted) return null
+          return isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, foes) : null
+        }
+        return chooseAITarget(foes, allies)
       }
       function chooseStatusStaffTarget(actor, foes) {
         const live = foes.filter((x) => x.hp > 0)
@@ -912,6 +922,7 @@
             })
             pendingTargetCancel = null
             pendingConsumableAction = null
+            pendingAutoFightAction = null
             pendingDefaultAction = null
             pendingDefaultLabel = ''
             activePreviewActor = null
@@ -921,6 +932,7 @@
           }
           pendingTargetCancel = () => finish({ type: 'cancel' })
           pendingConsumableAction = (slot) => finish({ type: 'consumable', slot })
+          pendingAutoFightAction = () => finish({ type: 'auto' })
           if (defaultLabel) {
             pendingDefaultLabel = defaultLabel
             pendingDefaultAction = () => finish({ type: 'default' })
@@ -932,6 +944,7 @@
             el.onclick = () => finish({ type: 'target', target: t })
           })
           renderConsumables()
+          if (autoFight) setTimeout(() => pendingAutoFightAction?.(), 0)
         })
       }
       function nextLivingIndex(team, start) {
@@ -1192,15 +1205,33 @@
         gold = 0,
         awaitingReward = false,
         battleRunning = false,
+        autoFight = false,
         filter = 'all',
         activePreviewActor = null,
         activeConsumableActor = null,
         nextEnemyMarkerId = null,
         pendingTargetCancel = null,
         pendingConsumableAction = null,
+        pendingAutoFightAction = null,
         pendingDefaultAction = null,
         pendingDefaultLabel = ''
       const $ = (id) => document.getElementById(id)
+      function updateAutoFightButton() {
+        const btn = $('autoFightBtn')
+        if (!btn) return
+        const canAuto = battleRunning && !awaitingReward && player.some((x) => x.hp > 0) && enemy.some((x) => x.hp > 0)
+        btn.disabled = !canAuto
+        btn.classList.toggle('active', autoFight)
+        btn.setAttribute('aria-pressed', autoFight ? 'true' : 'false')
+        btn.textContent = autoFight ? 'Auto-fight: On' : 'Auto-fight: Off'
+      }
+      function setAutoFight(enabled, silent = false) {
+        if (!battleRunning && enabled) return
+        autoFight = enabled
+        updateAutoFightButton()
+        if (!silent) setStatus(autoFight ? 'Auto-fight enabled.' : 'Auto-fight disabled.')
+        if (autoFight) pendingAutoFightAction?.()
+      }
       function selectedRosterCount() {
         return chosen.filter(Boolean).length
       }
@@ -1357,6 +1388,7 @@ ${growLine}</div>`
         renderSideCards()
         $('blueSprites').innerHTML = player.map((u) => combatantSpriteSlot(u, false)).join('')
         $('redSprites').innerHTML = enemy.map((u) => combatantSpriteSlot(u, true)).join('')
+        updateAutoFightButton()
       }
       function combatantSpriteSlot(u, isEnemy = false) {
         const preview = isEnemy ? combatPreviewHTML(activePreviewActor, u) : ''
@@ -1489,7 +1521,9 @@ ${growLine}</div>`
                 continue
               }
               let target = null
-              if (actor.weapon.staff && !stavesExhausted) {
+              if (autoFight) {
+                target = autoFightTargetFor(actor, player, enemy, stavesExhausted)
+              } else if (actor.weapon.staff && !stavesExhausted) {
                 if (isStatusStaff(actor.weapon)) {
                   const action = await selectPlayerAction(
                     actor,
@@ -1500,7 +1534,7 @@ ${growLine}</div>`
                     await useConsumableFromSlot(action.slot, actor)
                     continue
                   }
-                  target = action?.target || null
+                  target = action?.type === 'auto' ? autoFightTargetFor(actor, player, enemy, stavesExhausted) : action?.target || null
                 } else setStatus(`${actor.name} looks for an ally to heal.`)
               } else if (actor.weapon.staff) {
                 if (hasUsableConsumable(actor)) {
@@ -1521,9 +1555,9 @@ ${growLine}</div>`
                   await useConsumableFromSlot(action.slot, actor)
                   continue
                 }
-                target = action?.target || null
+                target = action?.type === 'auto' ? autoFightTargetFor(actor, player, enemy, stavesExhausted) : action?.target || null
               }
-              setStatus(`${actor.name} acts.`)
+              setStatus(autoFight ? (target ? `${actor.name} auto-targets ${target.name}.` : `${actor.name} auto-fights.`) : `${actor.name} acts.`)
               await resolveActorTurn(actor, player, enemy, target, stavesExhausted)
               await applyEndOfTurnStatus(actor)
               clearTurnBuffs(actor)
@@ -1563,8 +1597,9 @@ ${growLine}</div>`
         clearHighlights()
         setStatus('')
         nextEnemyMarkerId = null
-        renderTeams()
         battleRunning = false
+        setAutoFight(false, true)
+        renderTeams()
         if (player.some((x) => x.hp > 0)) {
           logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal')
           clearTemporaryBuffs(player)
@@ -1837,6 +1872,7 @@ ${growLine}</div>`
         chosen = emptyRosterChoices()
         renderDraft()
       }
+      $('autoFightBtn').onclick = () => setAutoFight(!autoFight)
       $('startBtn').onclick = startRun
       $('resetBtn').onclick = () => location.reload()
       document.addEventListener('keydown', (e) => {
