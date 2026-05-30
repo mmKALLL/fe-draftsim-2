@@ -37,5 +37,28 @@ const ROSTER_SIZE = 5,
   LEADER_BONUS_LEVELS = 4,
   CONSUMABLE_SLOTS = 3,
   CONSUMABLE_REWARD_CHANCE = 0.3,
+  REWARD_SKIP_GOLD = 200,
+  SHOP_SUPER_BOSS_GOLD = 1500,
   BOSS_TIER_REGULAR = 'regular',
   BOSS_TIER_SUPER = 'super'
+
+const SHOP_WEAPON_PRICES = {
+  normal: 450,
+  uncommon: 850,
+  rare: 1400,
+}
+const SHOP_CONSUMABLE_PRICES = {
+  normal: 150,
+  uncommon: 325,
+  rare: 550,
+}
+const SHOP_BOOST_PRICES = {
+  hp: 750,
+  str: 850,
+  skl: 750,
+  spd: 900,
+  lck: 600,
+  def: 850,
+  res: 850,
+  level: 1200,
+}

@@ -187,7 +187,7 @@ const WEAPONS = [
   { name: 'Steel Bow', type: 'bow', rank: 'D', mt: 9, hit: 70, wt: 9, crit: 0, magic: false, effective: ['flying'] },
   { name: 'Short Bow', type: 'bow', rank: 'D', mt: 5, hit: 85, wt: 3, crit: 10, magic: false, speedBonus: 2, effective: ['flying'] },
   { name: 'Longbow', type: 'bow', rank: 'C', mt: 7, hit: 70, wt: 10, crit: 0, magic: false, speedBonus: 2, effective: ['flying'] },
-  { name: 'Poison Bow', type: 'bow', rank: 'C', mt: 4, hit: 80, wt: 6, crit: 0, magic: false, speedBonus: 2, poison: true, effective: ['flying'] },
+  { name: 'Poison Bow', type: 'bow', rank: 'C', mt: 4, hit: 80, wt: 6, crit: 0, magic: false, poison: true, effective: ['flying'] },
   { name: 'Killer Bow', type: 'bow', rank: 'B', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
   { name: 'Brave Bow', type: 'bow', rank: 'A', mt: 10, hit: 70, wt: 12, crit: 0, magic: false, brave: true, effective: ['flying'] },
   { name: 'Silver Bow', type: 'bow', rank: 'A', mt: 13, hit: 75, wt: 6, crit: 0, magic: false, effective: ['flying'] },

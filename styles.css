@@ -457,6 +457,10 @@ button:disabled {
 .heal {
   color: #86efac;
 }
+.goldAmount,
+.goldLog {
+  color: #fde68a;
+}
 .death {
   color: #f87171;
 }
@@ -562,6 +566,10 @@ button:disabled {
 .choice.reward-rare {
   border-color: #fbbf24;
   box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.32);
+}
+.choice.reward-gold {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.28);
 }
 .rewardMeta {
   margin-top: 4px;
