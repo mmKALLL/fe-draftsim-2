@@ -346,6 +346,14 @@ button:disabled {
   color: #86efac;
   font-weight: 700;
 }
+.combatPreview .attackCountMulti {
+  color: #86efac;
+  font-weight: 700;
+}
+.combatPreview .attackCountQuad {
+  color: #e879f9;
+  font-weight: 800;
+}
 .combatPreview .critLine {
   color: #e2e8f0;
 }

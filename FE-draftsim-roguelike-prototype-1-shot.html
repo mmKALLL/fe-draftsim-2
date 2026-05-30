@@ -617,8 +617,9 @@
           crit = critRate(actor, target),
           dmg = rawDamage(actor, target),
           hits = (canDouble(actor, target) ? 2 : 1) * (actor.weapon?.brave ? 2 : 1),
-          dmgClass = isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : ''
-        return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div class="${dmgClass}">${dmg} dmg (x${hits})</div>`
+          dmgClass = isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : '',
+          hitCountClass = hits >= 4 ? 'attackCount attackCountQuad' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
+        return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
       }
       function classAbbrev(cls) {
         const map = {
