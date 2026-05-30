@@ -1474,7 +1474,7 @@ ${growLine}</div>`
         for (let i = 0; i < 5; i++) {
           const b = pool.splice(rint(pool.length), 1)[0] || pick(BASES)
           const isBossSlot = i === 0 && bossTier
-          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : 0), 1, 40)
+          const internal = clamp(baseInternal + Math.ceil(b.startOffset / 2) + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : 0), 1, 40)
           const promoted = internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
@@ -1485,7 +1485,6 @@ ${growLine}</div>`
           e.weapon = enemyWeaponFor(e, e.bossTier)
           e.name = enemyDisplayName(e)
           e.hp = e.maxHp
-          e.lvl = internal + Math.ceil(b.startOffset / 2)
           enemy.push(e)
         }
         activePreviewActor = null
