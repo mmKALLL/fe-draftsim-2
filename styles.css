@@ -252,16 +252,19 @@ button:disabled {
 .unitCard.selected {
   outline: 2px solid #fbbf24;
 }
-.growthHold {
-  display: none;
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.3;
-  opacity: 0.68;
+.portraitStack {
+  width: 64px;
 }
-.unitCard.showGrowths .growthHold,
-.unitCard:active .growthHold {
+.growthModeLabel {
+  display: none;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.15;
+  text-align: center;
+  opacity: 0.72;
+}
+.unitCard.showGrowths .growthModeLabel {
   display: block;
 }
 .portrait {

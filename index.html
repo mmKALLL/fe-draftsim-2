@@ -1509,14 +1509,14 @@
         }
         return slots
       }
-      function padCell(v, w = 3) {
+      function padCell(v, w = 2) {
         return String(v).padStart(w, ' ')
       }
       function growthCompareHTML(b) {
         const s = b.stats,
           g = b.growths
-        const baseLine = `Bases   HP ${padCell(s.hp)}  Str ${padCell(s.str)}  Skl ${padCell(s.skl)}  Spd ${padCell(s.spd)}  Lck ${padCell(s.lck)}  Def ${padCell(s.def)}  Res ${padCell(s.res)}`
-        const growLine = `Growths HP ${padCell(g.hp)}% Str ${padCell(g.str)}% Skl ${padCell(g.skl)}% Spd ${padCell(g.spd)}% Lck ${padCell(g.lck)}% Def ${padCell(g.def)}% Res ${padCell(g.res)}%`
+        const baseLine = `Bases   HP ${padCell(s.hp)}   Str ${padCell(s.str)}   Skl ${padCell(s.skl)}   Spd ${padCell(s.spd)}   Lck ${padCell(s.lck)}   Def ${padCell(s.def)}   Res ${padCell(s.res)}`
+        const growLine = `Growths HP ${padCell(g.hp)}%  Str ${padCell(g.str)}%  Skl ${padCell(g.skl)}%  Spd ${padCell(g.spd)}%  Lck ${padCell(g.lck)}%  Def ${padCell(g.def)}%  Res ${padCell(g.res)}%`
         return `<div class="statCompare">${baseLine}
 ${growLine}</div>`
       }
@@ -1585,16 +1585,17 @@ ${growLine}</div>`
         if (eff.length) labels.push([eff.join('/'), ''])
         return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
       }
-      function statHTML(s) {
-        return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'].map((k) => `<span><b>${k.toUpperCase()}</b> ${s[k]}</span>`).join('')
+      function statHTML(u) {
+        return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
+          .map((k) => {
+            const growth = u.growths[k] == null ? '--' : u.growths[k]
+            return `<span data-stat-value="${u.stats[k]}" data-growth-value="${growth}"><b>${k.toUpperCase()}</b> ${u.stats[k]}</span>`
+          })
+          .join('')
       }
       function growthSummaryHTML(u) {
         const g = u.growths
         return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${k.toUpperCase()} ${g[k]}%`).join(', ')})</span>`
-      }
-      function growthHoldHTML(u) {
-        const g = u.growths
-        return `<div class="growthHold">Growths: ${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${k.toUpperCase()} ${g[k]}%`).join(' · ')}</div>`
       }
       function unitCard(u) {
         const wt = u.weapon ? ` · ${u.weapon.name}` : ''
@@ -1604,7 +1605,7 @@ ${growLine}</div>`
         const buffs = temporaryBuffLabel(u)
         const buffText = buffs ? ` · ${buffs}` : ''
         const portrait = portraitImgForUnit(u)
-        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}" data-growth-card>${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div>${growthHoldHTML(u)}</div></div>`
+        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}" data-growth-card><div class="portraitStack">${portrait}<div class="growthModeLabel">Showing growths</div></div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div></div></div>`
       }
 
       function renderConsumables() {
@@ -1637,12 +1638,19 @@ ${growLine}</div>`
       }
       function bindGrowthHoldCards() {
         document.querySelectorAll('[data-growth-card]').forEach((card) => {
+          const setGrowthMode = (show) => {
+            card.classList.toggle('showGrowths', show)
+            card.querySelectorAll('[data-stat-value]').forEach((el) => {
+              const text = show ? el.dataset.growthValue : el.dataset.statValue
+              el.lastChild.textContent = ` ${text}`
+            })
+          }
           const clear = (e) => {
-            card.classList.remove('showGrowths')
+            setGrowthMode(false)
             if (e?.pointerId !== undefined && card.hasPointerCapture?.(e.pointerId)) card.releasePointerCapture(e.pointerId)
           }
           card.onpointerdown = (e) => {
-            card.classList.add('showGrowths')
+            setGrowthMode(true)
             card.setPointerCapture?.(e.pointerId)
           }
           card.onpointerup = clear
@@ -2007,9 +2015,11 @@ ${growLine}</div>`
         const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly))
         const oldWeapon = itemUnit.weapon ? `${itemUnit.weapon.name} (${weaponSummary(itemUnit.weapon)})` : 'nothing'
         const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Replaces ${oldWeapon}</div>`
+        const effectiveAttackSpeed = Math.min(0, itemUnit.stats.con - item.wt + (item.speedBonus || 0))
+        const effectiveASSymbol = effectiveAttackSpeed < 0 ? '-' : effectiveAttackSpeed === 0 ? '±' : '+'
         return {
           type: 'item',
-          title: `Equip ${item.name} to ${itemUnit.name} (CON: ${itemUnit.stats.con})`,
+          title: `Equip ${item.name} to ${itemUnit.name} (Con: ${itemUnit.stats.con}, Speed ${effectiveASSymbol}${Math.abs(effectiveAttackSpeed)})`,
           desc: `Give ${item.name} (${weaponSummary(item)}).${meta}`,
           unit: itemUnit,
           item,
