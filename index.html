@@ -547,19 +547,10 @@
         return [cloneConsumable(consumableById('vulnerary')), cloneConsumable(consumableById('speed_tonic')), null]
       }
       function allowedWeapons(u) {
+        const c = CLASSES[u.cls] || {}
         const base = [u.weaponType]
         if (u.cls === 'Thief') base.push('dagger')
-        if (u.promoted) {
-          if (['Lord', 'Mercenary', 'Myrmidon', 'Thief'].includes(u.cls)) base.push('sword')
-          if (u.cls === 'Fighter') base.push('bow')
-          if (u.cls === 'Archer') base.push('bow')
-          if (u.cls === 'Mage') base.push('anima', 'staff')
-          if (u.cls === 'Monk') base.push('light', 'anima', 'staff')
-          if (u.cls === 'Cleric') base.push('light', 'staff')
-          if (u.cls === 'Shaman') base.push('dark', 'staff')
-          if (u.cls === 'Cavalier') base.push('sword', 'lance', 'axe')
-          if (u.cls === 'Knight') base.push('sword', 'lance', 'axe')
-        }
+        if (u.promoted) base.push(...(c.promotionWeaponTypes || []))
         return [...new Set(base)]
       }
       function weaponScore(w) {
