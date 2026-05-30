@@ -14,12 +14,26 @@
         </div>
         <div id="biomeMap" class="biomeMap" aria-label="Biome map"></div>
         <div class="row topBadges">
-          <span class="badge"
+          <span class="badge">Gold <b id="goldLabel" class="goldAmount">0 G</b></span
+          ><span class="badge"
             >Battle <span><span id="battleNo">0</span>/20</span></span
           ><span class="badge"
-            >Roster <span><span id="rosterCount">0</span>/5</span></span
-          ><span class="badge">Gold <b id="goldLabel" class="goldAmount">0 G</b></span
+            >Roster <span><span id="rosterCount">0</span>/5</span> </span
           ><span class="badge">Seed <b id="seedLabel"></b></span>
+          <a
+            class="musicButton"
+            href="https://www.youtube.com/watch?v=yIDBhuYldSk&t=19m58s"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open music in a new tab"
+            aria-label="Open music in a new tab"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M11 5 6 9H3v6h3l5 4V5Z"></path>
+              <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+              <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+            </svg>
+          </a>
         </div>
       </div>
 
@@ -1574,6 +1588,14 @@ ${growLine}</div>`
       function statHTML(s) {
         return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'].map((k) => `<span><b>${k.toUpperCase()}</b> ${s[k]}</span>`).join('')
       }
+      function growthSummaryHTML(u) {
+        const g = u.growths
+        return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${k.toUpperCase()} ${g[k]}%`).join(', ')})</span>`
+      }
+      function growthHoldHTML(u) {
+        const g = u.growths
+        return `<div class="growthHold">Growths: ${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${k.toUpperCase()} ${g[k]}%`).join(' · ')}</div>`
+      }
       function unitCard(u) {
         const wt = u.weapon ? ` · ${u.weapon.name}` : ''
         const st = statusLabel(u)
@@ -1582,7 +1604,7 @@ ${growLine}</div>`
         const buffs = temporaryBuffLabel(u)
         const buffText = buffs ? ` · ${buffs}` : ''
         const portrait = portraitImgForUnit(u)
-        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}">${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div></div></div>`
+        return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}" data-growth-card>${portrait}<div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u.stats)}</div>${growthHoldHTML(u)}</div></div>`
       }
 
       function renderConsumables() {
@@ -1611,6 +1633,22 @@ ${growLine}</div>`
         renderConsumables()
         $('playerTeam').innerHTML = player.map(unitCard).join('')
         $('enemyTeam').innerHTML = enemy.map(unitCard).join('')
+        bindGrowthHoldCards()
+      }
+      function bindGrowthHoldCards() {
+        document.querySelectorAll('[data-growth-card]').forEach((card) => {
+          const clear = (e) => {
+            card.classList.remove('showGrowths')
+            if (e?.pointerId !== undefined && card.hasPointerCapture?.(e.pointerId)) card.releasePointerCapture(e.pointerId)
+          }
+          card.onpointerdown = (e) => {
+            card.classList.add('showGrowths')
+            card.setPointerCapture?.(e.pointerId)
+          }
+          card.onpointerup = clear
+          card.onpointercancel = clear
+          card.onlostpointercapture = clear
+        })
       }
       function updateNextEnemyMarker(startIndex = 0) {
         const idx = nextLivingIndex(enemy, startIndex)
@@ -1702,9 +1740,9 @@ ${growLine}</div>`
         const biomePrefix = biome ? `${biome.name} (${biomeEffectLabels(biome).join(', ')}): ` : ''
         const msg =
           bossTier === BOSS_TIER_BIOME
-            ? 'Biome boss fight: slot 1 is +6 levels with a random empowered weapon.'
+            ? 'Biome boss fight: +6 level leader with stronger weapons.'
             : bossTier === BOSS_TIER_REGULAR
-              ? 'Regular boss fight: slot 1 is +4 levels.'
+              ? 'Regular boss fight: +4 level leader.'
               : 'Standard enemy team.'
         logLine(null, `Battle ${battle}: ${biomePrefix}${msg}`, bossTier ? 'crit' : 'hit')
         renderTeams()
@@ -2020,8 +2058,7 @@ ${growLine}</div>`
       }
       function boostReward() {
         const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
-        if (boostTargetOptions({ stat: 'level' }).length && Math.random() < 0.22)
-          return levelBoostReward()
+        if (boostTargetOptions({ stat: 'level' }).length && Math.random() < 0.22) return levelBoostReward()
         const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
         const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
         const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
@@ -2273,7 +2310,8 @@ ${growLine}</div>`
           const before = offer.stat === 'level' ? levelLabel(u) : u.stats[offer.stat]
           const after = offer.stat === 'level' ? (canApplyBoost(offer, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, offer.stat), u.stats[offer.stat] + offer.amt)
           const label = offer.stat === 'level' ? 'Level' : offer.stat.toUpperCase()
-          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-shop-boost-target="${idx}">Use</button></div>`
+          const growths = offer.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
+          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}</div><button data-shop-boost-target="${idx}">Use</button></div>`
         })
         html += '<button id="backToShopBtn">Back</button>'
         showModal(html)
@@ -2366,7 +2404,8 @@ ${growLine}</div>`
           const before = r.stat === 'level' ? levelLabel(u) : u.stats[r.stat]
           const after = r.stat === 'level' ? (canApplyBoost(r, u) ? `L${u.lvl + 1}` : levelLabel(u)) : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
           const label = r.stat === 'level' ? 'Level' : r.stat.toUpperCase()
-          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-t="${i}">Use</button></div>`
+          const growths = r.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
+          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}</div><button data-t="${i}">Use</button></div>`
         })
         showModal(html)
         document.querySelectorAll('[data-t]').forEach(
