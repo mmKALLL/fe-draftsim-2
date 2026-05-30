@@ -2066,13 +2066,38 @@ ${growLine}</div>`
         const boost = boostReward()
         return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
       }
-      function boostReward() {
+      function boostReward(targeted = true) {
         const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
-        if (boostTargetOptions({ stat: 'level' }).length && Math.random() < 0.22) return levelBoostReward()
-        const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
-        const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
-        const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
-        return { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+        let reward
+        if (boostTargetOptions({ stat: 'level' }).length && rnd() < 0.22) reward = levelBoostReward()
+        else {
+          const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
+          const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
+          const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
+          reward = { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+        }
+        return targeted ? targetedBoostReward(reward) : reward
+      }
+      function targetedBoostReward(r) {
+        const targets = boostTargetOptions(r)
+        if (!targets.length) return r
+        const { unit } = pick(targets)
+        return {
+          ...r,
+          unit,
+          title: r.title,
+          desc: boostRewardDescription(r, unit),
+        }
+      }
+      function boostRewardDescription(r, u) {
+        if (r.stat === 'level') {
+          const growths = `<div class="small rewardMeta">Growths ${growthSummaryHTML(u)}</div>`
+          return `Immediately gives ${u.name} +1 level (${levelLabel(u)} -> L${u.lvl + 1}).${growths}`
+        }
+        const label = r.stat.toUpperCase()
+        const before = u.stats[r.stat]
+        const after = Math.min(capStat(u, r.stat), before + r.amt)
+        return `Permanently grants ${label} +${r.amt} to ${u.name} (${before} -> ${after}).`
       }
       function levelBoostReward() {
         return {
@@ -2170,7 +2195,7 @@ ${growLine}</div>`
         }
       }
       function shopBoostOffer() {
-        const boost = boostReward()
+        const boost = boostReward(false)
         boost.shopKind = 'boost'
         boost.price = shopBoostPrice(boost)
         return boost
@@ -2394,7 +2419,19 @@ ${growLine}</div>`
           closeModal()
           afterReward(`Took ${formatGold(r.gold)}.`, 'goldLog')
         }
-        if (r.type === 'boost') chooseBoostTarget(r, backToRewards)
+        if (r.type === 'boost') {
+          if (r.unit) {
+            if (!canApplyBoost(r, r.unit)) {
+              if (backToRewards) backToRewards()
+              return
+            }
+            const msg = applyBoostToUnit(r, r.unit)
+            closeModal()
+            afterReward(msg)
+            return
+          }
+          chooseBoostTarget(r, backToRewards)
+        }
       }
       function levelLabel(u) {
         return `L${u.lvl}`
@@ -2427,20 +2464,9 @@ ${growLine}</div>`
                 if (backToRewards) backToRewards()
                 return
               }
-              if (r.stat === 'level') {
-                const gained = levelUp(u, true)
-                u.hp = u.maxHp
-                closeModal()
-                afterReward(gained ? `${u.name} studied the Tome of Knowledge and gained a level.` : `${u.name} is already at the level cap.`)
-                return
-              }
-              u.stats[r.stat] = Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
-              if (r.stat === 'hp') {
-                u.maxHp = u.stats.hp
-                u.hp = u.maxHp
-              }
+              const msg = applyBoostToUnit(r, u)
               closeModal()
-              afterReward(`${u.name} used ${boosterName(r.stat)}.`)
+              afterReward(msg)
             })
         )
       }
