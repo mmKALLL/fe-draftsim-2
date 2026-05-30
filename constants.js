@@ -64,6 +64,7 @@ const SHOP_CONSUMABLE_PRICES = {
   uncommon: 300,
   rare: 600,
 }
+const SHOP_FORGE_PRICE = 1200
 const SHOP_BOOST_PRICES = {
   hp: 1000,
   str: 1100,

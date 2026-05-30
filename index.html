@@ -530,6 +530,13 @@
       function cloneWeapon(w) {
         return { ...w }
       }
+      function forgeWeapon(w) {
+        if (!w || w.staff) return false
+        w.name += '+'
+        w.mt = (w.mt || 0) + 2
+        w.hit = (w.hit || 0) + 5
+        return true
+      }
       function cloneConsumable(item) {
         return item ? { ...item } : null
       }
@@ -593,11 +600,7 @@
         if (!opts.length) return u.weapon
         if (tier === BOSS_TIER_BIOME) {
           const chosen = cloneWeapon(pick(bossWeaponPool(opts, tier)))
-          if (!chosen.staff) {
-            chosen.name = chosen.name.includes('+') ? chosen.name : chosen.name + '+'
-            chosen.mt += 2
-            chosen.hit += 5
-          }
+          forgeWeapon(chosen)
           return chosen
         }
         if (tier === BOSS_TIER_REGULAR) {
@@ -1249,8 +1252,8 @@
           const r = staffStatusResult(actor, t)
           if (r.hit) {
             applyStatus(t, fx)
-            logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: ${statusName(fx)} lands (${r.dh}% displayed).`, 'hit')
-          } else logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: miss (${r.dh}% displayed).`, 'miss')
+            logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: ${statusName(fx)} lands (${r.dh}% chance).`, 'hit')
+          } else logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: miss (${r.dh}% chance).`, 'miss')
           await animateStatusStaff(actor, t, r)
           return
         }
@@ -1954,14 +1957,15 @@ ${growLine}</div>`
         const skipBtn = document.querySelector('[data-skip-reward]')
         if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
       }
-      function weaponSummary(w) {
+      function weaponSummary(w, forForge = false) {
         const fx = staffEffect(w)
         const effects = weaponEffectLabels(w)
         const effectText = effects.length ? `, ${effects.join(', ')}` : ''
         if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt}${effectText}`
         if (fx === 'fortify') return `Staff, Rank ${w.rank}, heals all allies by Mag${effectText}`
         if (fx === 'sleep' || fx === 'berserk') return `Staff, Rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
-        return `Rank ${w.rank}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}${effectText}`
+        if (forForge) return `Mt ${w.mt}, Hit ${w.hit}`
+        return `Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}, Rank ${w.rank}${effectText}`
       }
       function isGoodRewardWeapon(w) {
         return w.tier !== 'normal'
@@ -2043,8 +2047,8 @@ ${growLine}</div>`
         const effectiveASSymbol = effectiveAttackSpeed < 0 ? '-' : effectiveAttackSpeed === 0 ? '±' : '+'
         return {
           type: 'item',
-          title: `Equip ${item.name} to ${itemUnit.name} (Con: ${itemUnit.stats.con}, Speed ${effectiveASSymbol}${Math.abs(effectiveAttackSpeed)})`,
-          desc: `Give ${item.name} (${weaponSummary(item)}).${meta}`,
+          title: `${item.name} to ${itemUnit.name} (Con: ${itemUnit.stats.con}, Speed ${effectiveASSymbol}${Math.abs(effectiveAttackSpeed)})`,
+          desc: `Equip ${itemUnit.name} with ${item.name} (${weaponSummary(item)}).${meta}`,
           unit: itemUnit,
           item,
         }
@@ -2121,7 +2125,7 @@ ${growLine}</div>`
         const label = r.stat.toUpperCase()
         const before = u.stats[r.stat]
         const after = Math.min(capStat(u, r.stat), before + r.amt)
-        return `Permanently grants ${label} +${r.amt} to ${u.name} (${before} -> ${after}).`
+        return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).`
       }
       function levelBoostReward() {
         return {
@@ -2225,11 +2229,21 @@ ${growLine}</div>`
         boost.price = shopBoostPrice(boost)
         return boost
       }
+      function shopForgeOffer() {
+        return {
+          type: 'forge',
+          shopKind: 'forge',
+          title: 'Weapon Forge',
+          desc: 'Upgrade one equipped weapon: Mt +2, Hit +5.',
+          price: SHOP_FORGE_PRICE,
+        }
+      }
       function makeShopOffers() {
         return [
           ...uniqueShopOffers(5, shopWeaponOffer, (offer) => offer.item.name),
           ...uniqueShopOffers(3, shopConsumableOffer, (offer) => offer.item.id),
           ...uniqueShopOffers(3, shopBoostOffer, (offer) => offer.title),
+          shopForgeOffer(),
         ]
       }
       function shopOfferClass(offer) {
@@ -2239,8 +2253,10 @@ ${growLine}</div>`
       function shopOfferHTML(offer, i) {
         const sold = !!offer.sold
         const affordable = gold >= offer.price
-        const buttonLabel = sold ? 'Sold' : `Buy ${goldHTML(offer.price)}`
-        const disabled = sold || !affordable ? ' disabled' : ''
+        const unavailable = offer.type === 'forge' && !forgeTargets().length
+        const action = offer.type === 'forge' ? 'Forge' : 'Buy'
+        const buttonLabel = sold ? 'Sold' : `${action} ${goldHTML(offer.price)}`
+        const disabled = sold || !affordable || unavailable ? ' disabled' : ''
         const meta = `<div class="small rewardMeta">${goldHTML(offer.price)}</div>`
         return `<div class="shopItem${shopOfferClass(offer)}"><div><h4>${offer.title}</h4><div class="small">${offer.desc}</div>${meta}</div><button data-shop-buy="${i}" class="good"${disabled}>${buttonLabel}</button></div>`
       }
@@ -2249,14 +2265,21 @@ ${growLine}</div>`
           weapon: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'weapon'),
           consumable: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'consumable'),
           boost: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'boost'),
+          forge: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'forge'),
         }
         let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need?</h3></div></div>`
         if (message) html += `<div class="notice">${message}</div>`
-        html += `<section class="shopSection"><h3>Weapons</h3><div class="shopRow shopWeapons">${groups.weapon.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
+
+        html += `<section class="shopSection"><h3>Weapons</h3>`
+        html += `<div class="small">Bought weapons can be equipped to anyone eligible to wield them.</div>`
+
+        html += `<div class="shopRow shopWeapons">${groups.weapon.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
         html += `<div class="shopLower"><section class="shopSection"><h3>Consumables</h3><div class="shopRow">${groups.consumable.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
         html += `<section class="shopSection"><h3>Stat Boosters</h3><div class="shopRow">${groups.boost.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section></div>`
-        html +=
-          '<div class="row space shopActions"><div class="small">Bought weapons can be equipped to anyone eligible to wield them.</div><button id="leaveShopBtn" class="primary">Leave shop</button></div>'
+        html += `<section class="shopSection"><h3>Forge</h3><div class="shopRow">${groups.forge.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
+
+        html += `<div class="row space shopActions"><button id="leaveShopBtn" class="primary">Leave shop</button></div>`
+
         setShopOpen(true)
         $('shopScreen').innerHTML = html
         $('shopScreen')
@@ -2290,6 +2313,10 @@ ${growLine}</div>`
           chooseShopWeaponTarget(i)
           return
         }
+        if (offer.type === 'forge') {
+          chooseShopForgeTarget(i)
+          return
+        }
         if (offer.type === 'consumable') {
           if (consumableInventoryFull()) {
             chooseShopConsumableReplacement(i)
@@ -2304,6 +2331,52 @@ ${growLine}</div>`
         if (offer.type === 'boost') {
           chooseShopBoostTarget(i)
         }
+      }
+      function forgeTargets() {
+        return player.filter((u) => u.weapon && !u.weapon.staff)
+      }
+      function forgePreview(w) {
+        const preview = cloneWeapon(w)
+        forgeWeapon(preview)
+        return preview
+      }
+      function chooseShopForgeTarget(i) {
+        const offer = shopOffers[i]
+        const eligible = forgeTargets()
+        if (!eligible.length) {
+          renderShop('No eligible equipped weapon to forge.')
+          return
+        }
+        let html = `<h2>Weapon Forge: choose weapon</h2><div class="small">Cost ${goldHTML(offer.price)}. Upgrades Mt +2 and Hit +5.</div>`
+        eligible.forEach((u, idx) => {
+          const preview = forgePreview(u.weapon)
+          html += `<div class="choice"><div><h4>${u.name}: ${u.weapon.name} -> ${preview.name}</h4><div>${weaponSummary(u.weapon)} -> ${weaponSummary(preview)}</div></div><button data-shop-forge-target="${idx}" class="good">Forge</button></div>`
+        })
+        html += '<button id="cancelShopForgeBtn">Cancel</button>'
+        showModal(html)
+        document.querySelectorAll('[data-shop-forge-target]').forEach(
+          (btn) =>
+            (btn.onclick = () => {
+              const u = eligible[+btn.dataset.shopForgeTarget]
+              if (!u?.weapon || u.weapon.staff) {
+                closeModal()
+                renderShop('That weapon cannot be forged.')
+                return
+              }
+              if (!spendGold(offer.price)) {
+                closeModal()
+                renderShop('Not enough gold for the weapon forge.')
+                return
+              }
+              const oldName = u.weapon.name
+              forgeWeapon(u.weapon)
+              offer.sold = true
+              closeModal()
+              renderTeams()
+              renderShop(`${u.name}'s ${oldName} was forged into ${u.weapon.name}.`)
+            })
+        )
+        $('cancelShopForgeBtn').onclick = closeModal
       }
       function chooseShopWeaponTarget(i) {
         const offer = shopOffers[i],
