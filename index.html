@@ -1679,7 +1679,8 @@ ${growLine}</div>`
         for (let i = 0; i < 5; i++) {
           const isBossSlot = i === 0 && bossTier
           const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
-          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : 0), 1, 40)
+          // Bosses have extra levels; normal units have slight variance
+          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
           const promoted = promotionUnlockedForEnemies() && internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
@@ -1887,10 +1888,10 @@ ${growLine}</div>`
         const fx = staffEffect(w)
         const effects = weaponEffectLabels(w)
         const effectText = effects.length ? `, ${effects.join(', ')}` : ''
-        if (fx === 'heal') return `staff, rank ${w.rank}, Heal ${w.mt}${effectText}`
-        if (fx === 'fortify') return `staff, rank ${w.rank}, heals all allies by Mag${effectText}`
-        if (fx === 'sleep' || fx === 'berserk') return `staff, rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
-        return `${w.type}, rank ${w.rank}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}${effectText}`
+        if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt}${effectText}`
+        if (fx === 'fortify') return `Staff, Rank ${w.rank}, heals all allies by Mag${effectText}`
+        if (fx === 'sleep' || fx === 'berserk') return `Staff, Rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
+        return `Rank ${w.rank}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}${effectText}`
       }
       function isGoodRewardWeapon(w) {
         return w.tier !== 'normal'
@@ -2018,17 +2019,22 @@ ${growLine}</div>`
         return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
       }
       function boostReward() {
-        if (Math.random() < 0.22)
-          return {
-            type: 'boost',
-            stat: 'level',
-            amt: 1,
-            title: 'Use Tome of Knowledge',
-            desc: 'Immediately gives a chosen unit +1 level. Promotion timing and level caps are respected.',
-          }
-        const stat = pick(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'])
+        const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
+        if (boostTargetOptions({ stat: 'level' }).length && Math.random() < 0.22)
+          return levelBoostReward()
+        const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
+        const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
         const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
-        return { type: 'boost', title: `${boosterName(stat)}`, desc: `Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+        return { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+      }
+      function levelBoostReward() {
+        return {
+          type: 'boost',
+          stat: 'level',
+          amt: 1,
+          title: 'Tome of Knowledge',
+          desc: 'Immediately gives a chosen unit +1 level.',
+        }
       }
       function boosterName(stat) {
         return {
@@ -2045,6 +2051,9 @@ ${growLine}</div>`
       function canApplyBoost(r, u) {
         if (r.stat === 'level') return !(u.promoted && u.lvl >= 20) && (u.promoted || u.lvl < 20 || promotionUnlockedForPlayers())
         return u.stats[r.stat] < capStat(u, r.stat)
+      }
+      function boostTargetOptions(r) {
+        return player.map((unit, index) => ({ unit, index })).filter(({ unit }) => canApplyBoost(r, unit))
       }
       function applyBoostToUnit(r, u) {
         if (r.stat === 'level') {
@@ -2253,13 +2262,18 @@ ${growLine}</div>`
       }
       function chooseShopBoostTarget(i) {
         const offer = shopOffers[i]
+        const targets = boostTargetOptions(offer)
+        if (!targets.length) {
+          closeModal()
+          renderShop(`No eligible target for ${boosterName(offer.stat)}.`)
+          return
+        }
         let html = `<h2>${boosterName(offer.stat)}: choose target</h2><div class="small">Cost ${goldHTML(offer.price)}.</div>`
-        player.forEach((u, idx) => {
+        targets.forEach(({ unit: u, index: idx }) => {
           const before = offer.stat === 'level' ? levelLabel(u) : u.stats[offer.stat]
           const after = offer.stat === 'level' ? (canApplyBoost(offer, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, offer.stat), u.stats[offer.stat] + offer.amt)
           const label = offer.stat === 'level' ? 'Level' : offer.stat.toUpperCase()
-          const disabled = canApplyBoost(offer, u) ? '' : ' disabled'
-          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-shop-boost-target="${idx}"${disabled}>Use</button></div>`
+          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-shop-boost-target="${idx}">Use</button></div>`
         })
         html += '<button id="backToShopBtn">Back</button>'
         showModal(html)
@@ -2332,16 +2346,25 @@ ${growLine}</div>`
           closeModal()
           afterReward(`Took ${formatGold(r.gold)}.`, 'goldLog')
         }
-        if (r.type === 'boost') chooseBoostTarget(r)
+        if (r.type === 'boost') chooseBoostTarget(r, backToRewards)
       }
       function levelLabel(u) {
         return `L${u.lvl}`
       }
-      function chooseBoostTarget(r) {
+      function chooseBoostTarget(r, backToRewards = null) {
+        const targets = boostTargetOptions(r)
+        if (!targets.length) {
+          if (backToRewards) {
+            backToRewards()
+            return
+          }
+          showModal(`<h2>${boosterName(r.stat)}: choose target</h2><p>No eligible targets.</p>`)
+          return
+        }
         let html = `<h2>${boosterName(r.stat)}: choose target</h2>`
-        player.forEach((u, i) => {
+        targets.forEach(({ unit: u, index: i }) => {
           const before = r.stat === 'level' ? levelLabel(u) : u.stats[r.stat]
-          const after = r.stat === 'level' ? (canApplyBoost(r, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
+          const after = r.stat === 'level' ? (canApplyBoost(r, u) ? `L${u.lvl + 1}` : levelLabel(u)) : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
           const label = r.stat === 'level' ? 'Level' : r.stat.toUpperCase()
           html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-t="${i}">Use</button></div>`
         })
@@ -2350,6 +2373,11 @@ ${growLine}</div>`
           (btn) =>
             (btn.onclick = () => {
               const u = player[+btn.dataset.t]
+              if (!canApplyBoost(r, u)) {
+                closeModal()
+                if (backToRewards) backToRewards()
+                return
+              }
               if (r.stat === 'level') {
                 const gained = levelUp(u, true)
                 u.hp = u.maxHp
