@@ -249,6 +249,7 @@ const CONSUMABLES = [
   { id: 'vulnerary', name: 'Vulnerary', tier: 'normal', effect: 'heal', amount: 10, desc: 'Restores 10 HP to one living ally.' },
   { id: 'concoction', name: 'Concoction', tier: 'uncommon', effect: 'heal', amount: 20, desc: 'Restores 20 HP to one living ally.' },
   { id: 'elixir', name: 'Elixir', tier: 'rare', effect: 'fullHeal', desc: 'Fully restores one living ally.' },
+  { id: 'dragon_tears', name: 'Dragon Tears', tier: 'rare', effect: 'revive', desc: 'Revives one fallen ally with half HP.' },
   { id: 'restore_potion', name: 'Restore Potion', tier: 'uncommon', effect: 'restore', desc: 'Clears Sleep or Berserk from one living ally.' },
   { id: 'hp_tonic', name: 'HP Tonic', tier: 'normal', effect: 'buff', stat: 'hp', amount: 5, desc: 'Grants HP +5 for the current battle.' },
   { id: 'power_tonic', name: 'Power Tonic', tier: 'normal', effect: 'buff', stat: 'str', amount: 2, desc: 'Grants Str +2 for the current battle.' },
@@ -376,3 +377,23 @@ const BOSS_NAMES_BY_CLASS = {
 
 // prettier-ignore
 const enemyNames = ['Bandit', 'Raider', 'Arena', 'Fang', 'Knight', 'Nomad', 'Mage', 'Rogue', 'Wyvern', 'Merc']
+
+// Biome data. Each focus entry can target a class generally, or a class plus weaponType
+// for special cases like axe wyverns. The focus list is intended to drive both enemy
+// class bias and biome boss class previews.
+// prettier-ignore
+const BIOMES = [
+  { id: 'road', name: 'Road', tile: 'road', effects: [], focus: [{ cls: 'Lord' }, { cls: 'Cavalier' }] },
+  { id: 'plains', name: 'Plains', tile: 'plains', effects: [], focus: [{ cls: 'Archer' }, { cls: 'Cavalier' }] },
+  { id: 'forest', name: 'Forest', tile: 'forest', effects: ['avoidUp'], focus: [{ cls: 'Fighter' }, { cls: 'Cleric', label: 'Priest' }] },
+  { id: 'swamp', name: 'Swamp', tile: 'swamp', effects: ['avoidDown'], focus: [{ cls: 'Myrmidon' }, { cls: 'Shaman' }] },
+  { id: 'mountain', name: 'Mountain', tile: 'mountain', effects: ['defUp'], focus: [{ cls: 'Fighter' }, { cls: 'Wyvern' }] },
+  { id: 'river_delta', name: 'River Delta', tile: 'riverDelta', effects: ['defDown'], focus: [{ cls: 'Pegasus' }, { cls: 'Mercenary' }] },
+  { id: 'desert', name: 'Desert', tile: 'desert', effects: ['speedDown'], focus: [{ cls: 'Mage' }, { cls: 'Mercenary' }] },
+  { id: 'fort', name: 'Fort', tile: 'fort', effects: ['defUp'], focus: [{ cls: 'Wyvern', weaponType: 'axe', label: 'Axe Wyvern' }, { cls: 'Archer' }] },
+  { id: 'castle', name: 'Castle', tile: 'castle', effects: ['strUp'], focus: [{ cls: 'Knight' }, { cls: 'Lord' }] },
+  { id: 'holy_temple', name: 'Holy Temple', tile: 'holyTemple', effects: ['resUp'], focus: [{ cls: 'Cleric', label: 'Priest' }, { cls: 'Pegasus' }] },
+  { id: 'dark_temple', name: 'Dark Temple', tile: 'darkTemple', effects: ['resDown'], focus: [{ cls: 'Shaman' }, { cls: 'Thief' }] },
+  { id: 'tower', name: 'Tower', tile: 'tower', effects: ['luckDown'], focus: [{ cls: 'Mage' }, { cls: 'Knight' }] },
+  { id: 'dungeon', name: 'Dungeon', tile: 'dungeon', effects: ['luckUp'], focus: [{ cls: 'Thief' }, { cls: 'Myrmidon' }] },
+]

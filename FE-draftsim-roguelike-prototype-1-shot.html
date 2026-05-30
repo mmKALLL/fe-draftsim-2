@@ -9,10 +9,11 @@
   <body>
     <div class="wrap">
       <div class="top">
-        <div>
+        <div class="topTitle">
           <h1>FireRogue: Blazing Sword</h1>
         </div>
-        <div class="row">
+        <div id="biomeMap" class="biomeMap" aria-label="Biome map"></div>
+        <div class="row topBadges">
           <span class="badge"
             >Battle <span><span id="battleNo">0</span>/20</span></span
           ><span class="badge"
@@ -561,15 +562,46 @@
         const mult = (aRev || bRev) && !(aRev && bRev) ? 2 : 1
         return { atk: sign * mult, hit: sign * 15 * mult }
       }
+      function biomeStatDelta(stat) {
+        const effects = activeBiomeEffects()
+        let delta = 0
+        if (stat === 'def') {
+          if (effects.includes('defUp')) delta += BIOME_STAT_DELTA
+          if (effects.includes('defDown')) delta -= BIOME_STAT_DELTA
+        }
+        if (stat === 'res') {
+          if (effects.includes('resUp')) delta += BIOME_STAT_DELTA
+          if (effects.includes('resDown')) delta -= BIOME_STAT_DELTA
+        }
+        if (stat === 'lck') {
+          if (effects.includes('luckUp')) delta += BIOME_STAT_DELTA
+          if (effects.includes('luckDown')) delta -= BIOME_STAT_DELTA
+        }
+        return delta
+      }
+      function combatStat(u, stat) {
+        let value = u.stats[stat] || 0
+        if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
+        return Math.max(0, value + biomeStatDelta(stat))
+      }
+      function biomePhysicalPowerDelta(weapon) {
+        return hasBiomeEffect('strUp') && !weapon?.magic ? BIOME_STAT_DELTA : 0
+      }
+      function biomeAvoidDelta() {
+        let delta = 0
+        if (hasBiomeEffect('avoidUp')) delta += BIOME_AVOID_DELTA
+        if (hasBiomeEffect('avoidDown')) delta -= BIOME_AVOID_DELTA
+        return delta
+      }
       function attackSpeed(u) {
         const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con)
-        return Math.max(0, u.stats.spd + (u.weapon?.speedBonus || 0) - penalty)
+        return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
       }
       function combatDefense(u) {
-        return u.stats.def + (u.weapon?.defBonus || 0)
+        return combatStat(u, 'def') + (u.weapon?.defBonus || 0)
       }
       function combatResistance(u) {
-        return u.stats.res + (u.weapon?.resBonus || 0)
+        return combatStat(u, 'res') + (u.weapon?.resBonus || 0)
       }
       function effectiveMt(a, d) {
         const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
@@ -577,8 +609,8 @@
       }
       function attackPower(a, d) {
         const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
-        const stat = a.stats.str
-        return stat + effectiveMt(a, d) + t
+        const stat = combatStat(a, 'str')
+        return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon)
       }
       function defenseAgainst(d, weapon) {
         return weapon.magic ? combatResistance(d) : combatDefense(d)
@@ -590,10 +622,10 @@
       }
       function hitRate(a, d) {
         const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
-        return floor(a.weapon.hit + 2 * a.stats.skl + a.stats.lck / 2 + t)
+        return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t)
       }
       function avoid(d) {
-        return floor(2 * attackSpeed(d) + d.stats.lck)
+        return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta())
       }
       function displayedHit(a, d) {
         return clamp(hitRate(a, d) - avoid(d), 0, 100)
@@ -604,7 +636,7 @@
       }
       function critRate(a, d) {
         let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
-        return clamp(floor((a.weapon.crit || 0) + a.stats.skl / 2 + a.stats.lck / 2 + bonus - d.stats.lck), 0, 100)
+        return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck')), 0, 100)
       }
       function triangleClass(a, d) {
         if (!a?.weapon || !d?.weapon) return 'hitNeu'
@@ -666,10 +698,10 @@
         return attackSpeed(a) - attackSpeed(d) >= 4
       }
       function healAmount(a) {
-        return Math.max(1, (a.weapon.mt || 10) + floor(a.stats.str / 2))
+        return Math.max(1, (a.weapon.mt || 10) + floor(combatStat(a, 'str') / 2))
       }
       function fortifyAmount(a) {
-        return Math.max(1, a.stats.str)
+        return Math.max(1, combatStat(a, 'str'))
       }
       function staffEffect(w) {
         return w?.staff ? w.effect || 'heal' : null
@@ -742,7 +774,8 @@
         if (!item) return []
         const living = team.filter((u) => u.hp > 0)
         if (item.effect === 'heal' || item.effect === 'fullHeal') return living.filter((u) => u.hp < u.maxHp)
-        if (item.effect === 'restore') return living.filter((u) => !!u.status)
+        if (item.effect === 'restore' || item.effect === 'fullHeal') return living.filter((u) => !!u.status)
+        if (item.effect === 'revive') return team.filter((u) => u.hp <= 0)
         if (item.effect === 'buff' || item.effect === 'turnBuff') {
           return living.filter((u) => u.stats[item.stat] < capStat(u, item.stat))
         }
@@ -1029,6 +1062,13 @@
           delete target.status
           floatText(target, 'RESTORE', 'healing')
           logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${status || 'status'} cleared.`, 'heal')
+        } else if (item.effect === 'revive') {
+          const amount = Math.max(1, Math.ceil(target.maxHp / 2))
+          target.hp = amount
+          clearUnitStatus(target)
+          floatText(target, `+${amount}`, 'healing')
+          updateUnitVisual(target)
+          logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} returns with ${amount} HP.`, 'heal')
         }
         renderSideCards()
         await sleep(350)
@@ -1202,6 +1242,7 @@
         enemy = [],
         consumables = [],
         shopOffers = [],
+        biomePlan = [],
         battle = 0,
         gold = 0,
         awaitingReward = false,
@@ -1238,6 +1279,108 @@
         gold -= amount
         updateGoldUI()
         return true
+      }
+      function shuffledCopy(items) {
+        const out = [...items]
+        for (let i = out.length - 1; i > 0; i--) {
+          const j = rint(i + 1)
+          const tmp = out[i]
+          out[i] = out[j]
+          out[j] = tmp
+        }
+        return out
+      }
+      function makeBiomePlan() {
+        const pool = shuffledCopy(BIOMES)
+        return Array.from({ length: BIOME_CYCLES_PER_RUN }, (_, i) => {
+          const biome = pool[i % pool.length]
+          return { biome, bossFocus: shuffledCopy(biome.focus) }
+        })
+      }
+      function biomeIndexForBattle(n = battle || 1) {
+        return clamp(Math.floor((Math.max(1, n) - 1) / BIOME_CYCLE_LENGTH), 0, Math.max(0, biomePlan.length - 1))
+      }
+      function biomeEntryForBattle(n = battle || 1) {
+        return biomePlan[biomeIndexForBattle(n)] || null
+      }
+      function activeBiomeEntry() {
+        return biomeEntryForBattle(battle || 1)
+      }
+      function activeBiomeEffects() {
+        return activeBiomeEntry()?.biome.effects || []
+      }
+      function hasBiomeEffect(effect) {
+        return activeBiomeEffects().includes(effect)
+      }
+      function biomeEffectLabel(effect) {
+        const labels = {
+          avoidUp: `Avo +${BIOME_AVOID_DELTA}`,
+          avoidDown: `Avo -${BIOME_AVOID_DELTA}`,
+          defUp: `Def +${BIOME_STAT_DELTA}`,
+          defDown: `Def -${BIOME_STAT_DELTA}`,
+          resUp: `Res +${BIOME_STAT_DELTA}`,
+          resDown: `Res -${BIOME_STAT_DELTA}`,
+          luckUp: `Lck +${BIOME_STAT_DELTA}`,
+          luckDown: `Lck -${BIOME_STAT_DELTA}`,
+          strUp: `Str +${BIOME_STAT_DELTA}`,
+          speedDown: `Spd x${BIOME_SPEED_MULTIPLIER}`,
+        }
+        return labels[effect] || effect
+      }
+      function biomeEffectLabels(biome) {
+        return biome.effects.length ? biome.effects.map(biomeEffectLabel) : ['Neutral']
+      }
+      function focusLabel(focus) {
+        return focus.label || focus.cls
+      }
+      function focusMatchesBase(focus, base) {
+        return base.cls === focus.cls && (!focus.weaponType || base.weaponType === focus.weaponType)
+      }
+      function pickBaseFromPool(pool, focusList = null) {
+        const candidates = focusList?.length
+          ? pool.map((b, idx) => ({ b, idx })).filter(({ b }) => focusList.some((focus) => focusMatchesBase(focus, b)))
+          : pool.map((b, idx) => ({ b, idx }))
+        const picked = pick(candidates.length ? candidates : pool.map((b, idx) => ({ b, idx })))
+        return pool.splice(picked.idx, 1)[0]
+      }
+      function enemyFocusForSlot(isBossSlot, bossTier) {
+        if (isBossSlot) {
+          const bossFocus = bossFocusForBattle(battle)
+          return bossFocus ? [bossFocus] : null
+        }
+        const biomeFocus = activeBiomeEntry()?.biome.focus || []
+        return biomeFocus.length && rnd() < BIOME_FOCUS_CHANCE ? biomeFocus : null
+      }
+      function bossFocusForBattle(n = battle) {
+        const entry = biomeEntryForBattle(n)
+        if (!entry) return null
+        const cycle = ((n - 1) % BIOME_CYCLE_LENGTH) + 1
+        if (cycle === 3) return entry.bossFocus[0]
+        if (cycle === BIOME_CYCLE_LENGTH) return entry.bossFocus[1]
+        return null
+      }
+      function biomeUnitIconHTML(focus, bossIndex) {
+        const kind = CLASSES[focus.cls]?.kind || 'lord'
+        const label = `${bossIndex === 0 ? 'Boss' : 'Biome boss'}: ${focusLabel(focus)}`
+        return `<img class="biomeUnitIcon" src="${svgDataUri(kind, 'red', false)}" alt="${htmlAttr(label)}" title="${htmlAttr(label)}">`
+      }
+      function renderBiomeMap() {
+        const el = $('biomeMap')
+        if (!el) return
+        if (!biomePlan.length) {
+          el.innerHTML = ''
+          return
+        }
+        const activeIndex = biomeIndexForBattle(battle || 1)
+        el.innerHTML = biomePlan
+          .map((entry, i) => {
+            const biome = entry.biome,
+              classes = i < activeIndex ? 'biomeNode done' : i === activeIndex ? 'biomeNode active' : 'biomeNode',
+              effects = biomeEffectLabels(biome),
+              title = `${biome.name}: ${effects.join(', ')}. Bosses: ${entry.bossFocus.map(focusLabel).join(' / ')}`
+            return `<div class="${classes}" title="${htmlAttr(title)}"><span class="biomeTile biomeTile-${biome.tile}"></span><div class="biomeUnits">${entry.bossFocus.map(biomeUnitIconHTML).join('')}</div><div class="biomeEffects">${effects.map((effect) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div>`
+          })
+          .join('')
       }
       function setShopOpen(open) {
         shopOpen = open
@@ -1305,6 +1448,7 @@
 ${growLine}</div>`
       }
       function renderDraft() {
+        renderBiomeMap()
         const selectedCount = selectedRosterCount()
         $('rosterCount').textContent = selectedCount
         $('draftHint').textContent =
@@ -1417,6 +1561,7 @@ ${growLine}</div>`
         $('battleNo').textContent = battle
         $('rosterCount').textContent = player.length || selectedRosterCount()
         updateGoldUI()
+        renderBiomeMap()
         renderSideCards()
         $('blueSprites').innerHTML = player.map((u) => combatantSpriteSlot(u, false)).join('')
         $('redSprites').innerHTML = enemy.map((u) => combatantSpriteSlot(u, true)).join('')
@@ -1461,8 +1606,8 @@ ${growLine}</div>`
         showRewards(true)
       }
       function bossTierForBattle(n) {
-        const cycle = ((n - 1) % 5) + 1
-        if (cycle === 5) return BOSS_TIER_BIOME
+        const cycle = ((n - 1) % BIOME_CYCLE_LENGTH) + 1
+        if (cycle === BIOME_CYCLE_LENGTH) return BOSS_TIER_BIOME
         if (cycle === 3) return BOSS_TIER_REGULAR
         return null
       }
@@ -1473,8 +1618,8 @@ ${growLine}</div>`
         enemy = []
         const pool = [...BASES]
         for (let i = 0; i < 5; i++) {
-          const b = pool.splice(rint(pool.length), 1)[0] || pick(BASES)
           const isBossSlot = i === 0 && bossTier
+          const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
           const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : 0), 1, 40)
           const promoted = internal > 20
           const lvl = promoted ? internal - 20 : internal
@@ -1493,13 +1638,15 @@ ${growLine}</div>`
         nextEnemyMarkerId = null
         $('log').innerHTML = ''
         setStatus('')
+        const biome = activeBiomeEntry()?.biome
+        const biomePrefix = biome ? `${biome.name} (${biomeEffectLabels(biome).join(', ')}): ` : ''
         const msg =
           bossTier === BOSS_TIER_BIOME
             ? 'Biome boss fight: slot 1 is +6 levels with a random empowered weapon.'
             : bossTier === BOSS_TIER_REGULAR
               ? 'Regular boss fight: slot 1 is +4 levels.'
               : 'Standard enemy team.'
-        logLine(null, `Battle ${battle}: ${msg}`, bossTier ? 'crit' : 'hit')
+        logLine(null, `Battle ${battle}: ${biomePrefix}${msg}`, bossTier ? 'crit' : 'hit')
         renderTeams()
       }
       function beginNextBattle() {
@@ -2187,6 +2334,7 @@ ${growLine}</div>`
         $('modalBody').innerHTML = ''
       }
 
+      biomePlan = makeBiomePlan()
       draftOptions = randomDraftOptions()
       chosen = emptyRosterChoices()
       $('randomPickBtn').onclick = () => {
