@@ -468,6 +468,9 @@
         margin: 0 0 5px;
         color: #fde68a;
       }
+      .rewardGrid .choice h4 {
+        margin: 4px 0;
+      }
       .pickList {
         max-height: 480px;
         overflow: auto;
@@ -829,7 +832,6 @@
       const FEMP_IMAGE_EXTS = ['png', 'gif', 'webp']
       const MAP_SPRITE_SCALE = 4
       const MAP_SPRITE_SLOT_H = 20 * MAP_SPRITE_SCALE
-      const STAFF_EXHAUST_ROUND_LIMIT = 30
       const FEMP_NAME_OVERRIDES = {
         "L'Arachel": 'larachel',
         Pent: 'pent',
@@ -997,6 +999,8 @@
       }
 
       // ---------- game data: close FE7 starting archetypes, compact roster ----------
+
+      const STAFF_EXHAUST_ROUND_LIMIT = 40
 
       // prettier-ignore
       const CLASSES = {
@@ -2419,10 +2423,10 @@ ${growLine}</div>`
         beginNextBattle()
       }
       function currentScore() {
-        return battle * 1000 + gold
+        return (battle - 1) * 1000 + gold
       }
       function scoreHTML() {
-        return `<p>Score: <b>${currentScore()}</b> (${battle} × 1000 + ${gold} gold)</p>`
+        return `<p>Score: <b>${currentScore()}</b> (${battle - 1} wins × 1000 + ${gold} gold)</p>`
       }
       function showWin() {
         showModal(`<h2>Run complete</h2><p>Your team survived 20 battles! Congratulations!</p>${scoreHTML()}<button onclick="location.reload()" class="primary">New run</button>`)
