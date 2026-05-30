@@ -163,7 +163,7 @@ const BOSS_NAMES_BY_CLASS = {
   Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
   Warrior: ['Oleg', 'Brendan'],
   Archer: ['Uhai'],
-  Sniper: ['Uhai'],
+  Sniper: ['Uhai', 'Denning'],
   Mage: ['Aion', 'Pablo', 'Selena'],
   Monk: ['Kenneth', 'Riev'],
   Sage: ['Sonia', 'Limstella', 'Pablo'],
