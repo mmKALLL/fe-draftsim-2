@@ -435,12 +435,6 @@
         u.displayCls = c.promotesTo
         u.lvl = 1
         u.internalLevel = Math.max(u.internalLevel || 20, 21)
-        if (u.isLeader && !u.isEnemy) {
-          while (currentInternalLevel(u) < 20 + LEADER_PROMOTION_LEVEL) {
-            applyGrowthLevel(u)
-            u.internalLevel = Math.min(40, currentInternalLevel(u) + 1)
-          }
-        }
         syncDisplayLevel(u)
         u.maxHp = u.stats.hp
         u.hp = Math.min(u.hp, u.maxHp)
@@ -708,7 +702,12 @@
         return wt > 0 ? 'hitAdv' : wt < 0 ? 'hitDis' : 'hitNeu'
       }
       function combatPreviewHTML(actor, target) {
-        if (!actor || !target || actor.hp <= 0 || target.hp <= 0 || actor.weapon?.staff) return ''
+        if (!actor || !target || actor.hp <= 0 || target.hp <= 0) return ''
+        if (actor.weapon?.staff) {
+          const fx = staffEffect(actor.weapon)
+          if (!isStatusStaff(actor.weapon)) return ''
+          return `<div><span class="${triangleClass(actor, target)}">${displayedHit(actor, target)}%</span></div><div>${statusName(fx)}</div>`
+        }
         const hit = displayedHit(actor, target),
           crit = critRate(actor, target),
           dmg = rawDamage(actor, target),
@@ -720,16 +719,16 @@
       function classAbbrev(cls) {
         const map = {
           Lord: 'Lord',
-          'Blade Lord': 'BladeLord',
-          Mercenary: 'Merc',
+          'Blade Lord': 'Blade Lord',
+          Mercenary: 'Mercenary',
           Hero: 'Hero',
-          Myrmidon: 'Myrm',
-          Swordmaster: 'SwrdMstr',
+          Myrmidon: 'Myrmidon',
+          Swordmaster: 'Swordmastr',
           Thief: 'Thief',
           Assassin: 'Assassin',
           Knight: 'Knight',
           General: 'General',
-          Cavalier: 'Caval',
+          Cavalier: 'Cavalier',
           Paladin: 'Paladin',
           Pegasus: 'Pegasus',
           'Falcon Knight': 'Falcon',
@@ -745,7 +744,7 @@
           Shaman: 'Shaman',
           Druid: 'Druid',
           Wyvern: 'Wyvern',
-          'Wyvern Lord': 'WyvLord',
+          'Wyvern Lord': 'Wyv Lord',
         }
         return map[cls] || String(cls).slice(0, 7)
       }
@@ -2116,7 +2115,14 @@ ${growLine}</div>`
         const label = r.stat.toUpperCase()
         const before = u.stats[r.stat]
         const after = Math.min(capStat(u, r.stat), before + r.amt)
-        return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).`
+        return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).${boostDetailHTML(r, u)}`
+      }
+      function equippedWeaponWeightText(u) {
+        return u.weapon ? `Equipped: ${u.weapon.name}, Wt ${u.weapon.wt || 0}` : 'Equipped: none'
+      }
+      function boostDetailHTML(r, u) {
+        if (r.stat === 'con') return `<div class="small rewardMeta">${equippedWeaponWeightText(u)}</div>`
+        return ''
       }
       function levelBoostReward() {
         return {
@@ -2258,7 +2264,7 @@ ${growLine}</div>`
           boost: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'boost'),
           forge: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'forge'),
         }
-        let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need?</h3></div></div>`
+        let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need? (Gold: ${goldHTML(gold)})</h3></div></div>`
         if (message) html += `<div class="notice">${message}</div>`
 
         html += `<section class="shopSection"><h3>Weapons</h3>`
@@ -2282,7 +2288,7 @@ ${growLine}</div>`
         awaitingReward = true
         shopOffers = makeShopOffers()
         renderTeams()
-        renderShop(`Current gold: ${goldHTML(gold)}.`)
+        renderShop("You browse the store's fine selection...")
       }
       function leaveShop() {
         closeModal()
@@ -2435,7 +2441,8 @@ ${growLine}</div>`
           const after = offer.stat === 'level' ? (canApplyBoost(offer, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, offer.stat), u.stats[offer.stat] + offer.amt)
           const label = offer.stat === 'level' ? 'Level' : offer.stat.toUpperCase()
           const growths = offer.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
-          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}</div><button data-shop-boost-target="${idx}">Use</button></div>`
+          const details = boostDetailHTML(offer, u)
+          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}${details}</div><button data-shop-boost-target="${idx}">Use</button></div>`
         })
         html += '<button id="backToShopBtn">Back</button>'
         showModal(html)
@@ -2541,7 +2548,8 @@ ${growLine}</div>`
           const after = r.stat === 'level' ? (canApplyBoost(r, u) ? `L${u.lvl + 1}` : levelLabel(u)) : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
           const label = r.stat === 'level' ? 'Level' : r.stat.toUpperCase()
           const growths = r.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
-          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}</div><button data-t="${i}">Use</button></div>`
+          const details = boostDetailHTML(r, u)
+          html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}${details}</div><button data-t="${i}">Use</button></div>`
         })
         showModal(html)
         document.querySelectorAll('[data-t]').forEach(
@@ -2573,11 +2581,13 @@ ${growLine}</div>`
       function currentScore() {
         return (battle - 1) * 1000 + gold
       }
-      function scoreHTML() {
-        return `<p>Score: <b>${currentScore()}</b> (${battle - 1} wins × 1000 + ${goldHTML(gold)})</p>`
+      function scoreHTML(finalScore = false) {
+        return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore()}</b> (${battle - 1} wins × 1000 + ${goldHTML(gold)})</p>`
       }
       function showWin() {
-        showModal(`<h2>Run complete</h2><p>Your team survived 20 battles! Congratulations!</p>${scoreHTML()}<button onclick="location.reload()" class="primary">New run</button>`)
+        showModal(
+          `<h2>Victory!!!</h2><p>Congratulations, you have overcome the toughest arena in Elibe and survived 20 battles!</p>${scoreHTML(true)}<button onclick="location.reload()" class="good">New run</button>`
+        )
       }
       function showGameOver() {
         showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="primary">Try again</button>`)

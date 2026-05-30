@@ -192,7 +192,7 @@ const BOSS_NAMES_BY_CLASS = {
 // prettier-ignore
 const WEAPONS = [
   { name: 'Iron Sword', type: 'sword', rank: 'E', mt: 5, hit: 90, wt: 5, crit: 0, magic: false },
-  { name: 'Slim Sword', type: 'sword', rank: 'E', mt: 3, hit: 100, wt: 2, crit: 5, magic: false },
+  { name: 'Slim Sword', type: 'sword', rank: 'E', mt: 3, hit: 95, wt: 2, crit: 5, magic: false, speedBonus: 2 },
   { name: 'Steel Sword', type: 'sword', rank: 'D', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
   { name: 'Iron Blade', type: 'sword', rank: 'D', mt: 9, hit: 70, wt: 12, crit: 0, magic: false },
   { name: 'Armourslayer', type: 'sword', rank: 'C', mt: 8, hit: 80, wt: 11, crit: 0, magic: false, effective: ['armored'] },
@@ -211,7 +211,7 @@ const WEAPONS = [
   { name: 'Poison Dagger', type: 'dagger', rank: 'B', mt: 1, hit: 90, wt: 2, crit: 0, magic: false, halfDef: true, poison: true },
 
   { name: 'Iron Lance', type: 'lance', rank: 'E', mt: 7, hit: 80, wt: 8, crit: 0, magic: false },
-  { name: 'Slim Lance', type: 'lance', rank: 'E', mt: 4, hit: 85, wt: 4, crit: 5, magic: false },
+  { name: 'Slim Lance', type: 'lance', rank: 'E', mt: 4, hit: 85, wt: 4, crit: 5, magic: false, speedBonus: 2 },
   { name: 'Javelin', type: 'lance', rank: 'D', mt: 6, hit: 65, wt: 11, crit: 0, magic: false, defBonus: 4 },
   { name: 'Steel Lance', type: 'lance', rank: 'D', mt: 10, hit: 70, wt: 13, crit: 0, magic: false },
   { name: 'Heavy Spear', type: 'lance', rank: 'C', mt: 9, hit: 70, wt: 14, crit: 0, magic: false, effective: ['armored'] },
@@ -267,8 +267,8 @@ const WEAPONS = [
   { name: 'Heal Staff', type: 'staff', rank: 'E', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
   { name: 'Mend Staff', type: 'staff', rank: 'D', mt: 20, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
   { name: 'Physic Staff', type: 'staff', rank: 'C', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal', speedBonus: 2 },
-  { name: 'Sleep Staff', type: 'staff', rank: 'C', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
-  { name: 'Berserk Staff', type: 'staff', rank: 'B', mt: 0, hit: 55, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
+  { name: 'Sleep Staff', type: 'staff', rank: 'C', mt: 0, hit: 75, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
+  { name: 'Berserk Staff', type: 'staff', rank: 'B', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
   { name: 'Fortify Staff', type: 'staff', rank: 'A', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
   { name: 'Restore Staff', type: 'staff', rank: 'S', mt: 30, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
 ]
