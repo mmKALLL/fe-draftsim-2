@@ -37,28 +37,32 @@ const ROSTER_SIZE = 5,
   LEADER_BONUS_LEVELS = 4,
   CONSUMABLE_SLOTS = 3,
   CONSUMABLE_REWARD_CHANCE = 0.3,
+  REWARD_RARE_LOCKED_UNTIL_BATTLE = 3,
   REWARD_SKIP_GOLD = 200,
-  SHOP_SUPER_BOSS_GOLD = 1500,
+  SHOP_BIOME_BOSS_GOLD = 2000,
   BOSS_TIER_REGULAR = 'regular',
-  BOSS_TIER_SUPER = 'super'
+  BOSS_TIER_BIOME = 'biome'
 
 const SHOP_WEAPON_PRICES = {
-  normal: 450,
-  uncommon: 850,
-  rare: 1400,
+  E: 400,
+  D: 600,
+  C: 900,
+  B: 1100,
+  A: 1500,
+  S: 2200,
 }
 const SHOP_CONSUMABLE_PRICES = {
-  normal: 150,
-  uncommon: 325,
-  rare: 550,
+  normal: 100,
+  uncommon: 250,
+  rare: 600,
 }
 const SHOP_BOOST_PRICES = {
-  hp: 750,
-  str: 850,
-  skl: 750,
-  spd: 900,
-  lck: 600,
-  def: 850,
-  res: 850,
-  level: 1200,
+  hp: 1200,
+  str: 1100,
+  skl: 900,
+  spd: 1200,
+  lck: 800,
+  def: 1100,
+  res: 1000,
+  level: 1400,
 }

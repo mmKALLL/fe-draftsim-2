@@ -47,24 +47,27 @@
         </section>
         <main class="panel">
           <div class="row space">
-            <h2>Arena</h2>
+            <h2 id="mainModeTitle">Arena</h2>
             <button id="autoFightBtn" class="autoFightToggle" type="button" aria-pressed="false" disabled>Auto-fight: Off</button>
           </div>
-          <div id="combatStatus" class="notice hidden combatLogTitle"></div>
-          <div id="arena" class="arena">
-            <div class="side">
-              <h3>Blue</h3>
-              <div id="blueSprites" class="spriteRow"></div>
+          <div id="shopScreen" class="shopScreen hidden"></div>
+          <div id="battleView">
+            <div id="combatStatus" class="notice hidden combatLogTitle"></div>
+            <div id="arena" class="arena">
+              <div class="side">
+                <h3>Blue</h3>
+                <div id="blueSprites" class="spriteRow"></div>
+              </div>
+              <div class="versus">VS</div>
+              <div class="side">
+                <h3>Red</h3>
+                <div id="redSprites" class="spriteRow"></div>
+              </div>
             </div>
-            <div class="versus">VS</div>
-            <div class="side">
-              <h3>Red</h3>
-              <div id="redSprites" class="spriteRow"></div>
-            </div>
+            <div id="consumablePanel" class="consumablePanel"></div>
+            <h3 class="combatLogTitle">Combat log</h3>
+            <div id="log" class="log"></div>
           </div>
-          <div id="consumablePanel" class="consumablePanel"></div>
-          <h3 class="combatLogTitle">Combat log</h3>
-          <div id="log" class="log"></div>
         </main>
         <aside class="panel">
           <h2>Enemy team</h2>
@@ -502,36 +505,23 @@
           staffFx
         )
       }
+      function bossWeaponRanks(tier) {
+        const lateBoss = battle > 10
+        if (tier === BOSS_TIER_BIOME) return lateBoss ? ['A', 'S'] : ['B', 'A']
+        if (tier === BOSS_TIER_REGULAR) return lateBoss ? ['B', 'A'] : ['C', 'B']
+        return []
+      }
+      function bossWeaponPool(opts, tier) {
+        const ranks = bossWeaponRanks(tier)
+        if (!ranks.length) return opts
+        const ranked = opts.filter((w) => ranks.includes(w.rank))
+        return ranked.length ? ranked : opts
+      }
       function enemyWeaponFor(u, tier) {
         const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
         if (!opts.length) return u.weapon
-        if (tier === BOSS_TIER_SUPER) {
-          const silver = opts.filter(
-            (w) =>
-              w.name.startsWith('Silver') ||
-              [
-                'Regal Blade',
-                'Brave Sword',
-                'Brave Lance',
-                'Brave Axe',
-                'Brave Bow',
-                'Excalibur',
-                'Fimbulvetr',
-                'Aureola',
-                'Aura',
-                'Ereshkigal',
-                'Fenrir',
-                'Divine',
-                'Luna',
-                'Nosferatu',
-                'Elfire',
-                'Shine',
-                'Fortify Staff',
-                'Berserk Staff',
-                'Mend Staff',
-              ].includes(w.name)
-          )
-          const chosen = cloneWeapon((silver.length ? silver : opts).sort((a, b) => weaponScore(b) - weaponScore(a))[0])
+        if (tier === BOSS_TIER_BIOME) {
+          const chosen = cloneWeapon(pick(bossWeaponPool(opts, tier)))
           if (!chosen.staff) {
             chosen.name = chosen.name.includes('+') ? chosen.name : chosen.name + '+'
             chosen.mt += 2
@@ -540,8 +530,8 @@
           return chosen
         }
         if (tier === BOSS_TIER_REGULAR) {
-          const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
-          return cloneWeapon((good.length ? good : opts).sort((a, b) => weaponScore(b) - weaponScore(a))[0])
+          const bossOpts = bossWeaponPool(opts, tier)
+          return cloneWeapon(bossOpts.sort((a, b) => weaponScore(b) - weaponScore(a))[0])
         }
         if (battle > 4) {
           const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
@@ -753,8 +743,7 @@
         if (item.effect === 'heal' || item.effect === 'fullHeal') return living.filter((u) => u.hp < u.maxHp)
         if (item.effect === 'restore') return living.filter((u) => !!u.status)
         if (item.effect === 'buff' || item.effect === 'turnBuff') {
-          const bucketName = item.effect === 'turnBuff' ? 'turnBuffs' : 'tempBuffs'
-          return living.filter((u) => (u[bucketName]?.[item.stat] || 0) < item.amount && u.stats[item.stat] < capStat(u, item.stat))
+          return living.filter((u) => u.stats[item.stat] < capStat(u, item.stat))
         }
         return []
       }
@@ -764,9 +753,8 @@
       function applyStatBuff(u, stat, amount, bucketName = 'tempBuffs') {
         u[bucketName] = u[bucketName] || {}
         const current = u[bucketName][stat] || 0
-        const requested = Math.max(0, amount - current)
         const room = Math.max(0, capStat(u, stat) - u.stats[stat])
-        const gained = Math.min(requested, room)
+        const gained = Math.min(amount, room)
         if (gained <= 0) return 0
         u.stats[stat] += gained
         u[bucketName][stat] = current + gained
@@ -1217,6 +1205,8 @@
         gold = 0,
         awaitingReward = false,
         battleRunning = false,
+        shopOpen = false,
+        pendingShopAfterReward = false,
         autoFight = false,
         filter = 'all',
         activePreviewActor = null,
@@ -1248,10 +1238,22 @@
         updateGoldUI()
         return true
       }
+      function setShopOpen(open) {
+        shopOpen = open
+        const battleView = $('battleView'),
+          shopScreen = $('shopScreen'),
+          title = $('mainModeTitle'),
+          autoBtn = $('autoFightBtn')
+        if (battleView) battleView.classList.toggle('hidden', open)
+        if (shopScreen) shopScreen.classList.toggle('hidden', !open)
+        if (title) title.textContent = open ? 'Shop' : 'Arena'
+        if (autoBtn) autoBtn.classList.toggle('hidden', open)
+        updateAutoFightButton()
+      }
       function updateAutoFightButton() {
         const btn = $('autoFightBtn')
         if (!btn) return
-        const canAuto = battleRunning && !awaitingReward && player.some((x) => x.hp > 0) && enemy.some((x) => x.hp > 0)
+        const canAuto = !shopOpen && battleRunning && !awaitingReward && player.some((x) => x.hp > 0) && enemy.some((x) => x.hp > 0)
         btn.disabled = !canAuto
         btn.classList.toggle('active', autoFight)
         btn.setAttribute('aria-pressed', autoFight ? 'true' : 'false')
@@ -1344,26 +1346,22 @@ ${growLine}</div>`
             ? [
                 ['Heal', w.mt],
                 ['Wt', w.wt],
-                ['Rank', w.rank || '?'],
               ]
             : fx === 'fortify'
               ? [
                   ['Heal', 'Mag'],
                   ['Wt', w.wt],
-                  ['Rank', w.rank || '?'],
                 ]
               : [
                   ['Fx', statusName(fx)],
                   ['Hit', w.hit],
                   ['Wt', w.wt],
-                  ['Rank', w.rank || '?'],
                 ]
           : [
               ['Mt', w.mt],
               ['Hit', w.hit],
               ['Crit', w.crit || 0],
               ['Wt', w.wt],
-              ['Rank', w.rank || '?'],
             ]
         const eff = weaponEffectLabels(w)
         if (eff.length) labels.push([eff.join('/'), ''])
@@ -1426,7 +1424,7 @@ ${growLine}</div>`
       function combatantSpriteSlot(u, isEnemy = false) {
         const preview = isEnemy ? combatPreviewHTML(activePreviewActor, u) : ''
         const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
-        const boss = u.bossTier === BOSS_TIER_SUPER ? ' <div class="bossTag">SUPER BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
+        const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">BIOME BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
         const st = statusLabel(u)
         const status = st ? ` ${st}` : ''
         const next =
@@ -1463,7 +1461,7 @@ ${growLine}</div>`
       }
       function bossTierForBattle(n) {
         const cycle = ((n - 1) % 5) + 1
-        if (cycle === 5) return BOSS_TIER_SUPER
+        if (cycle === 5) return BOSS_TIER_BIOME
         if (cycle === 3) return BOSS_TIER_REGULAR
         return null
       }
@@ -1476,7 +1474,7 @@ ${growLine}</div>`
         for (let i = 0; i < 5; i++) {
           const b = pool.splice(rint(pool.length), 1)[0] || pick(BASES)
           const isBossSlot = i === 0 && bossTier
-          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_SUPER ? 6 : 4) : 0), 1, 40)
+          const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : 0), 1, 40)
           const promoted = internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
@@ -1495,8 +1493,8 @@ ${growLine}</div>`
         $('log').innerHTML = ''
         setStatus('')
         const msg =
-          bossTier === BOSS_TIER_SUPER
-            ? 'Super boss fight: slot 1 is +6 levels with silver gear or better.'
+          bossTier === BOSS_TIER_BIOME
+            ? 'Biome boss fight: slot 1 is +6 levels with a random empowered weapon.'
             : bossTier === BOSS_TIER_REGULAR
               ? 'Regular boss fight: slot 1 is +4 levels.'
               : 'Standard enemy team.'
@@ -1644,8 +1642,12 @@ ${growLine}</div>`
           renderTeams()
           if (battle >= 20) {
             showWin()
-          } else if (bossTierForBattle(battle) === BOSS_TIER_SUPER) {
-            startShop()
+          } else if (bossTierForBattle(battle) === BOSS_TIER_BIOME) {
+            addGold(SHOP_BIOME_BOSS_GOLD)
+            pendingShopAfterReward = true
+            logLine(null, `Biome boss bounty: ${formatGold(SHOP_BIOME_BOSS_GOLD)}.`, 'goldLog')
+            renderTeams()
+            showRewards()
           } else showRewards()
         } else {
           logLine(null, `Defeat on battle ${battle}.`, 'death')
@@ -1657,22 +1659,19 @@ ${growLine}</div>`
         const bossTier = opening ? null : bossTierForBattle(battle)
         const rewards = makeRewards(bossTier, opening)
         const title = opening ? 'Choose an opening reward' : 'Choose a reward'
-        let desc = opening
-          ? 'Pick one free reward before battle 1. Weapons equip immediately, stat boosters are consumed immediately, and consumables fill a party item slot.'
-          : 'Pick exactly one. Weapons equip immediately, stat boosters are consumed immediately, and consumables fill a party item slot.'
-        if (bossTier)
-          desc +=
-            bossTier === BOSS_TIER_SUPER
-              ? ' Super boss weapon rewards are stronger and offer four weapon choices.'
-              : ' Regular boss weapon rewards are rolled from stronger weapons.'
-        let html = `<h2>${title}</h2><div class="small">${desc}</div><div class="rewardGrid">`
-        rewards.forEach((r, i) => {
-          const rewardClass = r.type === 'gold' ? ' reward-gold' : r.item?.tier ? ` reward-${r.item.tier || 'normal'}` : ''
+        const skipReward = rewards.find((r) => r.type === 'gold')
+        const choiceRewards = rewards.filter((r) => r.type !== 'gold')
+        let html = `<h2>${title}</h2><div class="rewardGrid">`
+        choiceRewards.forEach((r, i) => {
+          const rewardClass = r.item?.tier ? ` reward-${r.item.tier || 'normal'}` : ''
           html += `<div class="choice${rewardClass}"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
         })
         html += '</div>'
+        if (skipReward) html += `<div class="rewardSkipWrap"><button data-skip-reward class="rewardSkip">Skip reward: gain ${goldHTML(skipReward.gold)}</button></div>`
         showModal(html)
-        document.querySelectorAll('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(rewards[+btn.dataset.i])))
+        document.querySelectorAll('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i])))
+        const skipBtn = document.querySelector('[data-skip-reward]')
+        if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
       }
       function weaponSummary(w) {
         const fx = staffEffect(w)
@@ -1686,11 +1685,30 @@ ${growLine}</div>`
       function isGoodRewardWeapon(w) {
         return w.tier !== 'normal'
       }
+      function rewardsExcludeRare() {
+        return battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
+      }
+      function isNonRareRewardItem(item) {
+        return item.tier !== 'rare'
+      }
       function rewardWeaponPool(u, goodOnly = false) {
         const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
+        if (rewardsExcludeRare()) return opts.filter(isNonRareRewardItem)
         if (!goodOnly) return opts
         const good = opts.filter(isGoodRewardWeapon)
         return good.length ? good : opts
+      }
+      function fallbackRewardWeaponPool(goodOnly = false) {
+        if (rewardsExcludeRare()) return WEAPONS.filter(isNonRareRewardItem)
+        if (!goodOnly) return WEAPONS
+        const good = WEAPONS.filter(isGoodRewardWeapon)
+        return good.length ? good : WEAPONS
+      }
+      function rewardConsumablePool(goodOnly = false) {
+        if (rewardsExcludeRare()) return CONSUMABLES.filter(isNonRareRewardItem)
+        if (!goodOnly) return CONSUMABLES
+        const good = CONSUMABLES.filter((item) => item.tier !== 'normal')
+        return good.length ? good : CONSUMABLES
       }
       function weightedTier(weights) {
         const total = weights.reduce((sum, [, weight]) => sum + weight, 0)
@@ -1705,13 +1723,14 @@ ${growLine}</div>`
         return Math.max(0, battle)
       }
       function rewardTierWeights(weightSet, goodOnly = false) {
-        if (goodOnly) return weightSet.good
+        if (goodOnly) return rewardsExcludeRare() ? weightSet.good.filter(([tier]) => tier !== 'rare') : weightSet.good
         const fights = completedRewardFights()
-        return weightSet.normal.map(([tier, weight]) => {
+        const weights = weightSet.normal.map(([tier, weight]) => {
           if (tier === 'uncommon') return [tier, weight + fights * 2]
           if (tier === 'rare') return [tier, weight + fights]
           return [tier, weight]
         })
+        return rewardsExcludeRare() ? weights.filter(([tier]) => tier !== 'rare') : weights
       }
       function pickRewardWeapon(opts, goodOnly = false) {
         const weights = rewardTierWeights(WEAPON_TIER_WEIGHTS, goodOnly)
@@ -1723,19 +1742,20 @@ ${growLine}</div>`
         return pick(opts)
       }
       function pickRewardConsumable(goodOnly = false) {
+        const pool = rewardConsumablePool(goodOnly)
         const weights = rewardTierWeights(CONSUMABLE_TIER_WEIGHTS, goodOnly)
         for (let i = 0; i < 8; i++) {
           const tier = weightedTier(weights)
-          const tierOpts = CONSUMABLES.filter((item) => item.tier === tier)
+          const tierOpts = pool.filter((item) => item.tier === tier)
           if (tierOpts.length) return cloneConsumable(pick(tierOpts))
         }
-        return cloneConsumable(pick(CONSUMABLES))
+        return cloneConsumable(pick(pool.length ? pool : CONSUMABLES))
       }
       function weaponReward(goodOnly = false) {
         const candidates = player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
         const itemUnit = pick(candidates.length ? candidates : player)
         const opts = rewardWeaponPool(itemUnit, goodOnly)
-        const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : WEAPONS, goodOnly))
+        const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly))
         const oldWeapon = itemUnit.weapon ? `${itemUnit.weapon.name} (${weaponSummary(itemUnit.weapon)})` : 'nothing'
         const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Replaces ${oldWeapon}</div>`
         return {
@@ -1756,13 +1776,13 @@ ${growLine}</div>`
         const item = pickRewardConsumable(goodOnly)
         const slotText = consumableInventoryFull() ? 'Inventory full: choose a slot to replace.' : 'Stored in the first empty consumable slot.'
         const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · ${slotText}</div>`
-        return { type: 'consumable', title: `Take ${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
+        return { type: 'consumable', title: `${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
       }
       function goldReward(amount = REWARD_SKIP_GOLD) {
         return {
           type: 'gold',
-          title: `Take ${goldHTML(amount)}`,
-          desc: `Skip the normal reward and gain ${goldHTML(amount)} instead.`,
+          title: `Skip reward: gain ${formatGold(amount)}`,
+          desc: '',
           gold: amount,
         }
       }
@@ -1773,8 +1793,8 @@ ${growLine}</div>`
         return false
       }
       function makeRewards(bossTier = null, opening = false) {
-        const weaponCount = bossTier === BOSS_TIER_SUPER ? 2 : 2
-        const goodOnly = bossTier === BOSS_TIER_SUPER
+        const weaponCount = 2
+        const goodOnly = bossTier === BOSS_TIER_BIOME
         const allowConsumables = opening || !bossTier
         const weaponRewards = []
         for (let i = 0; i < weaponCount; i++) {
@@ -1785,14 +1805,14 @@ ${growLine}</div>`
           weaponRewards.push(next)
         }
         const boost = boostReward()
-        return opening || bossTier ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
+        return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
       }
       function boostReward() {
         if (Math.random() < 0.22)
           return { type: 'boost', stat: 'level', amt: 1, title: 'Use Tome of Knowledge', desc: 'Immediately gives a chosen unit +1 level. Promotion and level caps are respected.' }
         const stat = pick(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'])
         const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
-        return { type: 'boost', title: `Use ${boosterName(stat)}`, desc: `Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+        return { type: 'boost', title: `${boosterName(stat)}`, desc: `Immediately grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
       }
       function boosterName(stat) {
         return {
@@ -1824,7 +1844,8 @@ ${growLine}</div>`
         return `${u.name} used ${boosterName(r.stat)}.`
       }
       function shopWeaponPrice(w) {
-        return SHOP_WEAPON_PRICES[w.tier || 'normal'] || SHOP_WEAPON_PRICES.normal
+        const rank = String(w.rank || 'E').toUpperCase()
+        return SHOP_WEAPON_PRICES[rank] || SHOP_WEAPON_PRICES.E
       }
       function shopConsumablePrice(item) {
         return SHOP_CONSUMABLE_PRICES[item.tier || 'normal'] || SHOP_CONSUMABLE_PRICES.normal
@@ -1832,51 +1853,105 @@ ${growLine}</div>`
       function shopBoostPrice(r) {
         return SHOP_BOOST_PRICES[r.stat] || 800
       }
-      function makeShopOffers() {
-        const weapon = weaponReward(true)
-        weapon.shopCategory = 'Weapon'
-        weapon.price = shopWeaponPrice(weapon.item)
-        const consumable = consumableReward(true)
-        consumable.shopCategory = 'Consumable'
-        consumable.price = shopConsumablePrice(consumable.item)
+      function uniqueShopOffers(count, makeOffer, keyFn) {
+        const offers = [],
+          seen = new Set()
+        let guard = 0
+        while (offers.length < count && guard++ < 100) {
+          const offer = makeOffer()
+          if (!offer) break
+          const key = keyFn(offer)
+          if (seen.has(key)) continue
+          seen.add(key)
+          offers.push(offer)
+        }
+        return offers
+      }
+      function shopWeaponPool() {
+        return WEAPONS.filter((w) => player.some((u) => u.hp > 0 && allowedWeapons(u).includes(w.type)))
+      }
+      function eligibleWeaponUsers(w) {
+        return player.filter((u) => u.hp > 0 && allowedWeapons(u).includes(w.type))
+      }
+      function shopWeaponOffer() {
+        const pool = shopWeaponPool()
+        if (!pool.length) return null
+        const item = cloneWeapon(pickRewardWeapon(pool, false))
+        return {
+          type: 'item',
+          shopKind: 'weapon',
+          title: item.name,
+          desc: weaponSummary(item),
+          item,
+          price: shopWeaponPrice(item),
+        }
+      }
+      function shopConsumableOffer() {
+        const item = pickRewardConsumable(false)
+        return {
+          type: 'consumable',
+          shopKind: 'consumable',
+          title: item.name,
+          desc: consumableSummary(item),
+          item,
+          price: shopConsumablePrice(item),
+        }
+      }
+      function shopBoostOffer() {
         const boost = boostReward()
-        boost.shopCategory = 'Stat booster'
+        boost.shopKind = 'boost'
         boost.price = shopBoostPrice(boost)
-        return [weapon, consumable, boost]
+        return boost
+      }
+      function makeShopOffers() {
+        return [
+          ...uniqueShopOffers(5, shopWeaponOffer, (offer) => offer.item.name),
+          ...uniqueShopOffers(3, shopConsumableOffer, (offer) => offer.item.id),
+          ...uniqueShopOffers(3, shopBoostOffer, (offer) => offer.title),
+        ]
       }
       function shopOfferClass(offer) {
         if (offer.type === 'gold') return ' reward-gold'
         return offer.item?.tier ? ` reward-${offer.item.tier}` : ''
       }
+      function shopOfferHTML(offer, i) {
+        const sold = !!offer.sold
+        const affordable = gold >= offer.price
+        const buttonLabel = sold ? 'Sold' : `Buy ${goldHTML(offer.price)}`
+        const disabled = sold || !affordable ? ' disabled' : ''
+        const meta = `<div class="small rewardMeta">${goldHTML(offer.price)}</div>`
+        return `<div class="shopItem${shopOfferClass(offer)}"><div><h4>${offer.title}</h4><div class="small">${offer.desc}</div>${meta}</div><button data-shop-buy="${i}" class="good"${disabled}>${buttonLabel}</button></div>`
+      }
       function renderShop(message = '') {
-        let html = `<h2>Shop</h2><div class="row space"><div class="small">Buy any offers you want, then leave for the next battle.</div><div>${goldHTML(gold)}</div></div>`
+        const groups = {
+          weapon: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'weapon'),
+          consumable: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'consumable'),
+          boost: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'boost'),
+        }
+        let html = `<div class="shopHeader"><div><h3>Merchant</h3><div class="small">Buy any offers you want, then leave for the next battle.</div></div><div>${goldHTML(gold)}</div></div>`
         if (message) html += `<div class="notice">${message}</div>`
-        html += '<div class="rewardGrid">'
-        shopOffers.forEach((offer, i) => {
-          const sold = !!offer.sold
-          const affordable = gold >= offer.price
-          const buttonLabel = sold ? 'Sold' : `Buy ${goldHTML(offer.price)}`
-          const disabled = sold || !affordable ? ' disabled' : ''
-          const meta = `<div class="small rewardMeta">${offer.shopCategory} · ${goldHTML(offer.price)}</div>`
-          html += `<div class="choice${shopOfferClass(offer)}"><div><h4>${offer.title}</h4><div>${offer.desc}${meta}</div></div><button data-shop-buy="${i}" class="good"${disabled}>${buttonLabel}</button></div>`
-        })
-        html += '</div><div class="row space"><div></div><button id="leaveShopBtn" class="primary">Leave shop</button></div>'
-        showModal(html)
-        document.querySelectorAll('[data-shop-buy]').forEach((btn) => (btn.onclick = () => buyShopOffer(+btn.dataset.shopBuy)))
+        html += `<section class="shopSection"><h3>Weapons</h3><div class="shopRow shopWeapons">${groups.weapon.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
+        html += `<div class="shopLower"><section class="shopSection"><h3>Consumables</h3><div class="shopRow">${groups.consumable.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
+        html += `<section class="shopSection"><h3>Stat Boosters</h3><div class="shopRow">${groups.boost.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section></div>`
+        html += '<div class="row space shopActions"><div></div><button id="leaveShopBtn" class="primary">Leave shop</button></div>'
+        setShopOpen(true)
+        $('shopScreen').innerHTML = html
+        $('shopScreen')
+          .querySelectorAll('[data-shop-buy]')
+          .forEach((btn) => (btn.onclick = () => buyShopOffer(+btn.dataset.shopBuy)))
         $('leaveShopBtn').onclick = leaveShop
       }
       function startShop() {
         awaitingReward = true
-        addGold(SHOP_SUPER_BOSS_GOLD)
         shopOffers = makeShopOffers()
-        logLine(null, `Super boss bounty: ${formatGold(SHOP_SUPER_BOSS_GOLD)}.`, 'goldLog')
         renderTeams()
-        renderShop(`Super boss bounty: ${goldHTML(SHOP_SUPER_BOSS_GOLD)}.`)
+        renderShop(`Biome boss shop opened. Current gold: ${goldHTML(gold)}.`)
       }
       function leaveShop() {
         closeModal()
         awaitingReward = false
         shopOffers = []
+        setShopOpen(false)
         logLine(null, `Left the shop with ${formatGold(gold)}.`, 'goldLog')
         renderTeams()
         beginNextBattle()
@@ -1889,11 +1964,7 @@ ${growLine}</div>`
           return
         }
         if (offer.type === 'item') {
-          spendGold(offer.price)
-          offer.unit.weapon = offer.item
-          offer.sold = true
-          renderTeams()
-          renderShop(`${offer.unit.name} equipped ${offer.item.name}.`)
+          chooseShopWeaponTarget(i)
           return
         }
         if (offer.type === 'consumable') {
@@ -1911,6 +1982,34 @@ ${growLine}</div>`
           chooseShopBoostTarget(i)
         }
       }
+      function chooseShopWeaponTarget(i) {
+        const offer = shopOffers[i],
+          eligible = eligibleWeaponUsers(offer.item)
+        let html = `<h2>${offer.item.name}: choose wielder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${weaponSummary(offer.item)}</div>`
+        eligible.forEach((u, idx) => {
+          const oldWeapon = u.weapon ? `${u.weapon.name} (${weaponSummary(u.weapon)})` : 'nothing'
+          html += `<div class="choice"><div><h4>${u.name} (CON: ${u.stats.con})</h4><div>Replaces ${oldWeapon}</div></div><button data-shop-weapon-target="${idx}" class="good">Equip</button></div>`
+        })
+        html += '<button id="cancelShopWeaponBtn">Cancel</button>'
+        showModal(html)
+        document.querySelectorAll('[data-shop-weapon-target]').forEach(
+          (btn) =>
+            (btn.onclick = () => {
+              const u = eligible[+btn.dataset.shopWeaponTarget]
+              if (!spendGold(offer.price)) {
+                closeModal()
+                renderShop(`Not enough gold for ${offer.item.name}.`)
+                return
+              }
+              u.weapon = cloneWeapon(offer.item)
+              offer.sold = true
+              closeModal()
+              renderTeams()
+              renderShop(`${u.name} equipped ${offer.item.name}.`)
+            })
+        )
+        $('cancelShopWeaponBtn').onclick = closeModal
+      }
       function chooseShopConsumableReplacement(i) {
         const offer = shopOffers[i]
         let html = `<h2>${offer.item.name}: choose slot</h2><div class="small">Cost ${goldHTML(offer.price)}. ${consumableSummary(offer.item)}</div>`
@@ -1923,27 +2022,24 @@ ${growLine}</div>`
           (btn) =>
             (btn.onclick = () => {
               if (!spendGold(offer.price)) {
+                closeModal()
                 renderShop(`Not enough gold for ${offer.item.name}.`)
                 return
               }
               storeConsumable(offer.item, +btn.dataset.shopReplaceConsumable)
               offer.sold = true
+              closeModal()
               renderShop(`Stored ${offer.item.name}.`)
             })
         )
-        $('backToShopBtn').onclick = () => renderShop()
+        $('backToShopBtn').onclick = closeModal
       }
       function chooseShopBoostTarget(i) {
         const offer = shopOffers[i]
         let html = `<h2>${boosterName(offer.stat)}: choose target</h2><div class="small">Cost ${goldHTML(offer.price)}.</div>`
         player.forEach((u, idx) => {
           const before = offer.stat === 'level' ? levelLabel(u) : u.stats[offer.stat]
-          const after =
-            offer.stat === 'level'
-              ? canApplyBoost(offer, u)
-                ? '+1 level'
-                : levelLabel(u)
-              : Math.min(capStat(u, offer.stat), u.stats[offer.stat] + offer.amt)
+          const after = offer.stat === 'level' ? (canApplyBoost(offer, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, offer.stat), u.stats[offer.stat] + offer.amt)
           const label = offer.stat === 'level' ? 'Level' : offer.stat.toUpperCase()
           const disabled = canApplyBoost(offer, u) ? '' : ' disabled'
           html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}</div><button data-shop-boost-target="${idx}"${disabled}>Use</button></div>`
@@ -1955,20 +2051,23 @@ ${growLine}</div>`
             (btn.onclick = () => {
               const u = player[+btn.dataset.shopBoostTarget]
               if (!canApplyBoost(offer, u)) {
+                closeModal()
                 renderShop(`${u.name} cannot use ${boosterName(offer.stat)}.`)
                 return
               }
               if (!spendGold(offer.price)) {
+                closeModal()
                 renderShop(`Not enough gold for ${boosterName(offer.stat)}.`)
                 return
               }
               const msg = applyBoostToUnit(offer, u)
               offer.sold = true
+              closeModal()
               renderTeams()
               renderShop(msg)
             })
         )
-        $('backToShopBtn').onclick = () => renderShop()
+        $('backToShopBtn').onclick = closeModal
       }
       function storeConsumable(item, slot = firstEmptyConsumableSlot()) {
         const targetSlot = slot >= 0 ? slot : 0
@@ -2050,6 +2149,11 @@ ${growLine}</div>`
         awaitingReward = false
         logLine(null, msg, cls)
         renderTeams()
+        if (pendingShopAfterReward) {
+          pendingShopAfterReward = false
+          startShop()
+          return
+        }
         beginNextBattle()
       }
       function currentScore() {

@@ -482,6 +482,9 @@ button:disabled {
 .rewardGrid .choice h4 {
   margin: 4px 0;
 }
+h4 {
+  margin: 4px 0;
+}
 .pickList {
   max-height: 480px;
   overflow: auto;
@@ -570,6 +573,81 @@ button:disabled {
 .choice.reward-gold {
   border-color: #f59e0b;
   box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.28);
+}
+.rewardSkipWrap {
+  display: flex;
+  justify-content: center;
+}
+.rewardSkip {
+  margin-top: 8px;
+  padding: 6px 9px;
+  background: #172033;
+  color: #fde68a;
+  border-color: #92400e;
+  font-size: 12px;
+  font-weight: 650;
+}
+.rewardSkip:hover {
+  background: #1e293b;
+}
+.shopScreen {
+  margin-top: 10px;
+}
+.shopHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.shopHeader h3,
+.shopSection h3 {
+  margin: 0 0 6px;
+}
+.shopSection {
+  margin-top: 10px;
+}
+.shopRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.shopWeapons {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.shopItem {
+  min-width: 0;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 9px;
+  background: #111827;
+}
+.shopItem h4 {
+  margin: 4px 0;
+}
+.shopItem button {
+  width: 100%;
+}
+.shopItem.reward-uncommon {
+  border-color: #3b82f6;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
+}
+.shopItem.reward-rare {
+  border-color: #fbbf24;
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.32);
+}
+.shopLower {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.shopActions {
+  margin-top: 12px;
 }
 .rewardMeta {
   margin-top: 4px;
@@ -660,6 +738,11 @@ button:disabled {
     grid-template-columns: 1fr;
   }
   .draftChoices {
+    grid-template-columns: 1fr;
+  }
+  .shopWeapons,
+  .shopRow,
+  .shopLower {
     grid-template-columns: 1fr;
   }
 }
