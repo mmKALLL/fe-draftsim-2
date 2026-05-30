@@ -1171,9 +1171,13 @@
         { name: 'Longsword', type: 'sword', rank: 'C', mt: 6, hit: 85, wt: 11, crit: 0, magic: false, effective: ['mounted'] },
         { name: 'Killing Edge', type: 'sword', rank: 'C', mt: 9, hit: 75, wt: 7, crit: 30, magic: false },
         { name: 'Lancereaver', type: 'sword', rank: 'C', mt: 9, hit: 75, wt: 9, crit: 5, magic: false, reaver: true },
+        { name: 'Rune Sword', type: 'sword', rank: 'B', mt: 7, hit: 70, wt: 11, crit: 0, magic: true },
         { name: 'Brave Sword', type: 'sword', rank: 'A', mt: 9, hit: 75, wt: 12, crit: 0, magic: false, brave: true },
         { name: 'Silver Sword', type: 'sword', rank: 'A', mt: 13, hit: 80, wt: 8, crit: 0, magic: false },
         { name: 'Regal Blade', type: 'sword', rank: 'S', mt: 20, hit: 85, wt: 9, crit: 0, magic: false },
+
+        { name: 'Dagger', type: 'dagger', rank: 'D', mt: 1, hit: 95, wt: 1, crit: 0, magic: false, halfDef: true },
+        { name: 'Poison Dagger', type: 'dagger', rank: 'B', mt: 1, hit: 90, wt: 2, crit: 0, magic: false, halfDef: true, poison: true },
 
         { name: 'Iron Lance', type: 'lance', rank: 'E', mt: 7, hit: 80, wt: 8, crit: 0, magic: false },
         { name: 'Slim Lance', type: 'lance', rank: 'E', mt: 4, hit: 85, wt: 4, crit: 5, magic: false },
@@ -1201,6 +1205,8 @@
         { name: 'Iron Bow', type: 'bow', rank: 'E', mt: 6, hit: 85, wt: 5, crit: 0, magic: false, effective: ['flying'] },
         { name: 'Steel Bow', type: 'bow', rank: 'D', mt: 9, hit: 70, wt: 9, crit: 0, magic: false, effective: ['flying'] },
         { name: 'Short Bow', type: 'bow', rank: 'D', mt: 5, hit: 85, wt: 3, crit: 10, magic: false, speedBonus: 2, effective: ['flying'] },
+        { name: 'Longbow', type: 'bow', rank: 'C', mt: 7, hit: 70, wt: 10, crit: 0, magic: false, speedBonus: 2, effective: ['flying'] },
+        { name: 'Poison Bow', type: 'bow', rank: 'C', mt: 4, hit: 80, wt: 6, crit: 0, magic: false, speedBonus: 2, poison: true, effective: ['flying'] },
         { name: 'Killer Bow', type: 'bow', rank: 'B', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
         { name: 'Brave Bow', type: 'bow', rank: 'A', mt: 10, hit: 70, wt: 12, crit: 0, magic: false, brave: true, effective: ['flying'] },
         { name: 'Silver Bow', type: 'bow', rank: 'A', mt: 13, hit: 75, wt: 6, crit: 0, magic: false, effective: ['flying'] },
@@ -1209,22 +1215,28 @@
         { name: 'Thunder', type: 'anima', rank: 'D', mt: 8, hit: 80, wt: 6, crit: 5, magic: true },
         { name: 'Elfire', type: 'anima', rank: 'C', mt: 10, hit: 85, wt: 10, crit: 0, magic: true },
         { name: 'Fimbulvetr', type: 'anima', rank: 'B', mt: 12, hit: 80, wt: 12, crit: 0, magic: true },
+        { name: 'Bolting', type: 'anima', rank: 'A', mt: 12, hit: 60, wt: 20, crit: 0, magic: true, pierceRes: true },
         { name: 'Excalibur', type: 'anima', rank: 'S', mt: 18, hit: 90, wt: 13, crit: 10, magic: true, effective: ['flying'] },
         { name: 'Lightning', type: 'light', rank: 'E', mt: 4, hit: 95, wt: 6, crit: 5, magic: true },
         { name: 'Shine', type: 'light', rank: 'D', mt: 6, hit: 90, wt: 8, crit: 8, magic: true },
         { name: 'Divine', type: 'light', rank: 'C', mt: 8, hit: 85, wt: 12, crit: 10, magic: true },
+        { name: 'Purge', type: 'light', rank: 'B', mt: 10, hit: 70, wt: 20, crit: 0, magic: true, pierceRes: true },
         { name: 'Aura', type: 'light', rank: 'A', mt: 12, hit: 80, wt: 15, crit: 15, magic: true },
         { name: 'Aureola', type: 'light', rank: 'S', mt: 18, hit: 85, wt: 14, crit: 5, magic: true },
         { name: 'Flux', type: 'dark', rank: 'E', mt: 7, hit: 80, wt: 8, crit: 0, magic: true },
+        { name: 'Ruin', type: 'dark', rank: 'D', mt: 5, hit: 75, wt: 6, crit: 20, magic: true },
+        { name: 'Mire', type: 'dark', rank: 'D', mt: 6, hit: 70, wt: 9, crit: 0, magic: true, poison: true },
         { name: 'Luna', type: 'dark', rank: 'C', mt: 0, hit: 95, wt: 12, crit: 20, magic: true, pierceRes: true },
         { name: 'Nosferatu', type: 'dark', rank: 'C', mt: 10, hit: 70, wt: 14, crit: 0, magic: true, drain: true },
         { name: 'Fenrir', type: 'dark', rank: 'A', mt: 15, hit: 70, wt: 18, crit: 0, magic: true },
         { name: 'Ereshkigal', type: 'dark', rank: 'S', mt: 20, hit: 95, wt: 12, crit: 0, magic: true },
         { name: 'Heal Staff', type: 'staff', rank: 'E', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
         { name: 'Mend Staff', type: 'staff', rank: 'D', mt: 20, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+        { name: 'Physic Staff', type: 'staff', rank: 'C', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal', speedBonus: 2 },
         { name: 'Sleep Staff', type: 'staff', rank: 'C', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
         { name: 'Berserk Staff', type: 'staff', rank: 'B', mt: 0, hit: 55, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
         { name: 'Fortify Staff', type: 'staff', rank: 'A', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
+        { name: 'Restore Staff', type: 'staff', rank: 'S', mt: 30, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
       ]
       const WEAPON_RANKS = ['E', 'D', 'C', 'B', 'A', 'S']
       const WEAPON_TIER_WEIGHTS = {
@@ -1458,6 +1470,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       }
       function allowedWeapons(u) {
         const base = [u.weaponType]
+        if (u.cls === 'Thief') base.push('dagger')
         if (u.promoted) {
           if (['Lord', 'Mercenary', 'Myrmidon', 'Thief'].includes(u.cls)) base.push('sword')
           if (u.cls === 'Fighter') base.push('bow')
@@ -1479,12 +1492,14 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
           (w.crit || 0) / 2 -
           (w.wt || 0) / 3 +
           (w.pierceRes ? 12 : 0) +
+          (w.halfDef ? 10 : 0) +
           (w.brave ? 18 : 0) +
           (w.reaver ? 5 : 0) +
           (w.effective ? 8 : 0) +
           (w.drain ? 10 : 0) +
           (w.staff ? 4 : 0) +
           (w.speedBonus || 0) * 4 +
+          (w.poison ? 10 : 0) +
           staffFx
         )
       }
@@ -1574,7 +1589,8 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         return weapon.magic ? d.stats.res : d.stats.def
       }
       function rawDamage(a, d) {
-        const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
+        let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
+        if (a.weapon.halfDef) def = floor(def / 2)
         return Math.max(1, attackPower(a, d) - def)
       }
       function hitRate(a, d) {
@@ -1697,13 +1713,16 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         return { sleep: 'Sleep', berserk: 'Berserk' }[fx] || ''
       }
       function statusLabel(u) {
-        return statusName(u.status)
+        return [statusName(u.status), u.poisoned ? 'Poison' : ''].filter(Boolean).join(' ')
       }
       function weaponEffectLabels(w) {
         const labels = []
         if (w.speedBonus) labels.push(`Spd +${w.speedBonus}`)
         if (w.reaver) labels.push('Reaver')
         if (w.brave) labels.push('Brave')
+        if (w.magic && ['sword', 'lance', 'axe', 'bow', 'dagger'].includes(w.type)) labels.push('Targets Res')
+        if (w.halfDef) labels.push('Ignores half Def')
+        if (w.poison) labels.push('Poison')
         if (w.effective?.length) {
           const names = w.effective.map((e) => ({ armored: 'armored', mounted: 'mounted', flying: 'flying', swordUser: 'sword users' })[e] || e)
           labels.push(`Effective: ${names.join('/')}`)
@@ -1780,8 +1799,14 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       function applyStatus(u, fx) {
         u.status = fx
       }
+      function applyPoison(u) {
+        if (u.poisoned) return false
+        u.poisoned = true
+        return true
+      }
       function clearUnitStatus(u) {
         delete u.status
+        delete u.poisoned
       }
 
       function strikeResult(a, d, suffix = '') {
@@ -1801,7 +1826,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
           logLine(log, `${a.name}${suffix} attacks ${d.name}: miss (${r.dh}% displayed).`, 'miss')
           return r
         }
-        logLine(log, `${a.name}${suffix} hits ${d.name} for ${r.damage}${r.crit ? ' CRIT' : ''}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit ? 'crit' : 'hit')
+        logLine(log, `${a.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${d.name} for ${r.damage}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit ? 'crit' : 'hit')
         if (d.hp <= 0) logLine(log, `${d.name} falls.`, 'death')
         return r
       }
@@ -2019,7 +2044,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
           logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} gains ${item.stat.toUpperCase()} +${gained} ${duration}.`, 'heal')
         } else if (item.effect === 'restore') {
           const status = statusName(target.status)
-          clearUnitStatus(target)
+          delete target.status
           floatText(target, 'RESTORE', 'healing')
           logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${status || 'status'} cleared.`, 'heal')
         }
@@ -2073,6 +2098,17 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
         floatText(actor, 'WAIT', 'missText')
         await sleep(600)
       }
+      async function applyEndOfTurnStatus(actor) {
+        if (!actor?.poisoned || actor.hp <= 0) return
+        const damage = Math.max(1, floor(actor.maxHp * 0.2))
+        actor.hp = Math.max(0, actor.hp - damage)
+        floatText(actor, `-${damage}`, 'damage')
+        updateUnitVisual(actor)
+        renderSideCards()
+        logLine(null, `${actor.name} takes ${damage} poison damage. ${actor.name} HP ${actor.hp}/${actor.maxHp}.`, 'death')
+        if (actor.hp <= 0) logLine(null, `${actor.name} falls to poison.`, 'death')
+        await sleep(350)
+      }
       async function resolveStaffTurn(actor, allies, foes, forcedTarget = null) {
         const fx = staffEffect(actor.weapon)
         if (fx === 'fortify') {
@@ -2108,7 +2144,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       async function consumeTurnStatus(actor, allies, foes) {
         if (!actor.status) return false
         const fx = actor.status
-        clearUnitStatus(actor)
+        delete actor.status
         renderTeams()
         if (fx === 'sleep') {
           await animateWait(actor, `${actor.name} is asleep and waits.`)
@@ -2157,6 +2193,12 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
               if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
             }
             await animateStrike(actor, target, r)
+            if (actor.weapon?.poison && r.hit && target.hp > 0 && applyPoison(target)) {
+              logLine(null, `${target.name} is poisoned.`, 'crit')
+              floatText(target, 'POISON', 'missText')
+              renderSideCards()
+              await sleep(250)
+            }
             if (actor.weapon?.drain && r.hit && r.damage > 0) {
               const before = actor.hp
               actor.hp = Math.min(actor.maxHp, actor.hp + r.damage)
@@ -2479,6 +2521,7 @@ ${growLine}</div>`
               const ae = spriteEl(actor)
               if (ae) ae.classList.add('active')
               if (await consumeTurnStatus(actor, player, enemy)) {
+                await applyEndOfTurnStatus(actor)
                 clearTurnBuffs(actor)
                 pIdx = (pIdx + 1) % player.length
                 actions++
@@ -2522,6 +2565,7 @@ ${growLine}</div>`
               }
               setStatus(`${actor.name} acts.`)
               await resolveActorTurn(actor, player, enemy, target, stavesExhausted)
+              await applyEndOfTurnStatus(actor)
               clearTurnBuffs(actor)
               pIdx = (pIdx + 1) % player.length
               actions++
@@ -2534,6 +2578,7 @@ ${growLine}</div>`
               nextEnemyMarkerId = actor.id
               renderTeams()
               if (await consumeTurnStatus(actor, enemy, player)) {
+                await applyEndOfTurnStatus(actor)
                 clearTurnBuffs(actor)
                 eIdx = (eIdx + 1) % enemy.length
                 updateNextEnemyMarker(eIdx)
@@ -2545,6 +2590,7 @@ ${growLine}</div>`
               const target = actor.weapon.staff ? (!stavesExhausted && isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, player) : null) : chooseEnemyTarget()
               if (target) setStatus(`${actor.name} targets ${target.name}.`)
               await resolveActorTurn(actor, enemy, player, target, stavesExhausted)
+              await applyEndOfTurnStatus(actor)
               clearTurnBuffs(actor)
               eIdx = (eIdx + 1) % enemy.length
               updateNextEnemyMarker(eIdx)
