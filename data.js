@@ -141,6 +141,39 @@ const CLASS_TAGS = {
   Druid: [],
 }
 
+
+// prettier-ignore
+const BOSS_NAMES_BY_CLASS = {
+  Lord: ['Lundgren', 'Uther'],
+  'Blade Lord': ['Elbert', 'Karla'],
+  Mercenary: ['Saar', 'Carjiga'],
+  Hero: ['Linus', 'Caellach', 'Aias'],
+  Myrmidon: ['Glass', 'Lloyd', 'Carlyle'],
+  Swordmaster: ['Lloyd', 'Carlyle'],
+  Thief: ['Leila', 'Jan', 'Legault'],
+  Assassin: ['Jaffar', 'Jerme'],
+  Knight: ['Wire', 'Boies', 'Breguet'],
+  General: ['Darin', 'Tirado', 'Vigarde', 'Bauker'],
+  Cavalier: ['Murray', 'Cameron'],
+  Paladin: ['Eagler', 'Pascal', 'Orson'],
+  Pegasus: ['Ursula', 'Farina'],
+  'Falcon Knight': ['Ursula', 'Farina'],
+  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter'],
+  'Wyvern Lord': ['Vaida', 'Glen', 'Valter'],
+  Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
+  Warrior: ['Oleg', 'Brendan'],
+  Archer: ['Uhai'],
+  Sniper: ['Uhai'],
+  Mage: ['Aion', 'Pablo', 'Selena'],
+  Monk: ['Kenneth', 'Riev'],
+  Sage: ['Sonia', 'Limstella', 'Pablo'],
+  Cleric: ['Kenneth', 'Riev'],
+  Bishop: ['Kenneth', 'Riev'],
+  Shaman: ['Novala', 'Lyon', 'Teodor'],
+  Druid: ['Nergal', 'Teodor'],
+}
+
+
 // Weapon data
 // prettier-ignore
 const WEAPONS = [
@@ -344,38 +377,6 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
 function U(name, cls, weaponType, stats, growths, palette, startOffset = 0) {
   return { name, cls, weaponType, stats, growths, palette, startOffset }
 }
-
-// prettier-ignore
-const BOSS_NAMES_BY_CLASS = {
-  Lord: ['Lundgren'],
-  'Blade Lord': ['Lundgren'],
-  Mercenary: ['Saar', 'Carjiga'],
-  Hero: ['Linus', 'Caellach', 'Aias'],
-  Myrmidon: ['Glass', 'Lloyd', 'Carlyle'],
-  Swordmaster: ['Lloyd', 'Carlyle'],
-  Thief: ['Leila', 'Jan', 'Legault'],
-  Assassin: ['Jaffar', 'Jerme'],
-  Knight: ['Wire', 'Boies', 'Breguet'],
-  General: ['Darin', 'Tirado', 'Vigarde', 'Bauker'],
-  Cavalier: ['Murray', 'Cameron'],
-  Paladin: ['Eagler', 'Pascal', 'Orson'],
-  Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
-  Warrior: ['Oleg', 'Brendan'],
-  Archer: ['Uhai'],
-  Sniper: ['Uhai'],
-  Mage: ['Aion', 'Pablo', 'Selena'],
-  Monk: ['Kenneth', 'Riev'],
-  Sage: ['Sonia', 'Limstella', 'Pablo'],
-  Cleric: ['Kenneth', 'Riev'],
-  Bishop: ['Kenneth', 'Riev'],
-  Shaman: ['Novala', 'Lyon', 'Teodor'],
-  Druid: ['Nergal', 'Teodor'],
-  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter'],
-  'Wyvern Lord': ['Vaida', 'Glen', 'Valter'],
-}
-
-// prettier-ignore
-const enemyNames = ['Bandit', 'Raider', 'Arena', 'Fang', 'Knight', 'Nomad', 'Mage', 'Rogue', 'Wyvern', 'Merc']
 
 // Biome data. Each focus entry can target a class generally, or a class plus weaponType
 // for special cases like axe wyverns. The focus list is intended to drive both enemy

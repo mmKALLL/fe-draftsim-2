@@ -801,7 +801,7 @@
         if (w.poison) labels.push('Poison')
         if (w.effective?.length) {
           const names = w.effective.map((e) => ({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' })[e] || e)
-          labels.push(`Eff: ${names.join('/')}`)
+          labels.push(`Eff: ${names.join(' / ')}`)
         }
         if (w.pierceRes) labels.push('Ignores Res')
         if (w.drain) labels.push('Drain')
@@ -1609,7 +1609,7 @@ ${growLine}</div>`
               ['Wt', w.wt],
             ]
         const eff = weaponEffectLabels(w)
-        if (eff.length) labels.push([eff.join('/'), ''])
+        if (eff.length) labels.push([eff.join(', '), ''])
         return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
       }
       function statHTML(u) {
