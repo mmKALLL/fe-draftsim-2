@@ -250,20 +250,19 @@ const CONSUMABLES = [
   { id: 'concoction', name: 'Concoction', tier: 'uncommon', effect: 'heal', amount: 20, desc: 'Restores 20 HP to one living ally.' },
   { id: 'elixir', name: 'Elixir', tier: 'rare', effect: 'fullHeal', desc: 'Fully restores one living ally.' },
   { id: 'dragon_tears', name: 'Dragon Tears', tier: 'rare', effect: 'revive', desc: 'Revives one fallen ally with half HP.' },
+  { id: 'geosphere', name: 'Geosphere', tier: 'rare', effect: 'aoeDamage', amount: 13, desc: 'Deals 13 damage to all enemies.' },
   { id: 'restore_potion', name: 'Restore Potion', tier: 'uncommon', effect: 'restore', desc: 'Clears Sleep or Berserk from one living ally.' },
-  { id: 'hp_tonic', name: 'HP Tonic', tier: 'normal', effect: 'buff', stat: 'hp', amount: 5, desc: 'Grants HP +5 for the current battle.' },
+
+  { id: 'hp_tonic', name: 'HP Tonic', tier: 'normal', effect: 'buff', stat: 'hp', amount: 7, desc: 'Grants max HP +7 for the current battle.' },
   { id: 'power_tonic', name: 'Power Tonic', tier: 'normal', effect: 'buff', stat: 'str', amount: 2, desc: 'Grants Str +2 for the current battle.' },
-  { id: 'skill_tonic', name: 'Skill Tonic', tier: 'normal', effect: 'buff', stat: 'skl', amount: 2, desc: 'Grants Skl +2 for the current battle.' },
   { id: 'speed_tonic', name: 'Speed Tonic', tier: 'normal', effect: 'buff', stat: 'spd', amount: 2, desc: 'Grants Spd +2 for the current battle.' },
-  { id: 'luck_tonic', name: 'Luck Tonic', tier: 'normal', effect: 'buff', stat: 'lck', amount: 2, desc: 'Grants Lck +2 for the current battle.' },
-  { id: 'guard_tonic', name: 'Guard Tonic', tier: 'uncommon', effect: 'buff', stat: 'def', amount: 2, desc: 'Grants Def +2 for the current battle.' },
-  { id: 'ward_tonic', name: 'Ward Tonic', tier: 'uncommon', effect: 'buff', stat: 'res', amount: 2, desc: 'Grants Res +2 for the current battle.' },
-  { id: 'power_potion', name: 'Power Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 5, desc: 'Grants Str +5 until end of target\'s next turn.' },
-  { id: 'skill_potion', name: 'Skill Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 5, desc: 'Grants Skl +5 until end of target\'s next turn.' },
-  { id: 'speed_potion', name: 'Speed Potion', tier: 'rare', effect: 'turnBuff', stat: 'spd', amount: 5, desc: 'Grants Spd +5 until end of target\'s next turn.' },
-  { id: 'luck_potion', name: 'Luck Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'lck', amount: 5, desc: 'Grants Lck +5 until end of target\'s next turn.' },
-  { id: 'guard_potion', name: 'Guard Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 5, desc: 'Grants Def +5 until end of target\'s next turn.' },
-  { id: 'ward_potion', name: 'Ward Potion', tier: 'uncommon', effect: 'turnBuff', stat: 'res', amount: 5, desc: 'Grants Res +5 until end of target\'s next turn.' },
+  { id: 'guard_tonic', name: 'Guard Tonic', tier: 'normal', effect: 'buff', stat: 'def', amount: 2, desc: 'Grants Def +2 for the current battle.' },
+  { id: 'ward_tonic', name: 'Ward Tonic', tier: 'normal', effect: 'buff', stat: 'res', amount: 2, desc: 'Grants Res +2 for the current battle.' },
+
+  { id: 'power_potion', name: 'Filla\'s Might', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 10, desc: 'Grants Str +10 until end of target\'s next turn.' },
+  { id: 'skill_potion', name: 'Thor’s Ire', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 10, desc: 'Grants Skl +10 until end of target\'s next turn.' },
+  { id: 'speed_potion', name: 'Set’s Litany', tier: 'uncommon', effect: 'turnBuff', stat: 'spd', amount: 10, desc: 'Grants Spd +10 until end of target\'s next turn.' },
+  { id: 'guard_potion', name: 'Ninis\'s Grace', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 10, desc: 'Grants Def +10 until end of target\'s next turn.' },
 ]
 
 // prettier-ignore

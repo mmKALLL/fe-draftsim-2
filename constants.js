@@ -61,16 +61,17 @@ const SHOP_WEAPON_PRICES = {
 }
 const SHOP_CONSUMABLE_PRICES = {
   normal: 100,
-  uncommon: 250,
+  uncommon: 300,
   rare: 600,
 }
 const SHOP_BOOST_PRICES = {
-  hp: 1200,
+  hp: 1000,
   str: 1100,
   skl: 900,
   spd: 1200,
   lck: 800,
   def: 1100,
   res: 1000,
+  con: 800,
   level: 1400,
 }

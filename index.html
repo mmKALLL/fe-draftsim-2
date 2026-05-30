@@ -447,10 +447,7 @@
         if (showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal')
       }
       window.promote = promote
-      function promotionUnlockedForPlayers() {
-        return battle >= PROMOTION_UNLOCK_AFTER_BATTLE
-      }
-      function promotionUnlockedForEnemies() {
+      function promotionUnlockedForRegularEnemies() {
         return battle > PROMOTION_UNLOCK_AFTER_BATTLE
       }
       function currentInternalLevel(u) {
@@ -486,8 +483,7 @@
       }
       function levelUp(u, showLog = true) {
         if (u.promoted && u.lvl >= 20) return false
-        if (!u.promoted && u.lvl >= 20 && !promotionUnlockedForPlayers()) return false
-        return advanceInternalLevel(u, promotionUnlockedForPlayers(), showLog)
+        return advanceInternalLevel(u, true, showLog)
       }
       window.levelUp = levelUp
       function advanceTwoLevels(units) {
@@ -844,12 +840,13 @@
         if (!item) return ''
         return item.desc || ''
       }
-      function consumableTargets(item, team = player) {
+      function consumableTargets(item, team = player, foes = enemy) {
         if (!item) return []
         const living = team.filter((u) => u.hp > 0)
         if (item.effect === 'heal' || item.effect === 'fullHeal') return living.filter((u) => u.hp < u.maxHp)
         if (item.effect === 'restore' || item.effect === 'fullHeal') return living.filter((u) => !!u.status)
         if (item.effect === 'revive') return team.filter((u) => u.hp <= 0)
+        if (item.effect === 'aoeDamage') return foes.filter((u) => u.hp > 0)
         if (item.effect === 'buff' || item.effect === 'turnBuff') {
           return living.filter((u) => u.stats[item.stat] < capStat(u, item.stat))
         }
@@ -1112,6 +1109,27 @@
         logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal')
         await sleep(450)
       }
+      async function animateAoeConsumable(actor, targets, item) {
+        clearHighlights()
+        const ae = spriteEl(actor)
+        if (ae) ae.classList.add('active')
+        targets.forEach((t) => spriteEl(t)?.classList.add('target'))
+        await sleep(300)
+        let total = 0
+        const fallen = []
+        targets.forEach((t) => {
+          const damage = Math.min(t.hp, item.amount)
+          t.hp = Math.max(0, t.hp - item.amount)
+          total += damage
+          floatText(t, `-${damage}`, 'damage')
+          updateUnitVisual(t)
+          if (t.hp <= 0) fallen.push(t.name)
+        })
+        renderSideCards()
+        logLine(null, `${actor.name} uses ${item.name}; enemies take ${total} total damage.`, 'hit')
+        fallen.forEach((name) => logLine(null, `${name} falls.`, 'death'))
+        await sleep(450)
+      }
       async function animateConsumable(actor, target, item) {
         clearHighlights()
         const ae = spriteEl(actor),
@@ -1157,6 +1175,12 @@
         if (!targets.length) {
           setStatus(`${item.name} has no valid target right now.`)
           return false
+        }
+        if (item.effect === 'aoeDamage') {
+          await animateAoeConsumable(actor, targets, item)
+          consumables[slot] = null
+          renderTeams()
+          return true
         }
         const target = await selectTarget(actor, targets, `${actor.name} uses ${item.name}: choose an ally.`)
         if (!target) {
@@ -1727,7 +1751,7 @@ ${growLine}</div>`
           const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
           // Bosses have extra levels; normal units have slight variance
           const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
-          const promoted = promotionUnlockedForEnemies() && internal > 20
+          const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
           const lvl = promoted ? internal - 20 : internal
           const e = freshFromBase(b, true, lvl, promoted)
           e.lvl = clamp(lvl + Math.ceil(b.startOffset / 2), 1, 20)
@@ -2067,7 +2091,7 @@ ${growLine}</div>`
         return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
       }
       function boostReward(targeted = true) {
-        const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
+        const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
         let reward
         if (boostTargetOptions({ stat: 'level' }).length && rnd() < 0.22) reward = levelBoostReward()
         else {
@@ -2092,7 +2116,7 @@ ${growLine}</div>`
       function boostRewardDescription(r, u) {
         if (r.stat === 'level') {
           const growths = `<div class="small rewardMeta">Growths ${growthSummaryHTML(u)}</div>`
-          return `Immediately gives ${u.name} +1 level (${levelLabel(u)} -> L${u.lvl + 1}).${growths}`
+          return `Immediately levels up ${u.name} ${levelLabel(u)} -> L${u.lvl + 1}.${growths}`
         }
         const label = r.stat.toUpperCase()
         const before = u.stats[r.stat]
@@ -2117,11 +2141,12 @@ ${growLine}</div>`
           lck: 'Goddess Icon',
           def: 'Dragonshield',
           res: 'Talisman',
+          con: 'Body Ring',
           level: 'Tome of Knowledge',
         }[stat]
       }
       function canApplyBoost(r, u) {
-        if (r.stat === 'level') return !(u.promoted && u.lvl >= 20) && (u.promoted || u.lvl < 20 || promotionUnlockedForPlayers())
+        if (r.stat === 'level') return !(u.promoted && u.lvl >= 20)
         return u.stats[r.stat] < capStat(u, r.stat)
       }
       function boostTargetOptions(r) {
