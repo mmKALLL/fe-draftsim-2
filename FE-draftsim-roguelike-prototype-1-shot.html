@@ -1493,7 +1493,7 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       }
       function rawDamage(a, d) {
         const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
-        return Math.max(0, attackPower(a, d) - def)
+        return Math.max(1, attackPower(a, d) - def)
       }
       function hitRate(a, d) {
         const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
@@ -1616,6 +1616,19 @@ U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3
       }
       function statusLabel(u) {
         return statusName(u.status)
+      }
+      function weaponEffectLabels(w) {
+        const labels = []
+        if (w.speedBonus) labels.push(`Spd +${w.speedBonus}`)
+        if (w.reaver) labels.push('Reaver')
+        if (w.brave) labels.push('Brave')
+        if (w.effective?.length) {
+          const names = w.effective.map((e) => ({ armored: 'armored', mounted: 'mounted', flying: 'flying', swordUser: 'sword users' })[e] || e)
+          labels.push(`Effective: ${names.join('/')}`)
+        }
+        if (w.pierceRes) labels.push('Ignores Res')
+        if (w.drain) labels.push('Drain')
+        return labels
       }
       function applyStatus(u, fx) {
         u.status = fx
@@ -2042,13 +2055,7 @@ ${growLine}</div>`
               ['Wt', w.wt],
               ['Rank', w.rank || '?'],
             ]
-        const eff = []
-        if (w.speedBonus) eff.push(`Spd +${w.speedBonus}`)
-        if (w.reaver) eff.push('Reave')
-        if (w.brave) eff.push('Brave')
-        if (w.effective) eff.push('Eff')
-        if (w.pierceRes) eff.push('No Res')
-        if (w.drain) eff.push('Drain')
+        const eff = weaponEffectLabels(w)
         if (eff.length) labels.push([eff.join('/'), ''])
         return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
       }
@@ -2302,10 +2309,12 @@ ${growLine}</div>`
       }
       function weaponSummary(w) {
         const fx = staffEffect(w)
-        if (fx === 'heal') return `staff, rank ${w.rank}, Heal ${w.mt}`
-        if (fx === 'fortify') return `staff, rank ${w.rank}, heals all allies by Mag`
-        if (fx === 'sleep' || fx === 'berserk') return `staff, rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}`
-        return `${w.type}, rank ${w.rank}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}${w.speedBonus ? `, Spd +${w.speedBonus}` : ''}`
+        const effects = weaponEffectLabels(w)
+        const effectText = effects.length ? `, ${effects.join(', ')}` : ''
+        if (fx === 'heal') return `staff, rank ${w.rank}, Heal ${w.mt}${effectText}`
+        if (fx === 'fortify') return `staff, rank ${w.rank}, heals all allies by Mag${effectText}`
+        if (fx === 'sleep' || fx === 'berserk') return `staff, rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
+        return `${w.type}, rank ${w.rank}, Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}${effectText}`
       }
       function isGoodRewardWeapon(w) {
         return w.tier !== 'normal'
@@ -2340,11 +2349,17 @@ ${growLine}</div>`
         const opts = rewardWeaponPool(itemUnit, goodOnly)
         const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : WEAPONS, goodOnly))
         const oldWeapon = itemUnit.weapon ? `${itemUnit.weapon.name} (${weaponSummary(itemUnit.weapon)})` : 'nothing'
-        const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Rank ${item.rank} · Replaces ${oldWeapon}</div>`
-        return { type: 'item', title: `Equip ${item.name}`, desc: `Give ${item.name} (${weaponSummary(item)}) to ${itemUnit.name}.${meta}`, unit: itemUnit, item }
+        const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Replaces ${oldWeapon}</div>`
+        return {
+          type: 'item',
+          title: `Equip ${item.name} to ${itemUnit.name} (CON: ${itemUnit.con})`,
+          desc: `Give ${item.name} (${weaponSummary(item)}).${meta}`,
+          unit: itemUnit,
+          item,
+        }
       }
       function makeRewards(bossTier = null) {
-        const weaponCount = bossTier === BOSS_TIER_SUPER ? 4 : 2
+        const weaponCount = bossTier === BOSS_TIER_SUPER ? 2 : 2
         const goodOnly = !!bossTier
         const weaponRewards = []
         for (let i = 0; i < weaponCount; i++) {
