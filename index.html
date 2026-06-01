@@ -248,37 +248,28 @@
       function titleStem(stem = '') {
         return stem ? stem.charAt(0).toUpperCase() + stem.slice(1) : stem
       }
+      const failedAssetPaths = new Set()
       function assetPathVariants(folder, stem) {
         if (!folder || !stem) return []
         const key = String(stem)
         const stems = [key, titleStem(key), key.toUpperCase()].filter(Boolean)
-        const seen = new Set(),
-          out = []
-        for (const st of stems) {
-          for (const ext of FEMP_IMAGE_EXTS) {
-            const path = `${FEMP_ASSET_ROOT}/${folder}/${st}.${ext}`
-            if (!seen.has(path)) {
-              seen.add(path)
-              out.push(path)
-            }
-          }
-        }
-        return out
+        return [...new Set(stems.flatMap((st) => FEMP_IMAGE_EXTS.map((ext) => `${FEMP_ASSET_ROOT}/${folder}/${st}.${ext}`)))]
       }
       function assetChain(items) {
-        const seen = new Set(),
-          out = []
-        for (const item of items.filter(Boolean)) {
-          const key = String(item)
-          if (!seen.has(key)) {
-            seen.add(key)
-            out.push(key)
-          }
-        }
-        return out
+        return [...new Set(items.filter(Boolean).map(String))].filter((path) => !failedAssetPaths.has(path))
       }
       function htmlAttr(s = '') {
         return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      }
+      function fallbackSource(fallback) {
+        if (!fallback) return ''
+        if (typeof fallback === 'string') return fallback
+        if (fallback.type === 'portrait') return mugshotDataUri(fallback.name, fallback.kind, fallback.team, fallback.promoted)
+        if (fallback.type === 'battle') return svgDataUri(fallback.kind, fallback.team, fallback.promoted)
+        return ''
+      }
+      function fallbackAttr(fallback) {
+        return fallback ? ` data-fallback="${htmlAttr(JSON.stringify(fallback))}"` : ''
       }
       function portraitFileStem(name) {
         return FEMP_NAME_OVERRIDES[name] || assetSlug(name)
@@ -314,31 +305,36 @@
         return stems.flatMap((stem) => assetPathVariants('enemy-portraits', stem))
       }
       function fallbackPortrait(name, kind, team, promoted) {
-        return mugshotDataUri(name, kind, team, promoted)
+        return { type: 'portrait', name, kind, team, promoted }
       }
       function fallbackBattle(kind, team, promoted) {
-        return svgDataUri(kind, team, promoted)
+        return { type: 'battle', kind, team, promoted }
       }
       function assetImg(cls, primary, fallbacks, fallbackData, alt = '') {
-        const chain = assetChain([primary, ...fallbacks, fallbackData])
+        const [src, ...chain] = assetChain([primary, ...fallbacks])
         const encoded = chain.map(htmlAttr).join('|')
-        return `<img class="${cls}" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)">`
+        return `<img class="${cls}" src="${htmlAttr(src || fallbackSource(fallbackData))}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0"${fallbackAttr(fallbackData)} onerror="assetFallback(this)">`
       }
       function assetSheet(cls, primary, fallbacks, fallbackData, alt = '', opts = {}) {
-        const chain = assetChain([primary, ...fallbacks, fallbackData])
+        const [src, ...chain] = assetChain([primary, ...fallbacks])
         const encoded = chain.map(htmlAttr).join('|')
         const spriteWidth = opts.spriteWidth || 64,
           slotHeight = opts.slotHeight || MAP_SPRITE_SLOT_H
-        return `<span class="${cls}" style="--frames:1;--sprite-offset:0px;--sprite-distance:${spriteWidth}px" data-sprite-width="${spriteWidth}" data-sprite-slot-h="${slotHeight}"><img class="mapSpriteSheet" src="${htmlAttr(chain[0])}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0" onerror="assetFallback(this)" onload="assetSheetLoaded(this)"></span>`
+        return `<span class="${cls}" style="--frames:1;--sprite-offset:0px;--sprite-distance:${spriteWidth}px" data-sprite-width="${spriteWidth}" data-sprite-slot-h="${slotHeight}"><img class="mapSpriteSheet" src="${htmlAttr(src || fallbackSource(fallbackData))}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0"${fallbackAttr(fallbackData)} onerror="assetFallback(this)" onload="assetSheetLoaded(this)"></span>`
       }
       function assetFallback(img) {
-        const chain = (img.dataset.chain || '').split('|')
-        let i = Number(img.dataset.chainI || 0) + 1
+        const failed = img.getAttribute('src') || ''
+        if (failed && !failed.startsWith('data:')) failedAssetPaths.add(failed)
+        const chain = (img.dataset.chain || '').split('|').filter(Boolean)
+        let i = Number(img.dataset.chainI || 0)
+        while (i < chain.length && failedAssetPaths.has(chain[i])) i++
         if (i < chain.length) {
-          img.dataset.chainI = String(i)
+          img.dataset.chainI = String(i + 1)
           img.src = chain[i]
         } else {
+          const fallback = img.dataset.fallback ? fallbackSource(JSON.parse(img.dataset.fallback)) : ''
           img.onerror = null
+          if (fallback && img.src !== fallback) img.src = fallback
         }
       }
       function assetSheetLoaded(img) {
@@ -470,7 +466,7 @@
         u.internalLevel = Math.min(40, currentInternalLevel(u) + 1)
         syncDisplayLevel(u)
         if (showLog) {
-          const gainsText = gains.map((k) => k.toUpperCase()).join(', ') || 'no stats'
+          const gainsText = gains.map((k) => statLabel(u, k)).join(', ') || 'no stats'
           logLine(null, `${u.name} reached ${levelLabel(u)}: ${gainsText}.`, 'heal')
         }
         return true
@@ -547,6 +543,15 @@
         if (u.promoted) base.push(...(c.promotionWeaponTypes || []))
         return [...new Set(base)]
       }
+      function weaponBaseName(name = '') {
+        return String(name).replace(/\++$/, '')
+      }
+      function isCurrentWeapon(u, w) {
+        return !!u?.weapon && !!w && weaponBaseName(u.weapon.name) === weaponBaseName(w.name)
+      }
+      function canEquipAsNewWeapon(u, w) {
+        return u?.hp > 0 && !!w && allowedWeapons(u).includes(w.type) && !isCurrentWeapon(u, w)
+      }
       function weaponScore(w) {
         const staffFx = { sleep: 18, berserk: 24, fortify: 70 }[w.effect] || 0
         return (
@@ -556,6 +561,7 @@
           (w.wt || 0) / 3 +
           (w.pierceRes ? 12 : 0) +
           (w.halfDef ? 10 : 0) +
+          (w.halveHp ? 18 : 0) +
           (w.brave ? 18 : 0) +
           (w.reaver ? 5 : 0) +
           (w.effective ? 8 : 0) +
@@ -674,6 +680,7 @@
         return weapon.magic ? combatResistance(d) : combatDefense(d)
       }
       function rawDamage(a, d) {
+        if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
         let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
         if (a.weapon.halfDef) def = floor(def / 2)
         return Math.max(1, attackPower(a, d) - def)
@@ -693,6 +700,7 @@
         return rn <= displayed
       }
       function critRate(a, d) {
+        if (a.weapon?.halveHp) return 0
         let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
         return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck')), 0, 100)
       }
@@ -748,6 +756,10 @@
         }
         return map[cls] || String(cls).slice(0, 7)
       }
+      function statLabel(entity, stat) {
+        if (stat === 'str') return CLASSES[entity?.cls]?.strLabel || 'STR'
+        return stat.toUpperCase()
+      }
       function bossNameFor(u) {
         const list = BOSS_NAMES_BY_CLASS[u.displayCls] || BOSS_NAMES_BY_CLASS[u.cls]
         return list ? list[rint(list.length)] : null
@@ -789,6 +801,7 @@
         if (w.magic && ['sword', 'lance', 'axe', 'bow', 'dagger'].includes(w.type)) labels.push('Targets Res')
         if (w.halfDef) labels.push('Ignores half Def')
         if (w.poison) labels.push('Poison')
+        if (w.halveHp) labels.push('Halves HP')
         if (w.effective?.length) {
           const names = w.effective.map((e) => ({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' })[e] || e)
           labels.push(`Eff: ${names.join(' / ')}`)
@@ -800,10 +813,10 @@
       function temporaryBuffLabel(u) {
         const battleBuffs = Object.entries(u.tempBuffs || {})
           .filter(([, amt]) => amt > 0)
-          .map(([stat, amt]) => `${stat.toUpperCase()}+${amt}`)
+          .map(([stat, amt]) => `${statLabel(u, stat)}+${amt}`)
         const turnBuffs = Object.entries(u.turnBuffs || {})
           .filter(([, amt]) => amt > 0)
-          .map(([stat, amt]) => `${stat.toUpperCase()}+${amt} turn`)
+          .map(([stat, amt]) => `${statLabel(u, stat)}+${amt} turn`)
         const buffs = [...battleBuffs, ...turnBuffs]
         if (!buffs.length) return ''
         return buffs.join(', ')
@@ -1140,8 +1153,9 @@
           const bucketName = item.effect === 'turnBuff' ? 'turnBuffs' : 'tempBuffs'
           const gained = applyStatBuff(target, item.stat, item.amount, bucketName)
           const duration = item.effect === 'turnBuff' ? 'until its next action ends' : 'for this battle'
-          floatText(target, `${item.stat.toUpperCase()}+${gained}`, 'healing')
-          logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} gains ${item.stat.toUpperCase()} +${gained} ${duration}.`, 'heal')
+          const label = statLabel(target, item.stat)
+          floatText(target, `${label}+${gained}`, 'healing')
+          logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} gains ${label} +${gained} ${duration}.`, 'heal')
         } else if (item.effect === 'restore') {
           const status = statusName(target.status)
           delete target.status
@@ -1532,8 +1546,9 @@
       function growthCompareHTML(b) {
         const s = b.stats,
           g = b.growths
-        const baseLine = `Bases   HP ${padCell(s.hp)}   Str ${padCell(s.str)}   Skl ${padCell(s.skl)}   Spd ${padCell(s.spd)}   Lck ${padCell(s.lck)}   Def ${padCell(s.def)}   Res ${padCell(s.res)}`
-        const growLine = `Growths HP ${padCell(g.hp)}%  Str ${padCell(g.str)}%  Skl ${padCell(g.skl)}%  Spd ${padCell(g.spd)}%  Lck ${padCell(g.lck)}%  Def ${padCell(g.def)}%  Res ${padCell(g.res)}%`
+        const power = statLabel(b, 'str')
+        const baseLine = `Bases   HP ${padCell(s.hp)}   ${power} ${padCell(s.str)}   Skl ${padCell(s.skl)}   Spd ${padCell(s.spd)}   Lck ${padCell(s.lck)}   Def ${padCell(s.def)}   Res ${padCell(s.res)}`
+        const growLine = `Growths HP ${padCell(g.hp)}%  ${power} ${padCell(g.str)}%  Skl ${padCell(g.skl)}%  Spd ${padCell(g.spd)}%  Lck ${padCell(g.lck)}%  Def ${padCell(g.def)}%  Res ${padCell(g.res)}%`
         return `<div class="statCompare">${baseLine}
 ${growLine}</div>`
       }
@@ -1606,13 +1621,13 @@ ${growLine}</div>`
         return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
           .map((k) => {
             const growth = u.growths[k] == null ? '--' : u.growths[k]
-            return `<span data-stat-value="${u.stats[k]}" data-growth-value="${growth}"><b>${k.toUpperCase()}</b> ${u.stats[k]}</span>`
+            return `<span data-stat-value="${u.stats[k]}" data-growth-value="${growth}"><b>${statLabel(u, k)}</b> ${u.stats[k]}</span>`
           })
           .join('')
       }
       function growthSummaryHTML(u) {
         const g = u.growths
-        return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${k.toUpperCase()} ${g[k]}%`).join(', ')})</span>`
+        return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
       }
       function unitCard(u) {
         const wt = u.weapon ? ` · ${u.weapon.name}` : ''
@@ -1967,7 +1982,7 @@ ${growLine}</div>`
         return item.tier !== 'rare'
       }
       function rewardWeaponPool(u, goodOnly = false) {
-        const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
+        const opts = WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
         if (rewardsExcludeRare()) return opts.filter(isNonRareRewardItem)
         if (!goodOnly) return opts
         const good = opts.filter(isGoodRewardWeapon)
@@ -2092,7 +2107,8 @@ ${growLine}</div>`
           const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
           const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
           const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
-          reward = { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${stat.toUpperCase()} +${amt} to a chosen unit.`, stat, amt }
+          const label = stat === 'str' ? 'STR/MAG' : stat.toUpperCase()
+          reward = { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${label} +${amt} to a chosen unit.`, stat, amt }
         }
         return targeted ? targetedBoostReward(reward) : reward
       }
@@ -2112,7 +2128,7 @@ ${growLine}</div>`
           const growths = `<div class="small rewardMeta">Growths ${growthSummaryHTML(u)}</div>`
           return `Immediately levels up ${u.name} ${levelLabel(u)} -> L${u.lvl + 1}.${growths}`
         }
-        const label = r.stat.toUpperCase()
+        const label = statLabel(u, r.stat)
         const before = u.stats[r.stat]
         const after = Math.min(capStat(u, r.stat), before + r.amt)
         return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).${boostDetailHTML(r, u)}`
@@ -2191,10 +2207,10 @@ ${growLine}</div>`
         return offers
       }
       function shopWeaponPool() {
-        return WEAPONS.filter((w) => player.some((u) => u.hp > 0 && allowedWeapons(u).includes(w.type)))
+        return WEAPONS.filter((w) => player.some((u) => canEquipAsNewWeapon(u, w)))
       }
       function eligibleWeaponUsers(w) {
-        return player.filter((u) => u.hp > 0 && allowedWeapons(u).includes(w.type))
+        return player.filter((u) => canEquipAsNewWeapon(u, w))
       }
       function shopWeaponOffer() {
         const pool = shopWeaponPool()
@@ -2378,6 +2394,10 @@ ${growLine}</div>`
       function chooseShopWeaponTarget(i) {
         const offer = shopOffers[i],
           eligible = eligibleWeaponUsers(offer.item)
+        if (!eligible.length) {
+          renderShop(`No eligible wielder for ${offer.item.name}.`)
+          return
+        }
         let html = `<h2>${offer.item.name}: choose wielder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${weaponSummary(offer.item)}</div>`
         eligible.forEach((u, idx) => {
           const oldWeapon = u.weapon ? `${u.weapon.name} (${weaponSummary(u.weapon)})` : 'nothing'
@@ -2439,7 +2459,7 @@ ${growLine}</div>`
         targets.forEach(({ unit: u, index: idx }) => {
           const before = offer.stat === 'level' ? levelLabel(u) : u.stats[offer.stat]
           const after = offer.stat === 'level' ? (canApplyBoost(offer, u) ? '+1 level' : levelLabel(u)) : Math.min(capStat(u, offer.stat), u.stats[offer.stat] + offer.amt)
-          const label = offer.stat === 'level' ? 'Level' : offer.stat.toUpperCase()
+          const label = offer.stat === 'level' ? 'Level' : statLabel(u, offer.stat)
           const growths = offer.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
           const details = boostDetailHTML(offer, u)
           html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}${details}</div><button data-shop-boost-target="${idx}">Use</button></div>`
@@ -2546,7 +2566,7 @@ ${growLine}</div>`
         targets.forEach(({ unit: u, index: i }) => {
           const before = r.stat === 'level' ? levelLabel(u) : u.stats[r.stat]
           const after = r.stat === 'level' ? (canApplyBoost(r, u) ? `L${u.lvl + 1}` : levelLabel(u)) : Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
-          const label = r.stat === 'level' ? 'Level' : r.stat.toUpperCase()
+          const label = r.stat === 'level' ? 'Level' : statLabel(u, r.stat)
           const growths = r.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
           const details = boostDetailHTML(r, u)
           html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}${details}</div><button data-t="${i}">Use</button></div>`
