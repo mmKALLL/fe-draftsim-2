@@ -332,8 +332,8 @@ U('Lyn','Lord','sword',         {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,r
 U('Eliwood','Lord','sword',     {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
 U('Hector','Lord','axe',        {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25,gTotal:335},'green'),
 
-U('Raven','Mercenary','sword',  {bTotal:40,hp:25,str:8,skl:11,spd:13,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
-U('Harken','Mercenary','sword', {bTotal:41,hp:24,str:9,skl:9,spd:10,lck:4,def:7,res:2,con:11},  {hp:80,str:45,skl:45,spd:35,lck:35,def:30,res:25,gTotal:295},'blue'),
+U('Raven','Mercenary','sword',  {bTotal:37,hp:25,str:7,skl:10,spd:12,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
+U('Harken','Mercenary','sword', {bTotal:39,hp:24,str:9,skl:9,spd:8,lck:4,def:7,res:2,con:11},  {hp:80,str:35,skl:40,spd:40,lck:35,def:30,res:25,gTotal:275},'blue'),
 
 U('Guy','Myrmidon','sword',     {bTotal:38,hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},  {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25,gTotal:310},'gold'),
 U('Karel','Myrmidon','sword',   {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},  {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20,gTotal:280},'red'),
@@ -343,8 +343,8 @@ U('Matthew','Thief','sword',    {bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,
 U('Legault','Thief','sword',    {bTotal:37,hp:20,str:6,skl:8,spd:10,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
 U('Jaffar','Thief','sword',     {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
 
-U('Oswin','Knight','lance',     {bTotal:46,hp:28,str:13,skl:9,spd:5,lck:3,def:13,res:3,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
-U('Wallace','Knight','lance',   {bTotal:41,hp:28,str:10,skl:6,spd:5,lck:6,def:12,res:2,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
+U('Oswin','Knight','lance',     {bTotal:37,hp:24,str:11,skl:8,spd:4,lck:3,def:9,res:2,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
+U('Wallace','Knight','lance',   {bTotal:42,hp:26,str:10,skl:6,spd:5,lck:8,def:12,res:1,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
 U('Amelia','Knight','lance',    {bTotal:29,hp:18,str:5,skl:4,spd:4,lck:6,def:7,res:3,con:9},    {hp:60,str:40,skl:45,spd:40,lck:50,def:30,res:15,gTotal:280},'red'),
 
 U('Sain','Cavalier','lance',    {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
@@ -359,7 +359,6 @@ U('Farina','Pegasus','lance',   {bTotal:41,hp:18,str:7,skl:8,spd:9,lck:7,def:5,r
 
 U('Heath','Wyvern','lance',     {bTotal:40,hp:24,str:10,skl:7,spd:7,lck:7,def:8,res:1,con:9},   {hp:80,str:50,skl:50,spd:45,lck:20,def:30,res:20,gTotal:295},'red'),
 U('Vaida','Wyvern','lance',     {bTotal:43,hp:27,str:11,skl:8,spd:8,lck:4,def:10,res:2,con:12}, {hp:80,str:45,skl:35,spd:30,lck:25,def:25,res:15,gTotal:255},'purple',2),
-U('Haar','Wyvern','axe',        {bTotal:42,hp:28,str:12,skl:9,spd:6,lck:3,def:10,res:2,con:13}, {hp:80,str:45,skl:45,spd:35,lck:15,def:35,res:10,gTotal:265},'gold',2),
 U('Cormag','Wyvern','lance',    {bTotal:37,hp:22,str:10,skl:5,spd:6,lck:3,def:11,res:2,con:11}, {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'blue',2),
 U('Melady','Wyvern','lance',    {bTotal:43,hp:25,str:8,skl:11,spd:7,lck:3,def:11,res:3,con:9},  {hp:75,str:50,skl:50,spd:45,lck:25,def:20,res:5,gTotal:270},'red',2),
 
@@ -392,9 +391,9 @@ U('Artur','Monk','light',       {bTotal:30,hp:19,str:6,skl:6,spd:8,lck:2,def:2,r
 U('Riev','Monk','light',        {bTotal:36,hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},    {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60,gTotal:280},'purple'),
 U('Saul','Monk','light',        {bTotal:28,hp:20,str:5,skl:6,spd:7,lck:2,def:2,res:6,con:6},    {hp:60,str:40,skl:45,spd:45,lck:15,def:15,res:50,gTotal:270},'green'),
 
-U('Canas','Shaman','dark',      {bTotal:47,hp:21,str:10,skl:9,spd:8,lck:7,def:5,res:8,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
-U('Raigh','Shaman','dark',      {bTotal:51,hp:23,str:12,skl:9,spd:9,lck:6,def:5,res:10,con:4},  {hp:55,str:45,skl:55,spd:40,lck:15,def:15,res:20,gTotal:245},'purple'),
-U('Knoll','Shaman','dark',      {bTotal:28,hp:18,str:7,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
+U('Canas','Shaman','dark',      {bTotal:37,hp:21,str:8,skl:7,spd:7,lck:6,def:4,res:5,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
+U('Raigh','Shaman','dark',      {bTotal:41,hp:23,str:9,skl:5,spd:7,lck:6,def:5,res:9,con:4},    {hp:55,str:45,skl:55,spd:40,lck:15,def:15,res:20,gTotal:245},'purple'),
+U('Knoll','Shaman','dark',      {bTotal:29,hp:18,str:8,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
 U('Sophia','Shaman','dark',     {bTotal:24,hp:15,str:6,skl:2,spd:4,lck:3,def:1,res:8,con:3},    {hp:60,str:55,skl:40,spd:30,lck:20,def:20,res:55,gTotal:280},'blue'),
 U('Lyon','Shaman','dark',       {bTotal:35,hp:20,str:8,skl:7,spd:5,lck:3,def:4,res:8,con:8},    {hp:70,str:55,skl:45,spd:25,lck:25,def:25,res:55,gTotal:300},'purple'),
 U('Niime','Shaman','dark',      {bTotal:42,hp:20,str:9,skl:9,spd:7,lck:3,def:4,res:10,con:6},   {hp:55,str:30,skl:45,spd:25,lck:15,def:15,res:45,gTotal:230},'purple',4),
