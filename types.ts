@@ -100,3 +100,50 @@ export type BiomeData = {
   effects: string[]
   focus: BiomeFocus[]
 }
+
+// --- Runtime domain types (interim: well-known fields typed, permissive index
+// signature for the many dynamically-attached fields; tighten opportunistically) ---
+
+export type Weapon = WeaponData
+
+export type Consumable = ConsumableData
+
+export type Team = 'blue' | 'red'
+
+export type Unit = {
+  id: string
+  name: string
+  baseName: string
+  cls: string
+  displayCls: string
+  weaponType: WeaponType
+  palette: PaletteKey
+  kind: string
+  lvl: number
+  internalLevel: number
+  promoted: boolean
+  stats: StatBlock
+  growths: GrowthBlock
+  caps: StatBlock
+  team: Team
+  isEnemy: boolean
+  startOffset: number
+  status: string | null
+  weapon: Weapon
+  maxHp: number
+  hp: number
+  isLeader?: boolean
+  bossTier?: string | null
+  [key: string]: any
+}
+
+export type ShopOffer = {
+  kind: string
+  price: number
+  [key: string]: any
+}
+
+export type BiomeEntry = {
+  biome: BiomeData
+  [key: string]: any
+}

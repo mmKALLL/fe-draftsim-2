@@ -1,48 +1,57 @@
-'use strict'
+import { $ } from './utils'
+import type { Unit, Consumable, ShopOffer, BiomeEntry } from '../types'
 
-let chosen = [],
-  draftOptions = [],
-  player = [],
-  enemy = [],
-  consumables = [],
-  shopOffers = [],
-  biomePlan = [],
-  battle = 0,
-  combatTurn = 0,
-  gold = 0,
-  awaitingReward = false,
-  battleRunning = false,
-  shopOpen = false,
-  pendingShopAfterReward = false,
-  autoFight = false,
-  filter = 'all',
-  activePreviewActor = null,
-  activeDetailActorIds = [],
-  activeConsumableActor = null,
-  nextEnemyMarkerId = null,
-  pendingTargetCancel = null,
-  pendingConsumableAction = null,
-  pendingAutoFightAction = null,
-  pendingDefaultAction = null,
-  pendingDefaultLabel = ''
-const $ = (id = '') => document.getElementById(id)
-function formatGold(amount = 0) {
-  return `${amount} G`
+export const state = {
+  // cross-cutting (read/written across many modules)
+  player: [] as Unit[],
+  enemy: [] as Unit[],
+  consumables: [] as (Consumable | null)[],
+  gold: 0,
+  battle: 0,
+  biomePlan: [] as BiomeEntry[],
+
+  draft: {
+    chosen: [] as string[],
+    options: [] as string[][],
+  },
+  combat: {
+    running: false,
+    turn: 0,
+    autoFight: false,
+    nextEnemyMarkerId: null as string | null,
+    pendingTargetCancel: null as (() => void) | null,
+    pendingConsumableAction: null as ((slot: number) => void) | null,
+    pendingAutoFightAction: null as (() => void) | null,
+    pendingDefaultAction: null as (() => void) | null,
+    pendingDefaultLabel: '',
+  },
+  shop: {
+    open: false,
+    offers: [] as ShopOffer[],
+  },
+  ui: {
+    awaitingReward: false,
+    pendingShopAfterReward: false,
+    filter: 'all',
+    activePreviewActor: null as Unit | null,
+    activeDetailActorIds: [] as string[],
+    activeConsumableActor: null as Unit | null,
+  },
 }
-function goldHTML(amount = 0) {
-  return `<span class="goldAmount">${formatGold(amount)}</span>`
-}
-function updateGoldUI() {
+
+export const formatGold = (amount = 0) => `${amount} G`
+export const goldHTML = (amount = 0) => `<span class="goldAmount">${formatGold(amount)}</span>`
+export function updateGoldUI() {
   const el = $('goldLabel')
-  if (el) el.textContent = formatGold(gold)
+  if (el) el.textContent = formatGold(state.gold)
 }
-function addGold(amount = 0) {
-  gold += amount
+export function addGold(amount = 0) {
+  state.gold += amount
   updateGoldUI()
 }
-function spendGold(amount = 0) {
-  if (gold < amount) return false
-  gold -= amount
+export function spendGold(amount = 0) {
+  if (state.gold < amount) return false
+  state.gold -= amount
   updateGoldUI()
   return true
 }
