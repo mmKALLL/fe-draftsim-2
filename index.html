@@ -12,7 +12,7 @@
         <div class="topTitle">
           <h1>FireRogue: Blazing Sword</h1>
         </div>
-        <div id="biomeMap" class="biomeMap" aria-label="Biome map"></div>
+        <div id="biomeMap" class="biomeMap" aria-label="Arena map"></div>
         <div class="row topBadges">
           <span class="badge">Gold <b id="goldLabel" class="goldAmount">0 G</b></span
           ><span class="badge"
@@ -45,7 +45,7 @@
           <button id="menuHelpBtn" type="button">Help and rules</button>
           <button id="menuMusicBtn" type="button">Enable music</button>
         </div>
-        <p class="menuSummary">The game is divided into 4 biomes, with 5 battles each.<br />Can you overcome the toughest arenas in Elibe?</p>
+        <p class="menuSummary">The game is divided into 4 arenas, with 5 battles each.<br />Can you overcome the toughest teams in Elibe?</p>
       </div>
 
       <div id="draftScreen" class="panel hidden">
@@ -1477,7 +1477,7 @@
         return null
       }
       function biomeUnitIconHTML(focus, bossIndex, promoted = false) {
-        const label = `${bossIndex === 0 ? 'Boss' : 'Biome boss'}: ${focusLabel(focus)}`
+        const label = `${bossIndex === 0 ? 'Boss' : 'Arena boss'}: ${focusLabel(focus)}`
         return `<span title="${htmlAttr(label)}">${mapSpriteForFocus(focus, 'red', promoted)}</span>`
       }
       function renderBiomeMap() {
@@ -1719,7 +1719,7 @@ ${growLine}</div>`
       function combatantSpriteSlot(u, isEnemy = false) {
         const preview = isEnemy ? combatPreviewHTML(activePreviewActor, u) : ''
         const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
-        const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">BIOME BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
+        const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
         const st = statusLabel(u)
         const status = st ? ` ${st}` : ''
         const next =
@@ -1793,7 +1793,7 @@ ${growLine}</div>`
         const biomePrefix = biome ? `${biome.name} (${biomeEffectLabels(biome).join(', ')}): ` : ''
         const msg =
           bossTier === BOSS_TIER_BIOME
-            ? 'Biome boss fight: +6 level leader with stronger weapons.'
+            ? 'Arena boss fight: +6 level leader with stronger weapons.'
             : bossTier === BOSS_TIER_REGULAR
               ? 'Regular boss fight: +4 level leader.'
               : 'Standard enemy team.'
@@ -1944,7 +1944,7 @@ ${growLine}</div>`
           } else if (bossTierForBattle(battle) === BOSS_TIER_BIOME) {
             addGold(SHOP_BIOME_BOSS_GOLD)
             pendingShopAfterReward = true
-            logLine(null, `Biome boss bounty: ${formatGold(SHOP_BIOME_BOSS_GOLD)}.`, 'goldLog')
+            logLine(null, `Arena boss bounty: ${formatGold(SHOP_BIOME_BOSS_GOLD)}.`, 'goldLog')
             renderTeams()
             showRewards()
           } else showRewards()
@@ -2639,9 +2639,12 @@ ${growLine}</div>`
       function showHelpRules() {
         showModal(
           `<h2>Help and rules</h2>
-          <p>The run has 4 biomes with 5 battles each. Battles 3 and 5 in each biome are bosses, and battle 5 is the biome boss.</p>
-          <p>Your party fully heals after each battle. Choose rewards, manage consumables and gold, visit shops after biome bosses, and survive all 20 battles.</p>
-          <p>Score is wins × 1000 + remaining ${goldHTML(gold)}.</p>
+          <p>FireRogue is a roguelike game heavily inspired by Fire Emblem: Blazing Sword.</p>
+          <p>Your goal is to survive four arenas with 5 battles each. Battles #3 and #5 in each arena are bosses.</p>
+          <p>Your party fully heals after each battle. Improve your equipment, manage consumables, and build a well-balanced team capable of overcoming any obstacle.</p>
+          <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
+          <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
+          <p>Score is calculated as wins × 1000 + remaining gold.</p>
           <button onclick="closeModal()" class="primary">Back</button>`
         )
       }
