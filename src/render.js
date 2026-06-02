@@ -103,17 +103,46 @@ function weaponStatHTML(w) {
   if (eff.length) labels.push([eff.join(', '), ''])
   return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
 }
-function statHTML(u) {
+function statHTML(u, showGrowths = false) {
   return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
     .map((k) => {
       const growth = u.growths[k] == null ? '--' : u.growths[k]
-      return `<span data-stat-value="${u.stats[k]}" data-growth-value="${growth}"><b>${statLabel(u, k)}</b> ${u.stats[k]}</span>`
+      return `<span><b>${statLabel(u, k)}</b> ${showGrowths ? growth : u.stats[k]}</span>`
     })
     .join('')
 }
 function growthSummaryHTML(u) {
   const g = u.growths
   return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
+}
+function heldItemFromRef(ref) {
+  if (!ref) return null
+  if (typeof ref === 'string') return HELD_ITEMS.find((item) => item.id === ref) || null
+  return ref
+}
+function skillFromRef(ref) {
+  if (!ref) return null
+  if (typeof ref === 'string') return TEACHABLE_SKILLS.find((skill) => skill.id === ref) || null
+  return ref
+}
+function rarityClass(rarity) {
+  return rarity ? ` reward-${rarity}` : ''
+}
+function detailEntryHTML(title, value, desc = '', rarity = '') {
+  const descHTML = desc ? `<div class="small">${desc}</div>` : ''
+  return `<div class="unitDetailEntry${rarityClass(rarity)}"><div class="row space"><b>${title}</b><span>${value}</span></div>${descHTML}</div>`
+}
+function unitDetailsHTML(u) {
+  const held = heldItemFromRef(u.heldItem || u.heldItemId || u.item)
+  const skillRefs = Array.isArray(u.skills) ? u.skills : Array.isArray(u.skillIds) ? u.skillIds : []
+  const skills = skillRefs.map(skillFromRef).filter(Boolean)
+  const heldHTML = held
+    ? detailEntryHTML('Held item', held.name, held.desc, held.tier)
+    : detailEntryHTML('Held item', 'None')
+  const skillsHTML = skills.length
+    ? skills.map((skill) => detailEntryHTML('Skill', skill.name, skill.desc, skill.rarity)).join('')
+    : detailEntryHTML('Skills', 'None')
+  return `<div class="unitDetails">${heldHTML}${skillsHTML}</div>`
 }
 function unitCard(u) {
   const wt = u.weapon ? ` · ${u.weapon.name}` : ''
@@ -123,7 +152,8 @@ function unitCard(u) {
   const buffs = temporaryBuffLabel(u)
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}" data-growth-card><div class="portraitStack">${portrait}<div class="growthModeLabel">Showing growths</div></div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div></div></div>`
+  const expanded = activeDetailActorIds.includes(u.id)
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}${expanded ? ' expanded' : ''}" data-detail-card data-unit-id="${u.id}" role="button" tabindex="0" aria-expanded="${expanded ? 'true' : 'false'}"><div class="portraitStack">${portrait}<div class="detailModeLabel">Growths + details</div></div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u, expanded)}</div>${expanded ? unitDetailsHTML(u) : ''}</div></div>`
 }
 
 function renderConsumables() {
@@ -152,28 +182,26 @@ function renderSideCards() {
   renderConsumables()
   $('playerTeam').innerHTML = player.map(unitCard).join('')
   $('enemyTeam').innerHTML = enemy.map(unitCard).join('')
-  bindGrowthHoldCards()
+  bindDetailCards()
 }
-function bindGrowthHoldCards() {
-  document.querySelectorAll('[data-growth-card]').forEach((card) => {
-    const setGrowthMode = (show) => {
-      card.classList.toggle('showGrowths', show)
-      card.querySelectorAll('[data-stat-value]').forEach((el) => {
-        const text = show ? el.dataset.growthValue : el.dataset.statValue
-        el.lastChild.textContent = ` ${text}`
-      })
+function updateCombatLogTitle() {
+  const title = $('combatLogTitle')
+  if (!title) return
+  title.textContent = combatTurn > 0 ? `Combat log - Turn ${combatTurn}` : 'Combat log'
+}
+function bindDetailCards() {
+  document.querySelectorAll('[data-detail-card]').forEach((card) => {
+    const toggle = () => {
+      const unitId = card.dataset.unitId
+      activeDetailActorIds = activeDetailActorIds.includes(unitId) ? activeDetailActorIds.filter((id) => id !== unitId) : [...activeDetailActorIds, unitId]
+      renderSideCards()
     }
-    const clear = (e) => {
-      setGrowthMode(false)
-      if (e?.pointerId !== undefined && card.hasPointerCapture?.(e.pointerId)) card.releasePointerCapture(e.pointerId)
+    card.onclick = toggle
+    card.onkeydown = (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      e.preventDefault()
+      toggle()
     }
-    card.onpointerdown = (e) => {
-      setGrowthMode(true)
-      card.setPointerCapture?.(e.pointerId)
-    }
-    card.onpointerup = clear
-    card.onpointercancel = clear
-    card.onlostpointercapture = clear
   })
 }
 function updateNextEnemyMarker(startIndex = 0) {
@@ -186,6 +214,7 @@ function renderTeams() {
   updateGoldUI()
   renderBiomeMap()
   updateMainModeTitle()
+  updateCombatLogTitle()
   renderSideCards()
   $('blueSprites').innerHTML = player.map((u) => combatantSpriteSlot(u, false)).join('')
   $('redSprites').innerHTML = enemy.map((u) => combatantSpriteSlot(u, true)).join('')
@@ -219,7 +248,7 @@ function weaponSummary(w, forForge = false) {
   const fx = staffEffect(w)
   const effects = weaponEffectLabels(w)
   const effectText = effects.length ? `, ${effects.join(', ')}` : ''
-  if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt} + Mag${effectText}`
+  if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt}+Mag${effectText}`
   if (fx === 'fortify') return `Staff, Rank ${w.rank}, heals all allies by Mag${effectText}`
   if (fx === 'sleep' || fx === 'berserk') return `Staff, Rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
   if (forForge) return `Mt ${w.mt}, Hit ${w.hit}`

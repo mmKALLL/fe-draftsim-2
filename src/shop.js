@@ -71,9 +71,9 @@ function shopForgeOffer() {
 }
 function makeShopOffers() {
   return [
-    ...uniqueShopOffers(5, shopWeaponOffer, (offer) => offer.item.name),
-    ...uniqueShopOffers(3, shopConsumableOffer, (offer) => offer.item.id),
-    ...uniqueShopOffers(3, shopBoostOffer, (offer) => offer.title),
+    ...uniqueShopOffers(SHOP_WEAPON_OFFERS, shopWeaponOffer, (offer) => offer.item.name),
+    ...uniqueShopOffers(SHOP_CONSUMABLE_OFFERS, shopConsumableOffer, (offer) => offer.item.id),
+    ...uniqueShopOffers(SHOP_BOOST_OFFERS, shopBoostOffer, (offer) => offer.title),
     shopForgeOffer(),
   ]
 }

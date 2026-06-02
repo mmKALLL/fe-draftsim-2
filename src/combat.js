@@ -377,7 +377,7 @@ function floatText(u, text, cls) {
   n.className = 'floatText ' + cls
   n.textContent = text
   el.appendChild(n)
-  setTimeout(() => n.remove(), cls.includes('damage') ? 950 : 650)
+  setTimeout(() => n.remove(), cls.includes('statusText') ? 1250 : cls.includes('damage') ? 950 : 650)
 }
 function selectTarget(actor, targets, prompt, cancelLabel = '') {
   activePreviewActor = actor
@@ -637,11 +637,11 @@ async function animateStatusStaff(actor, target, result) {
   if (ae) ae.classList.add('active')
   if (te) te.classList.add('target')
   await sleep(300)
-  if (result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'missText')
+  if (result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'statusText')
   else floatText(target, 'MISS', 'missText')
   updateUnitVisual(target)
   renderSideCards()
-  await sleep(350)
+  await sleep(result.hit ? 800 : 350)
 }
 async function animateWait(actor, msg, cls = 'miss') {
   clearHighlights()
@@ -749,9 +749,9 @@ async function resolveActorTurn(actor, allies, foes, forcedTarget = null, staves
       await animateStrike(actor, target, r)
       if (actor.weapon?.poison && r.hit && target.hp > 0 && applyPoison(target)) {
         logLine(null, `${target.name} is poisoned.`, 'crit')
-        floatText(target, 'POISON', 'missText')
+        floatText(target, 'POISON', 'statusText')
         renderSideCards()
-        await sleep(250)
+        await sleep(650)
       }
       if (actor.weapon?.drain && r.hit && r.damage > 0) {
         const before = actor.hp

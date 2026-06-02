@@ -2,3 +2,5 @@ assets/*
 !assets/femp
 !assets/femp-backup
 fe-assets-db
+node_modules
+dist

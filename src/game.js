@@ -2,6 +2,7 @@
 
 function startRun() {
   if (selectedRosterCount() !== ROSTER_SIZE) return
+  activeDetailActorIds = []
   player = chosen.map((n, i) => {
     const u = freshFromBase(
       BASES.find((b) => b.name === n),
@@ -52,6 +53,7 @@ function generateEnemy() {
   }
   activePreviewActor = null
   nextEnemyMarkerId = null
+  combatTurn = 0
   $('log').innerHTML = ''
   setStatus('')
   const biome = activeBiomeEntry()?.biome
@@ -102,6 +104,7 @@ function debugAddGeosphere() {
 async function runBattle() {
   if (battleRunning || !enemy.length) return
   battleRunning = true
+  combatTurn = 1
   let actions = 0,
     side = 'player',
     pIdx = 0,
@@ -110,6 +113,7 @@ async function runBattle() {
   updateNextEnemyMarker(eIdx)
   renderTeams()
   while (player.some((x) => x.hp > 0) && enemy.some((x) => x.hp > 0) && actions < 300) {
+    combatTurn = actions + 1
     const stavesExhausted = actions >= STAFF_EXHAUST_ROUND_LIMIT
     if (stavesExhausted && !staffExhaustionLogged) {
       logLine(null, `Staves run out of uses after ${STAFF_EXHAUST_ROUND_LIMIT} combat rounds.`, 'miss')
@@ -213,6 +217,7 @@ async function runBattle() {
   setStatus('')
   nextEnemyMarkerId = null
   battleRunning = false
+  combatTurn = 0
   setAutoFight(false, true)
   renderTeams()
   if (player.some((x) => x.hp > 0)) {
