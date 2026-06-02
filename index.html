@@ -37,7 +37,18 @@
         </div>
       </div>
 
-      <div id="draftScreen" class="panel">
+      <div id="menuScreen" class="panel menuScreen">
+        <h2>Enter the arena</h2>
+        <div class="menuActions">
+          <button id="menuRandomBtn" class="good" type="button">New game (random team)</button>
+          <button id="menuDraftBtn" type="button">New game (draft)</button>
+          <button id="menuHelpBtn" type="button">Help and rules</button>
+          <button id="menuMusicBtn" type="button">Enable music</button>
+        </div>
+        <p class="menuSummary">The game is divided into 4 biomes, with 5 battles each.<br />Can you overcome the toughest arenas in Elibe?</p>
+      </div>
+
+      <div id="draftScreen" class="panel hidden">
         <h2>Draft starting roster</h2>
         <div class="small">
           Choose one unit for each roster slot from three offers. Slot 1 is the party leader and starts with +4 levels. After locking the roster, choose one free reward before
@@ -103,6 +114,7 @@
 
       'use strict'
       // ---------- deterministic-ish utilities ----------
+      const MUSIC_URL = 'https://www.youtube.com/watch?v=yIDBhuYldSk&t=19m58s'
       let seed = Math.floor(Math.random() * 999999)
       document.getElementById('seedLabel').textContent = seed
       function rnd() {
@@ -1736,6 +1748,7 @@ ${growLine}</div>`
           return u
         })
         consumables = startingConsumables()
+        $('menuScreen').classList.add('hidden')
         $('draftScreen').classList.add('hidden')
         $('gameScreen').classList.remove('hidden')
         renderTeams()
@@ -2620,10 +2633,48 @@ ${growLine}</div>`
         $('modal').classList.add('hidden')
         $('modalBody').innerHTML = ''
       }
+      function openMusic() {
+        window.open(MUSIC_URL, '_blank', 'noopener,noreferrer')
+      }
+      function showHelpRules() {
+        showModal(
+          `<h2>Help and rules</h2>
+          <p>The run has 4 biomes with 5 battles each. Battles 3 and 5 in each biome are bosses, and battle 5 is the biome boss.</p>
+          <p>Your party fully heals after each battle. Choose rewards, manage consumables and gold, visit shops after biome bosses, and survive all 20 battles.</p>
+          <p>Score is wins × 1000 + remaining ${goldHTML(gold)}.</p>
+          <button onclick="closeModal()" class="primary">Back</button>`
+        )
+      }
+      function showMenu() {
+        $('menuScreen').classList.remove('hidden')
+        $('draftScreen').classList.add('hidden')
+        $('gameScreen').classList.add('hidden')
+        $('battleNo').textContent = battle
+        $('rosterCount').textContent = selectedRosterCount()
+        updateGoldUI()
+        renderBiomeMap()
+      }
+      function startDraftGame() {
+        if (!draftOptions.length) draftOptions = randomDraftOptions()
+        if (!chosen.length) chosen = emptyRosterChoices()
+        $('menuScreen').classList.add('hidden')
+        $('draftScreen').classList.remove('hidden')
+        $('gameScreen').classList.add('hidden')
+        renderDraft()
+      }
+      function startRandomGame() {
+        draftOptions = randomDraftOptions()
+        chosen = draftOptions.map((slot) => pick(slot))
+        startRun()
+      }
 
       biomePlan = makeBiomePlan()
       draftOptions = randomDraftOptions()
       chosen = emptyRosterChoices()
+      $('menuRandomBtn').onclick = startRandomGame
+      $('menuDraftBtn').onclick = startDraftGame
+      $('menuHelpBtn').onclick = showHelpRules
+      $('menuMusicBtn').onclick = openMusic
       $('randomPickBtn').onclick = () => {
         chosen = draftOptions.map((slot) => pick(slot))
         renderDraft()
@@ -2642,7 +2693,7 @@ ${growLine}</div>`
           debugWinBattle()
         }
       })
-      renderDraft()
+      showMenu()
     </script>
   </body>
 </html>
