@@ -26,6 +26,12 @@ h2,
 h3 {
   margin: 0 0 8px;
 }
+.arenaTitleName {
+  font-weight: 600;
+}
+.arenaTitleEffects {
+  font-weight: 300;
+}
 .wrap {
   max-width: none;
   margin: 0;
@@ -770,6 +776,9 @@ h4 {
 }
 .shopSection {
   margin-top: 16px;
+}
+.shopSectionNote {
+  margin-bottom: 8px;
 }
 .shopRow {
   display: grid;

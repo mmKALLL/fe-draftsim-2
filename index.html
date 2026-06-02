@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GBA Emblem Roguelike Prototype</title>
+    <title>FireRogue</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -610,6 +610,10 @@
           const bossOpts = bossWeaponPool(opts, tier)
           return cloneWeapon(bossOpts.sort((a, b) => weaponScore(b) - weaponScore(a))[0])
         }
+        if (battle > 10) {
+          const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
+          if (good.length && rnd() < 0.85) return cloneWeapon(pick(good))
+        }
         if (battle > 4) {
           const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
           if (good.length && rnd() < 0.55) return cloneWeapon(pick(good))
@@ -785,7 +789,7 @@
         return attackSpeed(a) - attackSpeed(d) >= 4
       }
       function healAmount(a) {
-        return Math.max(1, (a.weapon.mt || 10) + floor(combatStat(a, 'str') / 2))
+        return Math.max(1, (a.weapon.mt || 0) + combatStat(a, 'str'))
       }
       function fortifyAmount(a) {
         return Math.max(1, combatStat(a, 'str'))
@@ -997,8 +1001,9 @@
         el.appendChild(n)
         setTimeout(() => n.remove(), cls.includes('damage') ? 950 : 650)
       }
-      function selectTarget(actor, targets, prompt) {
+      function selectTarget(actor, targets, prompt, cancelLabel = '') {
         activePreviewActor = actor
+        if (cancelLabel) activeConsumableActor = actor
         renderTeams()
         setStatus(prompt || `${actor.name}'s turn: choose a target.`)
         const ae = spriteEl(actor)
@@ -1013,11 +1018,19 @@
               ex.onclick = null
             })
             pendingTargetCancel = null
+            pendingDefaultAction = null
+            pendingDefaultLabel = ''
             activePreviewActor = null
+            if (cancelLabel) activeConsumableActor = null
             renderTeams()
             resolve(target)
           }
           pendingTargetCancel = () => finish(null)
+          if (cancelLabel) {
+            pendingDefaultLabel = cancelLabel
+            pendingDefaultAction = () => finish(null)
+            renderConsumables()
+          }
           targets.forEach((t) => {
             const el = spriteEl(t)
             if (!el) return
@@ -1184,6 +1197,21 @@
         renderSideCards()
         await sleep(350)
       }
+      function confirmConsumableUse(actor, item, details) {
+        return new Promise((resolve) => {
+          showModal(
+            `<h2>Use ${item.name}?</h2><p>${details || consumableSummary(item)}</p><div class="row"><button id="confirmConsumableBtn" class="good">Use</button><button id="cancelConsumableBtn">Cancel</button></div>`
+          )
+          $('confirmConsumableBtn').onclick = () => {
+            closeModal()
+            resolve(true)
+          }
+          $('cancelConsumableBtn').onclick = () => {
+            closeModal()
+            resolve(false)
+          }
+        })
+      }
       async function useConsumableFromSlot(slot, actor) {
         const item = consumables[slot]
         if (!item) {
@@ -1196,12 +1224,21 @@
           return false
         }
         if (item.effect === 'aoeDamage') {
+          const confirmed = await confirmConsumableUse(
+            actor,
+            item,
+            `${item.name} will affect ${targets.length} enem${targets.length === 1 ? 'y' : 'ies'}. ${consumableSummary(item)}`
+          )
+          if (!confirmed) {
+            setStatus(`${actor.name} holds onto ${item.name}.`)
+            return false
+          }
           await animateAoeConsumable(actor, targets, item)
           consumables[slot] = null
           renderTeams()
           return true
         }
-        const target = await selectTarget(actor, targets, `${actor.name} uses ${item.name}: choose an ally.`)
+        const target = await selectTarget(actor, targets, `${actor.name} uses ${item.name}: choose an ally.`, 'Cancel use')
         if (!target) {
           setStatus(`${actor.name} holds onto ${item.name}.`)
           return false
@@ -1498,16 +1535,26 @@
           })
           .join('')
       }
+      function arenaTitleHTML() {
+        const biome = activeBiomeEntry()?.biome
+        if (!biome) return '<span class="arenaTitleName">Arena</span>'
+        const effects = biomeEffectLabels(biome).join(', ')
+        return `<span class="arenaTitleName">${biome.name} Arena</span>${effects ? ` <span class="arenaTitleEffects">(${effects})</span>` : ''}`
+      }
+      function updateMainModeTitle() {
+        const title = $('mainModeTitle')
+        if (!title) return
+        title.innerHTML = shopOpen ? 'Shop' : arenaTitleHTML()
+      }
       function setShopOpen(open) {
         shopOpen = open
         const battleView = $('battleView'),
           shopScreen = $('shopScreen'),
-          title = $('mainModeTitle'),
           autoBtn = $('autoFightBtn')
         if (battleView) battleView.classList.toggle('hidden', open)
         if (shopScreen) shopScreen.classList.toggle('hidden', !open)
-        if (title) title.textContent = open ? 'Shop' : 'Arena'
         if (autoBtn) autoBtn.classList.toggle('hidden', open)
+        updateMainModeTitle()
         updateAutoFightButton()
       }
       function updateAutoFightButton() {
@@ -1711,6 +1758,7 @@ ${growLine}</div>`
         $('rosterCount').textContent = player.length || selectedRosterCount()
         updateGoldUI()
         renderBiomeMap()
+        updateMainModeTitle()
         renderSideCards()
         $('blueSprites').innerHTML = player.map((u) => combatantSpriteSlot(u, false)).join('')
         $('redSprites').innerHTML = enemy.map((u) => combatantSpriteSlot(u, true)).join('')
@@ -1817,6 +1865,23 @@ ${growLine}</div>`
         logLine(null, 'Debug hotkey: enemy team defeated.', 'crit')
         renderTeams()
       }
+      function debugAddGeosphere() {
+        const item = consumableById('geosphere')
+        if (!item) return
+        if (!player.length || consumables.length < CONSUMABLE_SLOTS) {
+          setStatus('Debug Geosphere: start a run first.')
+          return
+        }
+        const slot = firstEmptyConsumableSlot()
+        if (slot === -1) {
+          setStatus('Debug Geosphere: no empty consumable slot.')
+          logLine(null, 'Debug hotkey: no empty consumable slot for Geosphere.', 'miss')
+          return
+        }
+        storeConsumable(item, slot)
+        setStatus(`Debug Geosphere: added to slot ${slot + 1}.`)
+        logLine(null, `Debug hotkey: added Geosphere to slot ${slot + 1}.`, 'crit')
+      }
       async function runBattle() {
         if (battleRunning || !enemy.length) return
         battleRunning = true
@@ -1860,6 +1925,7 @@ ${growLine}</div>`
                     enemy.filter((x) => x.hp > 0),
                     `${actor.name}'s turn: choose an enemy for ${actor.weapon.name}, or use a consumable.`
                   )
+                  if (action?.type === 'cancel') continue
                   if (action?.type === 'consumable') {
                     await useConsumableFromSlot(action.slot, actor)
                     continue
@@ -1869,6 +1935,7 @@ ${growLine}</div>`
               } else if (actor.weapon.staff) {
                 if (hasUsableConsumable(actor)) {
                   const action = await selectPlayerAction(actor, [], `${actor.name}'s staff is out of uses. Use a consumable or end turn.`, 'End turn')
+                  if (action?.type === 'cancel') continue
                   if (action?.type === 'consumable') {
                     await useConsumableFromSlot(action.slot, actor)
                     continue
@@ -1881,6 +1948,7 @@ ${growLine}</div>`
                   enemy.filter((x) => x.hp > 0),
                   `${actor.name}'s turn: choose an enemy to attack, or use a consumable.`
                 )
+                if (action?.type === 'cancel') continue
                 if (action?.type === 'consumable') {
                   await useConsumableFromSlot(action.slot, actor)
                   continue
@@ -1966,7 +2034,7 @@ ${growLine}</div>`
         let html = `<h2>${title}</h2><div class="rewardGrid">`
         choiceRewards.forEach((r, i) => {
           const rewardClass = r.item?.tier ? ` reward-${r.item.tier || 'normal'}` : ''
-          html += `<div class="choice${rewardClass}"><div><h4>${r.title}</h4><div>${r.desc}</div></div><button data-i="${i}" class="good">Choose</button></div>`
+          html += selectionChoiceHTML(r.title, r.desc, `data-i="${i}"`, 'Choose', rewardClass)
         })
         html += '</div>'
         if (skipReward) html += `<div class="rewardSkipWrap"><button data-skip-reward class="rewardSkip">Skip reward: gain ${goldHTML(skipReward.gold)}</button></div>`
@@ -1975,15 +2043,40 @@ ${growLine}</div>`
         const skipBtn = document.querySelector('[data-skip-reward]')
         if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
       }
+      function selectionChoiceHTML(title, desc, buttonAttr, buttonLabel, extraClass = '', buttonClass = 'good', shellClass = 'choice', descClass = '') {
+        const descClassAttr = descClass ? ` class="${descClass}"` : ''
+        return `<div class="${shellClass}${extraClass}"><div><h4>${title}</h4><div${descClassAttr}>${desc}</div></div><button ${buttonAttr} class="${buttonClass}">${buttonLabel}</button></div>`
+      }
       function weaponSummary(w, forForge = false) {
         const fx = staffEffect(w)
         const effects = weaponEffectLabels(w)
         const effectText = effects.length ? `, ${effects.join(', ')}` : ''
-        if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt}${effectText}`
+        if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt} + Mag${effectText}`
         if (fx === 'fortify') return `Staff, Rank ${w.rank}, heals all allies by Mag${effectText}`
         if (fx === 'sleep' || fx === 'berserk') return `Staff, Rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
         if (forForge) return `Mt ${w.mt}, Hit ${w.hit}`
         return `Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}, Rank ${w.rank}${effectText}`
+      }
+      function weaponSpeedImpact(unit, item) {
+        const speedImpact = Math.min(0, unit.stats.con - item.wt + (item.speedBonus || 0))
+        const symbol = speedImpact < 0 ? '-' : speedImpact === 0 ? '±' : '+'
+        return `${symbol}${Math.abs(speedImpact)}`
+      }
+      function weaponReplacementText(unit) {
+        return unit.weapon ? `${unit.weapon.name} (${weaponSummary(unit.weapon)})` : 'nothing'
+      }
+      function weaponOfferTitle(item, unit = null) {
+        if (!unit) return item.name
+        return `${item.name} to ${unit.name} (Con: ${unit.stats.con}, Speed ${weaponSpeedImpact(unit, item)})`
+      }
+      function weaponOfferDescription(item, unit = null, opts = {}) {
+        const action = opts.action || 'Equip'
+        const includeTier = opts.includeTier !== false
+        const lead = unit ? `${action} ${unit.name} with ${item.name}` : `${action} ${item.name}`
+        const meta = []
+        if (includeTier) meta.push(weaponTierLabel(item.tier))
+        if (unit) meta.push(`Replaces ${weaponReplacementText(unit)}`)
+        return `${lead} (${weaponSummary(item)}).${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
       }
       function isGoodRewardWeapon(w) {
         return w.tier !== 'normal'
@@ -2059,14 +2152,10 @@ ${growLine}</div>`
         const itemUnit = pick(candidates.length ? candidates : player)
         const opts = rewardWeaponPool(itemUnit, goodOnly)
         const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly))
-        const oldWeapon = itemUnit.weapon ? `${itemUnit.weapon.name} (${weaponSummary(itemUnit.weapon)})` : 'nothing'
-        const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · Replaces ${oldWeapon}</div>`
-        const effectiveAttackSpeed = Math.min(0, itemUnit.stats.con - item.wt + (item.speedBonus || 0))
-        const effectiveASSymbol = effectiveAttackSpeed < 0 ? '-' : effectiveAttackSpeed === 0 ? '±' : '+'
         return {
           type: 'item',
-          title: `${item.name} to ${itemUnit.name} (Con: ${itemUnit.stats.con}, Speed ${effectiveASSymbol}${Math.abs(effectiveAttackSpeed)})`,
-          desc: `Equip ${itemUnit.name} with ${item.name} (${weaponSummary(item)}).${meta}`,
+          title: weaponOfferTitle(item, itemUnit),
+          desc: weaponOfferDescription(item, itemUnit),
           unit: itemUnit,
           item,
         }
@@ -2120,7 +2209,7 @@ ${growLine}</div>`
           const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
           const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
           const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
-          const label = stat === 'str' ? 'STR/MAG' : stat.toUpperCase()
+          const label = stat === 'str' ? 'Str/Mag' : stat.toUpperCase()
           reward = { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${label} +${amt} to a chosen unit.`, stat, amt }
         }
         return targeted ? targetedBoostReward(reward) : reward
@@ -2233,7 +2322,7 @@ ${growLine}</div>`
           type: 'item',
           shopKind: 'weapon',
           title: item.name,
-          desc: weaponSummary(item),
+          desc: weaponOfferDescription(item, null, { action: 'Buy' }),
           item,
           price: shopWeaponPrice(item),
         }
@@ -2284,7 +2373,7 @@ ${growLine}</div>`
         const buttonLabel = sold ? 'Sold' : `${action} ${goldHTML(offer.price)}`
         const disabled = sold || !affordable || unavailable ? ' disabled' : ''
         const meta = `<div class="small rewardMeta">${goldHTML(offer.price)}</div>`
-        return `<div class="shopItem${shopOfferClass(offer)}"><div><h4>${offer.title}</h4><div class="small">${offer.desc}</div>${meta}</div><button data-shop-buy="${i}" class="good"${disabled}>${buttonLabel}</button></div>`
+        return selectionChoiceHTML(offer.title, `${offer.desc}${meta}`, `data-shop-buy="${i}"${disabled}`, buttonLabel, shopOfferClass(offer), 'good', 'shopItem', 'small')
       }
       function renderShop(message = '') {
         const groups = {
@@ -2297,7 +2386,7 @@ ${growLine}</div>`
         if (message) html += `<div class="notice">${message}</div>`
 
         html += `<section class="shopSection"><h3>Weapons</h3>`
-        html += `<div class="small">Bought weapons can be equipped to anyone eligible to wield them.</div>`
+        html += `<div class="small shopSectionNote">Bought weapons can be equipped to anyone eligible to wield them.</div>`
 
         html += `<div class="shopRow shopWeapons">${groups.weapon.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
         html += `<div class="shopLower"><section class="shopSection"><h3>Consumables</h3><div class="shopRow">${groups.consumable.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
@@ -2411,10 +2500,9 @@ ${growLine}</div>`
           renderShop(`No eligible wielder for ${offer.item.name}.`)
           return
         }
-        let html = `<h2>${offer.item.name}: choose wielder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${weaponSummary(offer.item)}</div>`
+        let html = `<h2>${offer.item.name}: choose wielder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${weaponOfferDescription(offer.item, null, { action: 'Buy', includeTier: false })}</div>`
         eligible.forEach((u, idx) => {
-          const oldWeapon = u.weapon ? `${u.weapon.name} (${weaponSummary(u.weapon)})` : 'nothing'
-          html += `<div class="choice"><div><h4>${u.name} (CON: ${u.stats.con})</h4><div>Replaces ${oldWeapon}</div></div><button data-shop-weapon-target="${idx}" class="good">Equip</button></div>`
+          html += selectionChoiceHTML(weaponOfferTitle(offer.item, u), weaponOfferDescription(offer.item, u, { includeTier: false }), `data-shop-weapon-target="${idx}"`, 'Equip')
         })
         html += '<button id="cancelShopWeaponBtn">Cancel</button>'
         showModal(html)
@@ -2623,7 +2711,7 @@ ${growLine}</div>`
         )
       }
       function showGameOver() {
-        showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="primary">Try again</button>`)
+        showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="good">Try again</button>`)
       }
       function showModal(html) {
         $('modalBody').innerHTML = html
@@ -2691,9 +2779,18 @@ ${growLine}</div>`
       $('startBtn').onclick = startRun
       $('resetBtn').onclick = () => location.reload()
       document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && pendingTargetCancel) {
+          e.preventDefault()
+          pendingTargetCancel()
+          return
+        }
         if (e.shiftKey && e.key.toLowerCase() === 'w') {
           e.preventDefault()
           debugWinBattle()
+        }
+        if (e.shiftKey && e.key.toLowerCase() === 'g') {
+          e.preventDefault()
+          debugAddGeosphere()
         }
       })
       showMenu()
