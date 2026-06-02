@@ -313,16 +313,17 @@ const CONSUMABLES = [
   { id: 'geosphere', name: 'Geosphere', tier: 'rare', effect: 'aoeDamage', amount: 13, desc: 'Deals 13 damage to all enemies.' },
   { id: 'restore_potion', name: 'Restore Potion', tier: 'uncommon', effect: 'restore', desc: 'Clears Sleep or Berserk from one living ally.' },
 
-  { id: 'hp_tonic', name: 'HP Tonic', tier: 'normal', effect: 'buff', stat: 'hp', amount: 7, desc: 'Grants max HP +7 for the current battle.' },
-  { id: 'power_tonic', name: 'Power Tonic', tier: 'normal', effect: 'buff', stat: 'str', amount: 2, desc: 'Grants Str/Mag +2 for the current battle.' },
-  { id: 'speed_tonic', name: 'Speed Tonic', tier: 'normal', effect: 'buff', stat: 'spd', amount: 2, desc: 'Grants Spd +2 for the current battle.' },
-  { id: 'guard_tonic', name: 'Guard Tonic', tier: 'normal', effect: 'buff', stat: 'def', amount: 2, desc: 'Grants Def +2 for the current battle.' },
-  { id: 'ward_tonic', name: 'Ward Tonic', tier: 'normal', effect: 'buff', stat: 'res', amount: 2, desc: 'Grants Res +2 for the current battle.' },
+  { id: 'hp_tonic', name: 'HP Tonic', tier: 'normal', effect: 'buff', stat: 'hp', amount: 14, desc: 'Grants max HP +14 for the current battle.' },
+  { id: 'power_tonic', name: 'Power Tonic', tier: 'normal', effect: 'buff', stat: 'str', amount: 4, desc: 'Grants Str/Mag +4 for the current battle.' },
+  { id: 'speed_tonic', name: 'Speed Tonic', tier: 'normal', effect: 'buff', stat: 'spd', amount: 4, desc: 'Grants Spd +4 for the current battle.' },
+  { id: 'guard_tonic', name: 'Guard Tonic', tier: 'normal', effect: 'buff', stat: 'def', amount: 4, desc: 'Grants Def +4 for the current battle.' },
+  { id: 'ward_tonic', name: 'Ward Tonic', tier: 'normal', effect: 'buff', stat: 'res', amount: 4, desc: 'Grants Res +4 for the current battle.' },
 
   { id: 'power_potion', name: 'Filla\'s Might', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 10, desc: 'Grants Str/Mag +10 until end of target\'s next turn.' },
   { id: 'skill_potion', name: 'Thor’s Ire', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 10, desc: 'Grants Skl +10 until end of target\'s next turn.' },
   { id: 'speed_potion', name: 'Set’s Litany', tier: 'uncommon', effect: 'turnBuff', stat: 'spd', amount: 10, desc: 'Grants Spd +10 until end of target\'s next turn.' },
-  { id: 'guard_potion', name: 'Ninis\'s Grace', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 10, desc: 'Grants Def +10 until end of target\'s next turn.' },
+  { id: 'guard_potion', name: 'Battle Robe', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 10, desc: 'Grants Def +10 until end of target\'s next turn.' },
+  { id: 'ward_potion', name: 'Ninis\'s Grace', tier: 'uncommon', effect: 'turnBuff', stat: 'res', amount: 10, desc: 'Grants Res +10 until end of target\'s next turn.' },
 ]
 
 // Candidate held-item data. These are not wired into gameplay yet.
