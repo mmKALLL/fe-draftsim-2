@@ -1,6 +1,23 @@
-'use strict'
+import type {
+  BaseStatBlock,
+  BiomeData,
+  CandidateItemData,
+  ClassData,
+  ConsumableData,
+  GrowthBlock,
+  PaletteKey,
+  Rarity,
+  SkillData,
+  SkillGroupMap,
+  UnitBase,
+  WeaponData,
+  WeaponRank,
+  WeaponType,
+} from './types'
 
-const palettes = {
+const DATA_WEAPON_RANKS: WeaponRank[] = ['E', 'D', 'C', 'B', 'A', 'S']
+
+export const palettes: Record<PaletteKey, string[]> = {
   blue: ['#1e3a8a', '#2563eb', '#93c5fd', '#f8fafc', '#7c2d12', '#f2c9a0', '#111827'],
   red: ['#7f1d1d', '#dc2626', '#fecaca', '#f8fafc', '#422006', '#f2c9a0', '#111827'],
   green: ['#14532d', '#16a34a', '#bbf7d0', '#f8fafc', '#3f2a1d', '#f2c9a0', '#111827'],
@@ -8,7 +25,7 @@ const palettes = {
   gold: ['#713f12', '#d97706', '#fde68a', '#f8fafc', '#111827', '#f2c9a0', '#111827'],
 }
 
-const FEMP_NAME_OVERRIDES = {
+export const FEMP_NAME_OVERRIDES: Record<string, string> = {
   "L'Arachel": 'larachel',
   Pent: 'pent',
   Lucius: 'lucius',
@@ -16,7 +33,7 @@ const FEMP_NAME_OVERRIDES = {
   Niime: 'niime',
   Athos: 'athos',
 }
-const CUSTOM_MAP_SPRITE_STEMS = {
+export const CUSTOM_MAP_SPRITE_STEMS: Record<string, string> = {
   Lyn: 'lyn',
   Eliwood: 'eliwood',
   Hector: 'hector',
@@ -24,7 +41,7 @@ const CUSTOM_MAP_SPRITE_STEMS = {
 }
 
 // prettier-ignore
-const CLASSES = {
+export const CLASSES = {
   Lord: {
     promotesTo: 'Blade Lord',
     kind: 'lord',
@@ -127,9 +144,9 @@ const CLASSES = {
     caps: { hp: 60, str: 27, skl: 25, spd: 23, lck: 30, def: 28, res: 22, con: 20 },
     promo: { hp: 3, str: 2, skl: 2, spd: 2, def: 3, res: 1, con: 1 },
   },
-}
+} satisfies Record<string, ClassData>
 // prettier-ignore
-const CLASS_TAGS = {
+export const CLASS_TAGS: Record<string, string[]> = {
   Lord: [],
   'Blade Lord': [],
   Mercenary: [],
@@ -159,9 +176,8 @@ const CLASS_TAGS = {
   Druid: [],
 }
 
-
 // prettier-ignore
-const BOSS_NAMES_BY_CLASS = {
+export const BOSS_NAMES_BY_CLASS: Record<string, string[]> = {
   Lord: ['Lundgren', 'Uther'],
   'Blade Lord': ['Elbert', 'Karla'],
   Mercenary: ['Saar', 'Carjiga'],
@@ -191,10 +207,9 @@ const BOSS_NAMES_BY_CLASS = {
   Druid: ['Nergal', 'Teodor'],
 }
 
-
 // Weapon data
 // prettier-ignore
-const WEAPONS = [
+export const WEAPONS: WeaponData[] = [
   { name: 'Iron Sword', type: 'sword', rank: 'E', mt: 5, hit: 90, wt: 5, crit: 0, magic: false },
   { name: 'Slim Sword', type: 'sword', rank: 'E', mt: 3, hit: 95, wt: 2, crit: 5, magic: false, speedBonus: 4 },
   { name: 'Steel Sword', type: 'sword', rank: 'D', mt: 8, hit: 75, wt: 10, crit: 0, magic: false },
@@ -286,18 +301,18 @@ const WEAPONS = [
   { name: 'Restore Staff', type: 'staff', rank: 'S', mt: 30, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
 ]
 
-function weaponTierFromRank(rank) {
+export function weaponTierFromRank(rank: WeaponRank): Rarity {
   if (rank === 'A' || rank === 'S') return 'rare'
   if (rank === 'C' || rank === 'B') return 'uncommon'
   return 'normal'
 }
-function weaponTierLabel(tier) {
+export function weaponTierLabel(tier: Rarity): string {
   return tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Normal'
 }
-function prepareWeaponData() {
+export function prepareWeaponData(): void {
   WEAPONS.forEach((w) => {
     const rank = String(w.rank || 'E').toUpperCase()
-    w.rank = WEAPON_RANKS.includes(rank) ? rank : 'E'
+    w.rank = DATA_WEAPON_RANKS.includes(rank as WeaponRank) ? (rank as WeaponRank) : 'E'
     w.tier = w.tier || weaponTierFromRank(w.rank)
   })
 }
@@ -305,7 +320,7 @@ prepareWeaponData()
 
 // Consumable data
 // prettier-ignore
-const CONSUMABLES = [
+export const CONSUMABLES: ConsumableData[] = [
   { id: 'vulnerary', name: 'Vulnerary', tier: 'normal', effect: 'heal', amount: 10, desc: 'Restores 10 HP to one living ally.' },
   { id: 'concoction', name: 'Concoction', tier: 'uncommon', effect: 'heal', amount: 20, desc: 'Restores 20 HP to one living ally.' },
   { id: 'elixir', name: 'Elixir', tier: 'rare', effect: 'fullHeal', desc: 'Fully restores one living ally.' },
@@ -329,16 +344,16 @@ const CONSUMABLES = [
 // Candidate held-item data. These are not wired into gameplay yet.
 // Intended shape: each unit can equip one held item, usually from reward/shop pools.
 // prettier-ignore
-const HELD_ITEMS = [
+export const HELD_ITEMS: CandidateItemData[] = [
   // Auto-consumable conversions and status protections
   // { id: 'vulnerary_pouch', name: 'Vulnerary Pouch', tier: 'normal', family: 'autoConsumable', trigger: 'hpBelowHalf', effect: 'autoHeal', amount: 10, uses: 1, desc: 'Once per battle, heals 10 HP when holder falls below 50% HP.' },
   // { id: 'concoction_pouch', name: 'Concoction Pouch', tier: 'uncommon', family: 'autoConsumable', trigger: 'hpBelowHalf', effect: 'autoHeal', amount: 20, uses: 1, desc: 'Once per battle, heals 20 HP when holder falls below 50% HP.' },
   // { id: 'elixir_pouch', name: 'Elixir Pouch', tier: 'rare', family: 'autoConsumable', trigger: 'hpBelowQuarter', effect: 'autoFullHeal', uses: 1, desc: 'Once per battle, fully heals when holder falls below 25% HP.' },
-  { id: 'awakening_charm', name: 'Awakening Charm', tier: 'uncommon', family: 'protection', effect: 'sleepImmune', desc: 'Prevents sleep.' },
-  { id: 'clarity_charm', name: 'Clarity Charm', tier: 'uncommon', family: 'protection', effect: 'berserkImmune', desc: 'Prevents berserk.' },
-  { id: 'antitoxin_charm', name: 'Antitoxin Charm', tier: 'normal', family: 'protection', effect: 'poisonImmune', desc: 'Prevents poison.' },
+  { id: 'awakening_charm', name: 'Awakening Charm', tier: 'uncommon', price: 800, family: 'protection', effect: 'sleepImmune', desc: 'Prevents sleep.' },
+  { id: 'clarity_charm', name: 'Clarity Charm', tier: 'uncommon', price: 800, family: 'protection', effect: 'berserkImmune', desc: 'Prevents berserk.' },
+  { id: 'antitoxin_charm', name: 'Antitoxin Charm', tier: 'normal', price: 500, family: 'protection', effect: 'poisonImmune', desc: 'Prevents poison.' },
   // { id: 'dragon_tears_charm', name: 'Dragon Tears Charm', tier: 'rare', family: 'autoConsumable', trigger: 'lethalDamage', effect: 'revive', healPercent: 50, uses: 1, desc: 'Once per battle, revives holder at half HP when defeated.' },
-  { id: 'geosphere_shard', name: 'Geosphere Shard', tier: 'rare', family: 'autoConsumable', trigger: 'battleStart', effect: 'enemyAoeDamage', amount: 5, uses: 1, desc: 'At battle start, deals 5 damage to all enemies.' },
+  { id: 'geosphere_shard', name: 'Geosphere Shard', tier: 'rare', price: 1700, family: 'autoConsumable', trigger: 'battleStart', effect: 'enemyAoeDamage', amount: 5, uses: 1, desc: 'At battle start, deals 5 damage to all enemies.' },
 
   // Shields and guards
   // { id: 'leather_shield', name: 'Leather Shield', tier: 'normal', family: 'shield', stats: { def: 1 }, speedPenalty: 1, desc: 'Def +1, but effective speed -1.' },
@@ -347,66 +362,67 @@ const HELD_ITEMS = [
   // { id: 'silver_shield', name: 'Silver Shield', tier: 'rare', family: 'shield', stats: { def: 5 }, speedPenalty: 2, desc: 'Def +5, but effective speed -2.' },
   // { id: 'hexlock_shield', name: 'Hexlock Shield', tier: 'uncommon', family: 'shield', stats: { res: 4 }, speedPenalty: 2, desc: 'Res +4, but effective speed -2.' },
 
-  { id: 'iron_rune', name: 'Iron Rune', tier: 'uncommon', family: 'guard', effect: 'critImmune', desc: 'Nullifies incoming critical hits.' },
-  { id: 'delphi_shield', name: 'Delphi Shield', tier: 'uncommon', family: 'guard', effect: 'flyingEffectiveImmune', desc: 'Negates bonus damage against flying units.' },
-  { id: 'svalinn_shield', name: 'Svalinn Shield', tier: 'uncommon', family: 'guard', effect: 'armoredEffectiveImmune', desc: 'Negates bonus damage against armored units.' },
-  { id: 'dragon_mail', name: 'Dragon Mail', tier: 'uncommon', family: 'guard', effect: 'dragonEffectiveImmune', desc: 'Negates bonus damage against dragon units.' },
+  { id: 'iron_rune', name: 'Iron Rune', tier: 'uncommon', price: 1100, family: 'guard', effect: 'critImmune', desc: 'Nullifies incoming critical hits.' },
+  { id: 'delphi_shield', name: 'Delphi Shield', tier: 'uncommon', price: 900, family: 'guard', effect: 'flyingEffectiveImmune', desc: 'Negates bonus damage against flying units.' },
+  { id: 'svalinn_shield', name: 'Svalinn Shield', tier: 'uncommon', price: 900, family: 'guard', effect: 'armoredEffectiveImmune', desc: 'Negates bonus damage against armored units.' },
+  { id: 'dragon_mail', name: 'Dragon Mail', tier: 'uncommon', price: 900, family: 'guard', effect: 'dragonEffectiveImmune', desc: 'Negates bonus damage against dragon units.' },
   // { id: 'aegis_shield', name: 'Aegis Shield', tier: 'rare', family: 'shield', stats: { def: 3, res: 3 }, critAvoid: 20, desc: 'Def +3, Res +3, and critical avoid +20.' },
   // { id: 'ochain_shield', name: 'Ochain Shield', tier: 'rare', family: 'shield', stats: { def: 4, res: 2 }, trigger: 'turnStart', effect: 'regenPercent', amount: 10, desc: 'Def +4, Res +2, and restores 10% max HP at turn start.' },
   // { id: 'seiros_shield', name: 'Seiros Shield', tier: 'rare', family: 'shield', stats: { def: 5, res: 5 }, trigger: 'turnStart', effect: 'regenFlat', amount: 5, desc: 'Def +5, Res +5, and restores 5 HP at turn start.' },
 
   // Rings and passive stat items
-  { id: 'accuracy_ring', name: 'Accuracy Ring', tier: 'normal', family: 'charm', hit: 10, desc: 'Hit +10.' },
-  { id: 'evasion_ring', name: 'Evasion Ring', tier: 'normal', family: 'charm', avoid: 10, desc: 'Avoid +10.' },
-  { id: 'hunters_ring', name: 'Hunter\'s Ring', tier: 'uncommon', family: 'charm', crit: 10, desc: 'Crit +10.' },
-  { id: 'power_ring', name: 'Power Ring', tier: 'normal', family: 'ring', stats: { str: 2 }, desc: 'Str/Mag +2.' },
-  { id: 'skill_ring', name: 'Skill Ring', tier: 'normal', family: 'ring', stats: { skl: 2 }, desc: 'Skl +2.' },
-  { id: 'speed_ring', name: 'Speed Ring', tier: 'normal', family: 'ring', stats: { spd: 2 }, desc: 'Spd +2.' },
-  { id: 'luck_ring', name: 'Luck Ring', tier: 'normal', family: 'ring', stats: { lck: 4 }, desc: 'Lck +4.' },
-  { id: 'shield_ring', name: 'Shield Ring', tier: 'normal', family: 'ring', stats: { def: 2 }, desc: 'Def +2.' },
-  { id: 'barrier_ring', name: 'Barrier Ring', tier: 'normal', family: 'ring', stats: { res: 2 }, desc: 'Res +2.' },
-  { id: 'body_ring_held', name: 'Body Ring', tier: 'uncommon', family: 'ring', stats: { con: 2 }, desc: 'Con +2 while held.' },
-  { id: 'life_ring', name: 'Life Ring', tier: 'uncommon', family: 'ring', trigger: 'turnStart', effect: 'regenFlat', amount: 5, desc: 'Restores 5 HP at turn start.' },
-  { id: 'miracle_ring', name: 'Miracle Ring', tier: 'rare', family: 'ring', trigger: 'lethalDamage', effect: 'miracle', uses: 1, desc: 'Once per battle, survives lethal damage at 1 HP.' },
-  { id: 'pursuit_ring', name: 'Pursuit Ring', tier: 'rare', family: 'ring', effect: 'quadrupleStrike', desc: 'Holder can hit 4 times against enemies with 8 less speed.' },
+  { id: 'accuracy_ring', name: 'Accuracy Ring', tier: 'normal', price: 500, family: 'charm', hit: 10, desc: 'Hit +10.' },
+  { id: 'evasion_ring', name: 'Evasion Ring', tier: 'normal', price: 550, family: 'charm', avoid: 10, desc: 'Avoid +10.' },
+  { id: 'hunters_ring', name: 'Hunter\'s Ring', tier: 'uncommon', price: 850, family: 'charm', crit: 10, desc: 'Crit +10.' },
+  { id: 'power_ring', name: 'Power Ring', tier: 'normal', price: 750, family: 'ring', stats: { str: 2 }, desc: 'Str/Mag +2.' },
+  { id: 'skill_ring', name: 'Skill Ring', tier: 'normal', price: 550, family: 'ring', stats: { skl: 2 }, desc: 'Skl +2.' },
+  { id: 'speed_ring', name: 'Speed Ring', tier: 'normal', price: 850, family: 'ring', stats: { spd: 2 }, desc: 'Spd +2.' },
+  { id: 'luck_ring', name: 'Luck Ring', tier: 'normal', price: 500, family: 'ring', stats: { lck: 2 }, desc: 'Lck +2.' },
+  { id: 'clover', name: 'Four-leaf Clover', tier: 'uncommon', price: 900, family: 'ring', stats: { lck: 4 }, desc: 'Lck +4.' },
+  { id: 'shield_ring', name: 'Shield Ring', tier: 'normal', price: 750, family: 'ring', stats: { def: 2 }, desc: 'Def +2.' },
+  { id: 'barrier_ring', name: 'Barrier Ring', tier: 'normal', price: 700, family: 'ring', stats: { res: 2 }, desc: 'Res +2.' },
+  { id: 'body_ring_held', name: 'Body Ring', tier: 'uncommon', price: 850, family: 'ring', stats: { con: 2 }, desc: 'Con +2 while held.' },
+  { id: 'life_ring', name: 'Life Ring', tier: 'uncommon', price: 950, family: 'ring', trigger: 'turnStart', effect: 'regenFlat', amount: 5, desc: 'Restores 5 HP at turn start.' },
+  { id: 'miracle_ring', name: 'Miracle Ring', tier: 'rare', price: 1800, family: 'ring', trigger: 'lethalDamage', effect: 'miracle', uses: 1, desc: 'Once per battle, survives lethal damage at 1 HP.' },
+  { id: 'pursuit_ring', name: 'Pursuit Ring', tier: 'rare', price: 2400, family: 'ring', effect: 'quadrupleStrike', desc: 'Holder can hit 4 times against enemies with 8 less speed.' },
 
   // Combat charms and scrolls
-  { id: 'wrath_scroll', name: 'Wrath Scroll', tier: 'uncommon', family: 'scroll', trigger: 'hpBelowHalf', crit: 20, desc: 'Crit +20 while below 50% HP.' },
-  { id: 'vantage_scroll', name: 'Vantage Scroll', tier: 'uncommon', family: 'scroll', trigger: 'hpBelowHalf', effect: 'counterFirst', desc: 'When below 50% HP, counters before the attacker.' },
-  { id: 'adept_scroll', name: 'Adept Scroll', tier: 'uncommon', family: 'scroll', trigger: 'afterHit', effect: 'extraStrikeChance', chance: 20, desc: '20% chance to immediately strike again after a hit.' },
-  { id: 'nihil_scroll', name: 'Nihil Scroll', tier: 'rare', family: 'scroll', effect: 'negateEnemySpecials', desc: 'Negates enemy brave strikes, critical hits, poison, drain, and effective damage against holder.' },
-  { id: 'renewal_scroll', name: 'Renewal Scroll', tier: 'rare', family: 'scroll', trigger: 'turnStart', effect: 'regenPercent', amount: 15, desc: 'Restores 15% max HP at turn start.' },
-  { id: 'resolve_scroll', name: 'Resolve Scroll', tier: 'rare', family: 'scroll', trigger: 'hpBelowHalf', stats: { skl: 4, spd: 4 }, desc: 'Skl +4 and Spd +4 while below 50% HP.' },
-  { id: 'parity_scroll', name: 'Parity Scroll', tier: 'rare', family: 'scroll', trigger: 'combatStart', effect: 'ignoreBothHeldItems', desc: 'During holder combat, both combatants ignore held-item effects.' },
+  { id: 'wrath_scroll', name: 'Wrath Scroll', tier: 'uncommon', price: 1000, family: 'scroll', trigger: 'hpBelowHalf', crit: 20, desc: 'Crit +20 while below 50% HP.' },
+  { id: 'vantage_scroll', name: 'Vantage Scroll', tier: 'uncommon', price: 1100, family: 'scroll', trigger: 'hpBelowHalf', effect: 'counterFirst', desc: 'When below 50% HP, counters before the attacker.' },
+  { id: 'adept_scroll', name: 'Adept Scroll', tier: 'uncommon', price: 1200, family: 'scroll', trigger: 'afterHit', effect: 'extraStrikeChance', chance: 20, desc: '20% chance to immediately strike again after a hit.' },
+  { id: 'nihil_scroll', name: 'Nihil Scroll', tier: 'rare', price: 2200, family: 'scroll', effect: 'negateEnemySpecials', desc: 'Negates enemy brave strikes, critical hits, poison, drain, and effective damage against holder.' },
+  { id: 'renewal_scroll', name: 'Renewal Scroll', tier: 'rare', price: 2100, family: 'scroll', trigger: 'turnStart', effect: 'regenPercent', amount: 15, desc: 'Restores 15% max HP at turn start.' },
+  { id: 'resolve_scroll', name: 'Resolve Scroll', tier: 'rare', price: 1900, family: 'scroll', trigger: 'hpBelowHalf', stats: { skl: 4, spd: 4 }, desc: 'Skl +4 and Spd +4 while below 50% HP.' },
+  { id: 'parity_scroll', name: 'Parity Scroll', tier: 'rare', price: 1800, family: 'scroll', trigger: 'combatStart', effect: 'ignoreBothHeldItems', desc: 'During holder combat, both combatants ignore held-item effects.' },
 
   // Weapon-style modifiers
-  { id: 'poison_stone', name: 'Poison Stone', tier: 'uncommon', family: 'charm', effect: 'weaponPoison', desc: 'Holder poisons enemies on weapon hit.' },
-  { id: 'drain_stone', name: 'Drain Stone', tier: 'rare', family: 'charm', effect: 'weaponDrainPercent', amount: 25, desc: 'Holder heals for 25% of damage dealt.' },
-  { id: 'pierce_badge', name: 'Pierce Badge', tier: 'rare', family: 'badge', trigger: 'attack', effect: 'defPierceChance', chance: 20, desc: '20% chance for attacks to ignore Def or Res.' },
-  { id: 'breaker_badge', name: 'Breaker Badge', tier: 'uncommon', family: 'badge', trigger: 'weaponTriangleAdvantage', hit: 15, avoid: 15, desc: 'Hit +15 and Avoid +15 when holder has weapon triangle advantage.' },
-  { id: 'reaver_badge', name: 'Reaver Badge', tier: 'uncommon', family: 'badge', effect: 'reverseTriangle', desc: 'Reverses holder weapon triangle matchups.' },
-  { id: 'brave_badge', name: 'Brave Badge', tier: 'rare', family: 'badge', trigger: 'firstAttack', effect: 'extraFirstStrike', uses: 1, desc: 'Once per battle, holder makes one extra strike on their first attack.' },
+  { id: 'poison_stone', name: 'Poison Stone', tier: 'uncommon', price: 950, family: 'charm', effect: 'weaponPoison', desc: 'Holder poisons enemies on weapon hit.' },
+  { id: 'drain_stone', name: 'Drain Stone', tier: 'rare', price: 1800, family: 'charm', effect: 'weaponDrainPercent', amount: 25, desc: 'Holder heals for 25% of damage dealt.' },
+  { id: 'pierce_badge', name: 'Pierce Badge', tier: 'rare', price: 2100, family: 'badge', trigger: 'attack', effect: 'defPierceChance', chance: 20, desc: '20% chance for attacks to ignore Def or Res.' },
+  { id: 'breaker_badge', name: 'Breaker Badge', tier: 'uncommon', price: 900, family: 'badge', trigger: 'weaponTriangleAdvantage', hit: 15, avoid: 15, desc: 'Hit +15 and Avoid +15 when holder has weapon triangle advantage.' },
+  { id: 'reaver_badge', name: 'Reaver Badge', tier: 'uncommon', price: 950, family: 'badge', effect: 'reverseTriangle', desc: 'Reverses holder weapon triangle matchups.' },
+  { id: 'brave_badge', name: 'Brave Badge', tier: 'rare', price: 2300, family: 'badge', trigger: 'firstAttack', effect: 'extraFirstStrike', uses: 1, desc: 'Once per battle, holder makes one extra strike on their first attack.' },
 
   // Economy and long-term planning
-  { id: 'silver_card', name: 'Silver Card', tier: 'rare', family: 'economy', effect: 'shopDiscount', amount: 20, desc: 'Shop prices are 20% lower while held by a living ally.' },
-  { id: 'member_card', name: 'Member Card', tier: 'uncommon', family: 'economy', effect: 'extraShopOffer', amount: 1, desc: 'Shops offer one extra random item while held by a living ally.' },
-  { id: 'bargain_band', name: 'Bargain Band', tier: 'uncommon', family: 'economy', effect: 'forgeDiscount', amount: 25, desc: 'Forge costs are 25% lower while held by a living ally.' },
-  { id: 'white_gem', name: 'White Gem', tier: 'rare', family: 'economy', trigger: 'skipReward', effect: 'bonusGoldPercent', amount: 50, desc: 'Skip reward gold is increased by 50% while held by a living ally.' },
-  { id: 'knowledge_gem', name: 'Knowledge Gem', tier: 'uncommon', family: 'growth', trigger: 'levelUp', effect: 'extraGrowthRoll', chance: 25, desc: '25% chance to gain one extra successful growth stat on level up.' },
-  { id: 'paragon_band', name: 'Paragon Band', tier: 'rare', family: 'growth', trigger: 'victoryLevelUp', effect: 'extraLevelChance', chance: 25, desc: '25% chance to gain one extra level after battle victories.' },
+  { id: 'silver_card', name: 'Silver Card', tier: 'rare', price: 2200, family: 'economy', effect: 'shopDiscount', amount: 20, desc: 'Shop prices are 20% lower while held by a living ally.' },
+  { id: 'member_card', name: 'Member Card', tier: 'uncommon', price: 1200, family: 'economy', effect: 'extraShopOffer', amount: 1, desc: 'Shops offer one extra random item while held by a living ally.' },
+  { id: 'bargain_band', name: 'Bargain Band', tier: 'uncommon', price: 1100, family: 'economy', effect: 'forgeDiscount', amount: 25, desc: 'Forge costs are 25% lower while held by a living ally.' },
+  { id: 'white_gem', name: 'White Gem', tier: 'rare', price: 1700, family: 'economy', trigger: 'skipReward', effect: 'bonusGoldPercent', amount: 50, desc: 'Skip reward gold is increased by 50% while held by a living ally.' },
+  { id: 'knowledge_gem', name: 'Knowledge Gem', tier: 'uncommon', price: 1000, family: 'growth', trigger: 'levelUp', effect: 'extraGrowthRoll', chance: 25, desc: '25% chance to gain one extra successful growth stat on level up.' },
+  { id: 'paragon_band', name: 'Paragon Band', tier: 'rare', price: 2200, family: 'growth', trigger: 'victoryLevelUp', effect: 'extraLevelChance', chance: 25, desc: '25% chance to gain one extra level after battle victories.' },
 
   // FE9-style growth bands, adapted for this roguelike
-  { id: 'fighter_band', name: 'Fighter Band', tier: 'normal', family: 'growthBand', growths: { hp: 10, str: 5 }, desc: 'While held, HP growth +10 and Str/Mag growth +5.' },
-  { id: 'knight_band', name: 'Knight Band', tier: 'normal', family: 'growthBand', stats: { def: 1 }, growths: { def: 10 }, desc: 'Def +1, and Def growth +10.' },
-  { id: 'mage_band', name: 'Mage Band', tier: 'normal', family: 'growthBand', growths: { str: 10, res: 5 }, desc: 'Str/Mag growth +10 and Res growth +5.' },
-  { id: 'pegasus_band', name: 'Pegasus Band', tier: 'normal', family: 'growthBand', growths: { spd: 10, res: 5 }, desc: 'Spd growth +10 and Res growth +5.' },
-  { id: 'thief_band', name: 'Thief Band', tier: 'normal', family: 'growthBand', stats: { spd: 1 }, growths: { spd: 5, lck: 10 }, desc: 'Spd +1, Spd growth +5, and Lck growth +10.' },
-  { id: 'archer_band', name: 'Archer Band', tier: 'normal', family: 'growthBand', hit: 5, growths: { skl: 10 }, desc: 'Hit +5 and Skl growth +10.' },
-  { id: 'wyvern_band', name: 'Wyvern Band', tier: 'uncommon', family: 'growthBand', stats: { str: 1, def: 1 }, growths: { hp: 5, str: 5, def: 5 }, desc: 'Str/Mag +1, Def +1, HP growth +5, Str/Mag growth +5, and Def growth +5.' },
-  { id: 'hero_band', name: 'Hero Band', tier: 'rare', family: 'growthBand', stats: { skl: 1, spd: 1 }, growths: { str: 5, skl: 5, spd: 5, def: 5 }, desc: 'Skl +1, Spd +1, Str/Mag growth +5, Skl growth +5, Spd growth +5, and Def growth +5.' },
+  { id: 'fighter_band', name: 'Fighter Band', tier: 'normal', price: 500, family: 'growthBand', growths: { hp: 10, str: 5 }, desc: 'While held, HP growth +10 and Str/Mag growth +5.' },
+  { id: 'knight_band', name: 'Knight Band', tier: 'normal', price: 550, family: 'growthBand', stats: { def: 1 }, growths: { def: 10 }, desc: 'Def +1, and Def growth +10.' },
+  { id: 'mage_band', name: 'Mage Band', tier: 'normal', price: 500, family: 'growthBand', growths: { str: 10, res: 5 }, desc: 'Str/Mag growth +10 and Res growth +5.' },
+  { id: 'pegasus_band', name: 'Pegasus Band', tier: 'normal', price: 550, family: 'growthBand', growths: { spd: 10, res: 5 }, desc: 'Spd growth +10 and Res growth +5.' },
+  { id: 'thief_band', name: 'Thief Band', tier: 'normal', price: 600, family: 'growthBand', stats: { spd: 1 }, growths: { spd: 5, lck: 10 }, desc: 'Spd +1, Spd growth +5, and Lck growth +10.' },
+  { id: 'archer_band', name: 'Archer Band', tier: 'normal', price: 500, family: 'growthBand', hit: 5, growths: { skl: 10 }, desc: 'Hit +5 and Skl growth +10.' },
+  { id: 'wyvern_band', name: 'Wyvern Band', tier: 'uncommon', price: 950, family: 'growthBand', stats: { str: 1, def: 1 }, growths: { hp: 5, str: 5, def: 5 }, desc: 'Str/Mag +1, Def +1, HP growth +5, Str/Mag growth +5, and Def growth +5.' },
+  { id: 'hero_band', name: 'Hero Band', tier: 'rare', price: 1800, family: 'growthBand', stats: { skl: 1, spd: 1 }, growths: { str: 5, skl: 5, spd: 5, def: 5 }, desc: 'Skl +1, Spd +1, Str/Mag growth +5, Skl growth +5, Spd growth +5, and Def growth +5.' },
 ]
 
-const SKILL_CLASS_GROUPS = {
+export const SKILL_CLASS_GROUPS: SkillGroupMap = {
   any: ['Any'],
   lord: ['Lord', 'Blade Lord'],
   mercenary: ['Mercenary', 'Hero'],
@@ -428,7 +444,7 @@ const SKILL_CLASS_GROUPS = {
 // Candidate teachable skill data. These are not wired into gameplay yet.
 // `classes` describes who should be eligible to learn the skill as a reward.
 // prettier-ignore
-const TEACHABLE_SKILLS = [
+export const TEACHABLE_SKILLS: SkillData[] = [
   // Universal and tactical skills
   { rarity: 'rare', id: 'aptitude', name: 'Aptitude', desc: 'All growth rates +10.', source: 'Awakening Villager', classes: SKILL_CLASS_GROUPS.any, family: 'growth', effect: 'growthBonusAll', amount: 10 },
   { rarity: 'uncommon', id: 'veteran', name: 'Veteran', desc: '15% chance to gain one extra level after battle victories.', source: 'Awakening Tactician', classes: SKILL_CLASS_GROUPS.any, family: 'growth', trigger: 'victoryLevelUp', effect: 'extraLevelChance', chance: 15 },
@@ -556,14 +572,14 @@ const TEACHABLE_SKILLS = [
 ]
 
 // prettier-ignore
-const BASES = [
+export const BASES: UnitBase[] = [
   // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
 U('Lyn','Lord','sword',         {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
 U('Eliwood','Lord','sword',     {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
 U('Hector','Lord','axe',        {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:35,lck:30,def:50,res:25,gTotal:335},'green'),
 
 U('Raven','Mercenary','sword',  {bTotal:37,hp:25,str:7,skl:10,spd:12,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
-U('Harken','Mercenary','sword', {bTotal:39,hp:24,str:9,skl:9,spd:8,lck:4,def:7,res:2,con:11},  {hp:80,str:35,skl:40,spd:40,lck:35,def:30,res:25,gTotal:275},'blue'),
+U('Harken','Mercenary','sword', {bTotal:39,hp:24,str:9,skl:9,spd:8,lck:4,def:7,res:2,con:11},   {hp:80,str:35,skl:40,spd:40,lck:35,def:30,res:25,gTotal:275},'blue'),
 
 U('Guy','Myrmidon','sword',     {bTotal:38,hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},  {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25,gTotal:310},'gold'),
 U('Karel','Myrmidon','sword',   {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},  {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20,gTotal:280},'red'),
@@ -573,7 +589,7 @@ U('Matthew','Thief','sword',    {bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,
 U('Legault','Thief','sword',    {bTotal:37,hp:20,str:6,skl:8,spd:10,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
 U('Jaffar','Thief','sword',     {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
 
-U('Oswin','Knight','lance',     {bTotal:37,hp:24,str:11,skl:8,spd:4,lck:3,def:9,res:2,con:14}, {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
+U('Oswin','Knight','lance',     {bTotal:37,hp:24,str:11,skl:8,spd:4,lck:3,def:9,res:2,con:14},  {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
 U('Wallace','Knight','lance',   {bTotal:42,hp:26,str:10,skl:6,spd:5,lck:8,def:12,res:1,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
 U('Amelia','Knight','lance',    {bTotal:29,hp:18,str:5,skl:4,spd:4,lck:6,def:7,res:3,con:9},    {hp:60,str:40,skl:45,spd:40,lck:50,def:30,res:15,gTotal:280},'red'),
 
@@ -621,7 +637,7 @@ U('Artur','Monk','light',       {bTotal:30,hp:19,str:6,skl:6,spd:8,lck:2,def:2,r
 U('Riev','Monk','light',        {bTotal:36,hp:21,str:8,skl:7,spd:6,lck:3,def:4,res:8,con:8},    {hp:65,str:45,skl:35,spd:30,lck:20,def:25,res:60,gTotal:280},'purple'),
 U('Saul','Monk','light',        {bTotal:28,hp:20,str:5,skl:6,spd:7,lck:2,def:2,res:6,con:6},    {hp:60,str:40,skl:45,spd:45,lck:15,def:15,res:50,gTotal:270},'green'),
 
-U('Canas','Shaman','dark',      {bTotal:37,hp:21,str:8,skl:7,spd:7,lck:6,def:4,res:5,con:7},   {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
+U('Canas','Shaman','dark',      {bTotal:37,hp:21,str:8,skl:7,spd:7,lck:6,def:4,res:5,con:7},    {hp:70,str:45,skl:40,spd:35,lck:25,def:25,res:45,gTotal:285},'purple'),
 U('Raigh','Shaman','dark',      {bTotal:41,hp:23,str:9,skl:5,spd:7,lck:6,def:5,res:9,con:4},    {hp:55,str:45,skl:55,spd:40,lck:15,def:15,res:20,gTotal:245},'purple'),
 U('Knoll','Shaman','dark',      {bTotal:29,hp:18,str:8,skl:6,spd:6,lck:0,def:2,res:7,con:7},    {hp:70,str:50,skl:40,spd:35,lck:20,def:10,res:45,gTotal:270},'blue'),
 U('Sophia','Shaman','dark',     {bTotal:24,hp:15,str:6,skl:2,spd:4,lck:3,def:1,res:8,con:3},    {hp:60,str:55,skl:40,spd:30,lck:20,def:20,res:55,gTotal:280},'blue'),
@@ -634,7 +650,7 @@ U('Moulder','Cleric','staff',   {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,r
 U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
 U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
 ]
-function U(name, cls, weaponType, stats, growths, palette, startOffset = 0) {
+function U(name: string, cls: string, weaponType: WeaponType, stats: BaseStatBlock, growths: GrowthBlock, palette: PaletteKey, startOffset = 0): UnitBase {
   return { name, cls, weaponType, stats, growths, palette, startOffset }
 }
 
@@ -642,7 +658,7 @@ function U(name, cls, weaponType, stats, growths, palette, startOffset = 0) {
 // for special cases like axe wyverns. The focus list is intended to drive both enemy
 // class bias and biome boss class previews.
 // prettier-ignore
-const BIOMES = [
+export const BIOMES: BiomeData[] = [
   { id: 'road', name: 'Road', tile: 'road', effects: [], focus: [{ cls: 'Lord' }, { cls: 'Cavalier' }] },
   { id: 'plains', name: 'Plains', tile: 'plains', effects: [], focus: [{ cls: 'Archer' }, { cls: 'Cavalier' }] },
   { id: 'forest', name: 'Forest', tile: 'forest', effects: ['avoidUp'], focus: [{ cls: 'Fighter' }, { cls: 'Cleric', label: 'Priest' }] },

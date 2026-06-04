@@ -1,6 +1,12 @@
-'use strict'
+import { BIOME_AVOID_DELTA, BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BIOME_FOCUS_CHANCE, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA } from '../constants'
+import { BIOMES } from '../data'
+import { htmlAttr, mapSpriteForFocus } from './assets'
+import { setStatus } from './combat'
+import { $, clamp, floor, pick, rint, rnd } from './utils'
+import { state } from './state'
 
-function shuffledCopy(items) {
+
+export function shuffledCopy(items) {
   const out = [...items]
   for (let i = out.length - 1; i > 0; i--) {
     const j = rint(i + 1)
@@ -10,29 +16,29 @@ function shuffledCopy(items) {
   }
   return out
 }
-function makeBiomePlan() {
+export function makeBiomePlan() {
   const pool = shuffledCopy(BIOMES)
   return Array.from({ length: BIOME_CYCLES_PER_RUN }, (_, i) => {
     const biome = pool[i % pool.length]
     return { biome, bossFocus: shuffledCopy(biome.focus) }
   })
 }
-function biomeIndexForBattle(n = battle || 1) {
-  return clamp(Math.floor((Math.max(1, n) - 1) / BIOME_CYCLE_LENGTH), 0, Math.max(0, biomePlan.length - 1))
+export function biomeIndexForBattle(n = state.battle || 1) {
+  return clamp(Math.floor((Math.max(1, n) - 1) / BIOME_CYCLE_LENGTH), 0, Math.max(0, state.biomePlan.length - 1))
 }
-function biomeEntryForBattle(n = battle || 1) {
-  return biomePlan[biomeIndexForBattle(n)] || null
+export function biomeEntryForBattle(n = state.battle || 1) {
+  return state.biomePlan[biomeIndexForBattle(n)] || null
 }
-function activeBiomeEntry() {
-  return biomeEntryForBattle(battle || 1)
+export function activeBiomeEntry() {
+  return biomeEntryForBattle(state.battle || 1)
 }
-function activeBiomeEffects() {
+export function activeBiomeEffects() {
   return activeBiomeEntry()?.biome.effects || []
 }
-function hasBiomeEffect(effect) {
+export function hasBiomeEffect(effect) {
   return activeBiomeEffects().includes(effect)
 }
-function biomeEffectLabel(effect) {
+export function biomeEffectLabel(effect) {
   const labels = {
     avoidUp: `Avo +${BIOME_AVOID_DELTA}`,
     avoidDown: `Avo -${BIOME_AVOID_DELTA}`,
@@ -47,31 +53,31 @@ function biomeEffectLabel(effect) {
   }
   return labels[effect] || effect
 }
-function biomeEffectLabels(biome) {
+export function biomeEffectLabels(biome) {
   return biome.effects.length ? biome.effects.map(biomeEffectLabel) : ['Neutral']
 }
-function focusLabel(focus) {
+export function focusLabel(focus) {
   return focus.label || focus.cls
 }
-function focusMatchesBase(focus, base) {
+export function focusMatchesBase(focus, base) {
   return base.cls === focus.cls && (!focus.weaponType || base.weaponType === focus.weaponType)
 }
-function pickBaseFromPool(pool, focusList = null) {
+export function pickBaseFromPool(pool, focusList = null) {
   const candidates = focusList?.length
     ? pool.map((b, idx) => ({ b, idx })).filter(({ b }) => focusList.some((focus) => focusMatchesBase(focus, b)))
     : pool.map((b, idx) => ({ b, idx }))
-  const picked = pick(candidates.length ? candidates : pool.map((b, idx) => ({ b, idx })))
+  const picked: any = pick(candidates.length ? candidates : pool.map((b, idx) => ({ b, idx })))
   return pool.splice(picked.idx, 1)[0]
 }
-function enemyFocusForSlot(isBossSlot, bossTier) {
+export function enemyFocusForSlot(isBossSlot, bossTier) {
   if (isBossSlot) {
-    const bossFocus = bossFocusForBattle(battle)
+    const bossFocus = bossFocusForBattle(state.battle)
     return bossFocus ? [bossFocus] : null
   }
   const biomeFocus = activeBiomeEntry()?.biome.focus || []
   return biomeFocus.length && rnd() < BIOME_FOCUS_CHANCE ? biomeFocus : null
 }
-function bossFocusForBattle(n = battle) {
+export function bossFocusForBattle(n = state.battle) {
   const entry = biomeEntryForBattle(n)
   if (!entry) return null
   const cycle = ((n - 1) % BIOME_CYCLE_LENGTH) + 1
@@ -79,19 +85,19 @@ function bossFocusForBattle(n = battle) {
   if (cycle === BIOME_CYCLE_LENGTH) return entry.bossFocus[1]
   return null
 }
-function biomeUnitIconHTML(focus, bossIndex, promoted = false) {
+export function biomeUnitIconHTML(focus, bossIndex, promoted = false) {
   const label = `${bossIndex === 0 ? 'Boss' : 'Arena boss'}: ${focusLabel(focus)}`
   return `<span title="${htmlAttr(label)}">${mapSpriteForFocus(focus, 'red', promoted)}</span>`
 }
-function renderBiomeMap() {
+export function renderBiomeMap() {
   const el = $('biomeMap')
   if (!el) return
-  if (!biomePlan.length) {
+  if (!state.biomePlan.length) {
     el.innerHTML = ''
     return
   }
-  const activeIndex = biomeIndexForBattle(battle || 1)
-  el.innerHTML = biomePlan
+  const activeIndex = biomeIndexForBattle(state.battle || 1)
+  el.innerHTML = state.biomePlan
     .map((entry, i) => {
       const biome = entry.biome,
         classes = i < activeIndex ? 'biomeNode done' : i === activeIndex ? 'biomeNode active' : 'biomeNode',
@@ -101,19 +107,19 @@ function renderBiomeMap() {
     })
     .join('')
 }
-function arenaTitleHTML() {
+export function arenaTitleHTML() {
   const biome = activeBiomeEntry()?.biome
   if (!biome) return '<span class="arenaTitleName">Arena</span>'
   const effects = biomeEffectLabels(biome).join(', ')
   return `<span class="arenaTitleName">${biome.name} Arena</span>${effects ? ` <span class="arenaTitleEffects">(${effects})</span>` : ''}`
 }
-function updateMainModeTitle() {
+export function updateMainModeTitle() {
   const title = $('mainModeTitle')
   if (!title) return
-  title.innerHTML = shopOpen ? 'Shop' : arenaTitleHTML()
+  title.innerHTML = state.shop.open ? 'Shop' : arenaTitleHTML()
 }
-function setShopOpen(open) {
-  shopOpen = open
+export function setShopOpen(open) {
+  state.shop.open = open
   const battleView = $('battleView'),
     shopScreen = $('shopScreen'),
     autoBtn = $('autoFightBtn')
@@ -123,19 +129,19 @@ function setShopOpen(open) {
   updateMainModeTitle()
   updateAutoFightButton()
 }
-function updateAutoFightButton() {
-  const btn = $('autoFightBtn')
+export function updateAutoFightButton() {
+  const btn = $('autoFightBtn') as HTMLButtonElement
   if (!btn) return
-  const canAuto = !shopOpen && battleRunning && !awaitingReward && player.some((x) => x.hp > 0) && enemy.some((x) => x.hp > 0)
+  const canAuto = !state.shop.open && state.combat.running && !state.ui.awaitingReward && state.player.some((x) => x.hp > 0) && state.enemy.some((x) => x.hp > 0)
   btn.disabled = !canAuto
-  btn.classList.toggle('active', autoFight)
-  btn.setAttribute('aria-pressed', autoFight ? 'true' : 'false')
-  btn.textContent = autoFight ? 'Auto-fight: On' : 'Auto-fight: Off'
+  btn.classList.toggle('active', state.combat.autoFight)
+  btn.setAttribute('aria-pressed', state.combat.autoFight ? 'true' : 'false')
+  btn.textContent = state.combat.autoFight ? 'Auto-fight: On' : 'Auto-fight: Off'
 }
-function setAutoFight(enabled, silent = false) {
-  if (!battleRunning && enabled) return
-  autoFight = enabled
+export function setAutoFight(enabled, silent = false) {
+  if (!state.combat.running && enabled) return
+  state.combat.autoFight = enabled
   updateAutoFightButton()
-  if (!silent) setStatus(autoFight ? 'Auto-fight enabled.' : 'Auto-fight disabled.')
-  if (autoFight) pendingAutoFightAction?.()
+  if (!silent) setStatus(state.combat.autoFight ? 'Auto-fight enabled.' : 'Auto-fight disabled.')
+  if (state.combat.autoFight) state.combat.pendingAutoFightAction?.()
 }

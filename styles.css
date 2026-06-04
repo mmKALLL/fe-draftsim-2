@@ -274,6 +274,7 @@ button:disabled {
   gap: 9px;
   align-items: start;
   user-select: none;
+  cursor: pointer;
 }
 .unitCard > div {
   min-width: 0;
@@ -281,10 +282,18 @@ button:disabled {
 .unitCard.selected {
   outline: 2px solid #fbbf24;
 }
+.unitCard.expanded {
+  border-color: #64748b;
+  background: rgba(30, 41, 59, 0.94);
+}
+.unitCard:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
 .portraitStack {
   width: 64px;
 }
-.growthModeLabel {
+.detailModeLabel {
   display: none;
   margin-top: 4px;
   color: var(--muted);
@@ -293,8 +302,32 @@ button:disabled {
   text-align: center;
   opacity: 0.72;
 }
-.unitCard.showGrowths .growthModeLabel {
+.unitCard.expanded .detailModeLabel {
   display: block;
+}
+.unitDetails {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+}
+.unitDetailEntry {
+  border-left: 2px solid #475569;
+  padding-left: 6px;
+  color: #dbeafe;
+  font-size: 12px;
+}
+.unitDetailEntry.reward-normal {
+  border-left-color: #64748b;
+}
+.unitDetailEntry.reward-uncommon {
+  border-left-color: #60a5fa;
+}
+.unitDetailEntry.reward-rare {
+  border-left-color: #fbbf24;
+}
+.rosterHint {
+  margin-top: 8px;
+  text-align: center;
 }
 .portrait {
   width: 60px;
@@ -574,6 +607,16 @@ button:disabled {
 }
 .floatText.missText {
   color: #93c5fd;
+}
+.floatText.statusText {
+  top: 6px;
+  color: #d8b4fe;
+  font-size: 1.65em;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 2px 0 #000,
+    0 0 8px rgba(168, 85, 247, 0.7);
+  animation-duration: 1.15s;
 }
 @keyframes floatDamage {
   0% {

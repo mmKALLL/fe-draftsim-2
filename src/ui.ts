@@ -1,9 +1,18 @@
-'use strict'
+import { makeBiomePlan, renderBiomeMap } from './biomes'
+import { statLabel } from './combat'
+import { beginNextBattle, startRun } from './game'
+import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount } from './render'
+import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost } from './rewards'
+import { startShop } from './shop'
+import { goldHTML, updateGoldUI } from './state'
+import { $, MUSIC_URL, capStat, pick } from './utils'
+import { state } from './state'
 
-function levelLabel(u) {
+
+export function levelLabel(u) {
   return `L${u.lvl}`
 }
-function chooseBoostTarget(r, backToRewards = null) {
+export function chooseBoostTarget(r, backToRewards = null) {
   const targets = boostTargetOptions(r)
   if (!targets.length) {
     if (backToRewards) {
@@ -23,10 +32,10 @@ function chooseBoostTarget(r, backToRewards = null) {
     html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}${details}</div><button data-t="${i}">Use</button></div>`
   })
   showModal(html)
-  document.querySelectorAll('[data-t]').forEach(
+  document.querySelectorAll<HTMLElement>('[data-t]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        const u = player[+btn.dataset.t]
+        const u = state.player[+btn.dataset.t]
         if (!canApplyBoost(r, u)) {
           closeModal()
           if (backToRewards) backToRewards()
@@ -38,43 +47,43 @@ function chooseBoostTarget(r, backToRewards = null) {
       })
   )
 }
-function afterReward(msg, cls = 'heal') {
-  awaitingReward = false
+export function afterReward(msg, cls = 'heal') {
+  state.ui.awaitingReward = false
   logLine(null, msg, cls)
   renderTeams()
-  if (pendingShopAfterReward) {
-    pendingShopAfterReward = false
+  if (state.ui.pendingShopAfterReward) {
+    state.ui.pendingShopAfterReward = false
     startShop()
     return
   }
   beginNextBattle()
 }
-function currentScore() {
-  return (battle - 1) * 1000 + gold
+export function currentScore() {
+  return (state.battle - 1) * 1000 + state.gold
 }
-function scoreHTML(finalScore = false) {
-  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore()}</b> (${battle - 1} wins × 1000 + ${goldHTML(gold)})</p>`
+export function scoreHTML(finalScore = false) {
+  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore()}</b> (${state.battle - 1} wins × 1000 + ${goldHTML(state.gold)})</p>`
 }
-function showWin() {
+export function showWin() {
   showModal(
     `<h2>Victory!!!</h2><p>Congratulations, you have overcome the toughest arena in Elibe and survived 20 battles!</p>${scoreHTML(true)}<button onclick="location.reload()" class="good">New run</button>`
   )
 }
-function showGameOver() {
+export function showGameOver() {
   showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="good">Try again</button>`)
 }
-function showModal(html) {
+export function showModal(html) {
   $('modalBody').innerHTML = html
   $('modal').classList.remove('hidden')
 }
-function closeModal() {
+export function closeModal() {
   $('modal').classList.add('hidden')
   $('modalBody').innerHTML = ''
 }
-function openMusic() {
+export function openMusic() {
   window.open(MUSIC_URL, '_blank', 'noopener,noreferrer')
 }
-function showHelpRules() {
+export function showHelpRules() {
   showModal(
     `<h2>Help and rules</h2>
     <p>FireRogue is a roguelike game heavily inspired by Fire Emblem: Blazing Sword.</p>
@@ -83,32 +92,37 @@ function showHelpRules() {
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
     <p>Score is calculated as wins × 1000 + remaining gold.</p>
-    <button onclick="closeModal()" class="primary">Back</button>`
+    <button data-close class="primary">Back</button>`
   )
 }
-function showMenu() {
+// Delegated handler so modal close buttons need no global (replaces inline onclick="closeModal()")
+document.addEventListener('click', (e) => {
+  const t = e.target as HTMLElement | null
+  if (t && t.closest('[data-close]')) closeModal()
+})
+export function showMenu() {
   $('menuScreen').classList.remove('hidden')
   $('draftScreen').classList.add('hidden')
   $('gameScreen').classList.add('hidden')
-  $('battleNo').textContent = battle
-  $('rosterCount').textContent = selectedRosterCount()
+  $('battleNo').textContent = String(state.battle)
+  $('rosterCount').textContent = String(selectedRosterCount())
   updateGoldUI()
   renderBiomeMap()
 }
-function startDraftGame() {
-  if (!draftOptions.length) draftOptions = randomDraftOptions()
-  if (!chosen.length) chosen = emptyRosterChoices()
+export function startDraftGame() {
+  if (!state.draft.options.length) state.draft.options = randomDraftOptions()
+  if (!state.draft.chosen.length) state.draft.chosen = emptyRosterChoices()
   $('menuScreen').classList.add('hidden')
   $('draftScreen').classList.remove('hidden')
   $('gameScreen').classList.add('hidden')
   renderDraft()
 }
-function startRandomGame() {
-  draftOptions = randomDraftOptions()
-  chosen = draftOptions.map((slot) => pick(slot))
+export function startRandomGame() {
+  state.draft.options = randomDraftOptions()
+  state.draft.chosen = state.draft.options.map((slot) => pick(slot))
   startRun()
 }
 
-biomePlan = makeBiomePlan()
-draftOptions = randomDraftOptions()
-chosen = emptyRosterChoices()
+state.biomePlan = makeBiomePlan()
+state.draft.options = randomDraftOptions()
+state.draft.chosen = emptyRosterChoices()

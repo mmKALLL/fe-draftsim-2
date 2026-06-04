@@ -1,13 +1,24 @@
-'use strict'
+import { BOSS_TIER_BIOME, CONSUMABLE_REWARD_CHANCE, CONSUMABLE_TIER_WEIGHTS, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_SKIP_GOLD, WEAPON_TIER_WEIGHTS } from '../constants'
+import { CONSUMABLES, WEAPONS, weaponTierLabel } from '../data'
+import { consumableSummary, statLabel } from './combat'
+import { bossTierForBattle } from './game'
+import { growthSummaryHTML, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle } from './render'
+import { applyReward } from './shop'
+import { formatGold, goldHTML } from './state'
+import { levelLabel, showModal } from './ui'
+import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, levelUp } from './units'
+import { $, capStat, pick, rnd } from './utils'
+import { state } from './state'
 
-function showRewards(opening = false) {
-  awaitingReward = true
-  const bossTier = opening ? null : bossTierForBattle(battle)
+
+export function showRewards(opening = false) {
+  state.ui.awaitingReward = true
+  const bossTier = opening ? null : bossTierForBattle(state.battle)
   const rewards = makeRewards(bossTier, opening)
   const title = opening ? 'Choose an opening reward' : 'Choose a reward'
   renderRewardSelection(title, rewards)
 }
-function renderRewardSelection(title, rewards) {
+export function renderRewardSelection(title, rewards) {
   const skipReward = rewards.find((r) => r.type === 'gold')
   const choiceRewards = rewards.filter((r) => r.type !== 'gold')
   let html = `<h2>${title}</h2><div class="rewardGrid">`
@@ -18,40 +29,40 @@ function renderRewardSelection(title, rewards) {
   html += '</div>'
   if (skipReward) html += `<div class="rewardSkipWrap"><button data-skip-reward class="rewardSkip">Skip reward: gain ${goldHTML(skipReward.gold)}</button></div>`
   showModal(html)
-  document.querySelectorAll('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i], () => renderRewardSelection(title, rewards))))
-  const skipBtn = document.querySelector('[data-skip-reward]')
+  document.querySelectorAll<HTMLElement>('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i], () => renderRewardSelection(title, rewards))))
+  const skipBtn = document.querySelector<HTMLElement>('[data-skip-reward]')
   if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
 }
 
-function isGoodRewardWeapon(w) {
+export function isGoodRewardWeapon(w) {
   return w.tier !== 'normal'
 }
-function rewardsExcludeRare() {
-  return battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
+export function rewardsExcludeRare() {
+  return state.battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
 }
-function isNonRareRewardItem(item) {
+export function isNonRareRewardItem(item) {
   return item.tier !== 'rare'
 }
-function rewardWeaponPool(u, goodOnly = false) {
+export function rewardWeaponPool(u, goodOnly = false) {
   const opts = WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
   if (rewardsExcludeRare()) return opts.filter(isNonRareRewardItem)
   if (!goodOnly) return opts
   const good = opts.filter(isGoodRewardWeapon)
   return good.length ? good : opts
 }
-function fallbackRewardWeaponPool(goodOnly = false) {
+export function fallbackRewardWeaponPool(goodOnly = false) {
   if (rewardsExcludeRare()) return WEAPONS.filter(isNonRareRewardItem)
   if (!goodOnly) return WEAPONS
   const good = WEAPONS.filter(isGoodRewardWeapon)
   return good.length ? good : WEAPONS
 }
-function rewardConsumablePool(goodOnly = false) {
+export function rewardConsumablePool(goodOnly = false) {
   if (rewardsExcludeRare()) return CONSUMABLES.filter(isNonRareRewardItem)
   if (!goodOnly) return CONSUMABLES
   const good = CONSUMABLES.filter((item) => item.tier !== 'normal')
   return good.length ? good : CONSUMABLES
 }
-function weightedTier(weights) {
+export function weightedTier(weights) {
   const total = weights.reduce((sum, [, weight]) => sum + weight, 0)
   let roll = rnd() * total
   for (const [tier, weight] of weights) {
@@ -60,10 +71,10 @@ function weightedTier(weights) {
   }
   return weights[weights.length - 1][0]
 }
-function completedRewardFights() {
-  return Math.max(0, battle)
+export function completedRewardFights() {
+  return Math.max(0, state.battle)
 }
-function rewardTierWeights(weightSet, goodOnly = false) {
+export function rewardTierWeights(weightSet, goodOnly = false) {
   if (goodOnly) return rewardsExcludeRare() ? weightSet.good.filter(([tier]) => tier !== 'rare') : weightSet.good
   const fights = completedRewardFights()
   const weights = weightSet.normal.map(([tier, weight]) => {
@@ -73,7 +84,7 @@ function rewardTierWeights(weightSet, goodOnly = false) {
   })
   return rewardsExcludeRare() ? weights.filter(([tier]) => tier !== 'rare') : weights
 }
-function pickRewardWeapon(opts, goodOnly = false) {
+export function pickRewardWeapon(opts, goodOnly = false) {
   const weights = rewardTierWeights(WEAPON_TIER_WEIGHTS, goodOnly)
   for (let i = 0; i < 8; i++) {
     const tier = weightedTier(weights)
@@ -82,7 +93,7 @@ function pickRewardWeapon(opts, goodOnly = false) {
   }
   return pick(opts)
 }
-function pickRewardConsumable(goodOnly = false) {
+export function pickRewardConsumable(goodOnly = false) {
   const pool = rewardConsumablePool(goodOnly)
   const weights = rewardTierWeights(CONSUMABLE_TIER_WEIGHTS, goodOnly)
   for (let i = 0; i < 8; i++) {
@@ -92,9 +103,9 @@ function pickRewardConsumable(goodOnly = false) {
   }
   return cloneConsumable(pick(pool.length ? pool : CONSUMABLES))
 }
-function weaponReward(goodOnly = false) {
-  const candidates = player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
-  const itemUnit = pick(candidates.length ? candidates : player)
+export function weaponReward(goodOnly = false) {
+  const candidates = state.player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
+  const itemUnit = pick(candidates.length ? candidates : state.player)
   const opts = rewardWeaponPool(itemUnit, goodOnly)
   const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly))
   return {
@@ -105,19 +116,19 @@ function weaponReward(goodOnly = false) {
     item,
   }
 }
-function firstEmptyConsumableSlot() {
-  return consumables.findIndex((item) => !item)
+export function firstEmptyConsumableSlot() {
+  return state.consumables.findIndex((item) => !item)
 }
-function consumableInventoryFull() {
+export function consumableInventoryFull() {
   return firstEmptyConsumableSlot() === -1
 }
-function consumableReward(goodOnly = false) {
+export function consumableReward(goodOnly = false) {
   const item = pickRewardConsumable(goodOnly)
   const slotText = consumableInventoryFull() ? 'Inventory full: choose a slot to replace.' : 'Stored in the first empty consumable slot.'
   const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · ${slotText}</div>`
   return { type: 'consumable', title: `${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
 }
-function goldReward(amount = REWARD_SKIP_GOLD) {
+export function goldReward(amount = REWARD_SKIP_GOLD) {
   return {
     type: 'gold',
     title: `Skip reward: gain ${formatGold(amount)}`,
@@ -125,13 +136,13 @@ function goldReward(amount = REWARD_SKIP_GOLD) {
     gold: amount,
   }
 }
-function sameReward(a, b) {
+export function sameReward(a, b) {
   if (a.type !== b.type) return false
   if (a.type === 'item') return a.unit === b.unit && a.item.name === b.item.name
   if (a.type === 'consumable') return a.item.id === b.item.id
   return false
 }
-function makeRewards(bossTier = null, opening = false) {
+export function makeRewards(bossTier = null, opening = false) {
   const weaponCount = 2
   const goodOnly = bossTier === BOSS_TIER_BIOME
   const allowConsumables = opening || !bossTier
@@ -146,7 +157,7 @@ function makeRewards(bossTier = null, opening = false) {
   const boost = boostReward()
   return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
 }
-function boostReward(targeted = true) {
+export function boostReward(targeted = true) {
   const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
   let reward
   if (boostTargetOptions({ stat: 'level' }).length && rnd() < 0.22) reward = levelBoostReward()
@@ -159,7 +170,7 @@ function boostReward(targeted = true) {
   }
   return targeted ? targetedBoostReward(reward) : reward
 }
-function targetedBoostReward(r) {
+export function targetedBoostReward(r) {
   const targets = boostTargetOptions(r)
   if (!targets.length) return r
   const { unit } = pick(targets)
@@ -170,7 +181,7 @@ function targetedBoostReward(r) {
     desc: boostRewardDescription(r, unit),
   }
 }
-function boostRewardDescription(r, u) {
+export function boostRewardDescription(r, u) {
   if (r.stat === 'level') {
     const growths = `<div class="small rewardMeta">Growths ${growthSummaryHTML(u)}</div>`
     return `Immediately levels up ${u.name} ${levelLabel(u)} -> L${u.lvl + 1}.${growths}`
@@ -180,14 +191,14 @@ function boostRewardDescription(r, u) {
   const after = Math.min(capStat(u, r.stat), before + r.amt)
   return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).${boostDetailHTML(r, u)}`
 }
-function equippedWeaponWeightText(u) {
+export function equippedWeaponWeightText(u) {
   return u.weapon ? `Equipped: ${u.weapon.name}, Wt ${u.weapon.wt || 0}` : 'Equipped: none'
 }
-function boostDetailHTML(r, u) {
+export function boostDetailHTML(r, u) {
   if (r.stat === 'con') return `<div class="small rewardMeta">${equippedWeaponWeightText(u)}</div>`
   return ''
 }
-function levelBoostReward() {
+export function levelBoostReward() {
   return {
     type: 'boost',
     stat: 'level',
@@ -196,7 +207,7 @@ function levelBoostReward() {
     desc: 'Immediately gives a chosen unit +1 level.',
   }
 }
-function boosterName(stat) {
+export function boosterName(stat) {
   return {
     hp: 'Angelic Robe',
     str: 'Energy Ring',
@@ -209,14 +220,14 @@ function boosterName(stat) {
     level: 'Tome of Knowledge',
   }[stat]
 }
-function canApplyBoost(r, u) {
+export function canApplyBoost(r, u) {
   if (r.stat === 'level') return !(u.promoted && u.lvl >= 20)
   return u.stats[r.stat] < capStat(u, r.stat)
 }
-function boostTargetOptions(r) {
-  return player.map((unit, index) => ({ unit, index })).filter(({ unit }) => canApplyBoost(r, unit))
+export function boostTargetOptions(r) {
+  return state.player.map((unit, index) => ({ unit, index })).filter(({ unit }) => canApplyBoost(r, unit))
 }
-function applyBoostToUnit(r, u) {
+export function applyBoostToUnit(r, u) {
   if (r.stat === 'level') {
     const gained = levelUp(u, true)
     u.hp = u.maxHp

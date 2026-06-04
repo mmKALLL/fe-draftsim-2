@@ -1,10 +1,18 @@
-'use strict'
+import { BOSS_TIER_BIOME, BOSS_TIER_REGULAR, PROMOTION_UNLOCK_AFTER_BATTLE } from '../constants'
+import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
+import { sleep, statLabel } from './combat'
+import { logLine } from './render'
+import { levelLabel } from './ui'
+import { $, capStat, clamp, pick, rint, rnd } from './utils'
+import { state } from './state'
+import type { StatKey } from '../types'
 
-function promote(u, showLog = true) {
+
+export function promote(u, showLog = true) {
   if (u.promoted) return
   const c = CLASSES[u.cls],
     promo = c.promo || {}
-  for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']) {
+  for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[]) {
     u.stats[k] = Math.min(capStat(u, k), u.stats[k] + (promo[k] || 0))
   }
   u.promoted = true
@@ -16,27 +24,26 @@ function promote(u, showLog = true) {
   u.hp = Math.min(u.hp, u.maxHp)
   if (showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal')
 }
-window.promote = promote
-function promotionUnlockedForRegularEnemies() {
-  return battle > PROMOTION_UNLOCK_AFTER_BATTLE
+export function promotionUnlockedForRegularEnemies() {
+  return state.battle > PROMOTION_UNLOCK_AFTER_BATTLE
 }
-function currentInternalLevel(u) {
+export function currentInternalLevel(u) {
   return u.internalLevel || (u.promoted ? 20 + u.lvl : u.lvl)
 }
-function syncDisplayLevel(u) {
+export function syncDisplayLevel(u) {
   const internal = currentInternalLevel(u)
   u.lvl = u.promoted ? clamp(internal - 20, 1, 20) : clamp(internal, 1, 20)
 }
-function applyGrowthLevel(u) {
+export function applyGrowthLevel(u) {
   const before = { ...u.stats }
-  for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']) {
+  for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'] as StatKey[]) {
     if (rint(100) + 1 <= u.growths[k]) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
   }
   u.maxHp = u.stats.hp
   u.hp = Math.min(u.hp, u.maxHp)
   return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].filter((k) => u.stats[k] > before[k])
 }
-function advanceInternalLevel(u, allowPromotion, showLog = true) {
+export function advanceInternalLevel(u, allowPromotion, showLog = true) {
   if (u.promoted && u.lvl >= 20) return false
   if (!u.promoted && u.lvl >= 20 && allowPromotion) {
     promote(u, showLog)
@@ -51,20 +58,19 @@ function advanceInternalLevel(u, allowPromotion, showLog = true) {
   }
   return true
 }
-function levelUp(u, showLog = true) {
+export function levelUp(u, showLog = true) {
   if (u.promoted && u.lvl >= 20) return false
   return advanceInternalLevel(u, true, showLog)
 }
-window.levelUp = levelUp
-function advanceTwoLevels(units) {
+export function advanceTwoLevels(units) {
   units.forEach((u) => {
     for (let i = 0; i < 2; i++) levelUp(u, true)
     u.hp = u.maxHp
   })
 }
-function freshFromBase(base, enemy = false, targetLevel = 1, promoted = false) {
+export function freshFromBase(base, enemy = false, targetLevel = 1, promoted = false) {
   const c = CLASSES[base.cls],
-    u = {
+    u: any = {
       id: Math.random().toString(36).slice(2),
       name: base.name,
       baseName: base.name,
@@ -93,46 +99,46 @@ function freshFromBase(base, enemy = false, targetLevel = 1, promoted = false) {
   u.hp = u.maxHp
   return u
 }
-function startingWeapon(type) {
+export function startingWeapon(type) {
   const map = { sword: 'Iron Sword', lance: 'Iron Lance', axe: 'Iron Axe', bow: 'Iron Bow', anima: 'Fire', light: 'Lightning', dark: 'Flux', staff: 'Heal Staff' }
   return cloneWeapon(WEAPONS.find((w) => w.name === map[type]))
 }
-function cloneWeapon(w) {
+export function cloneWeapon(w) {
   return { ...w }
 }
-function forgeWeapon(w) {
+export function forgeWeapon(w) {
   if (!w || w.staff) return false
   w.name += '+'
   w.mt = (w.mt || 0) + 2
   w.hit = (w.hit || 0) + 5
   return true
 }
-function cloneConsumable(item) {
+export function cloneConsumable(item) {
   return item ? { ...item } : null
 }
-function consumableById(id) {
+export function consumableById(id) {
   return CONSUMABLES.find((item) => item.id === id)
 }
-function startingConsumables() {
+export function startingConsumables() {
   return [cloneConsumable(consumableById('vulnerary')), cloneConsumable(consumableById('speed_tonic')), null]
 }
-function allowedWeapons(u) {
+export function allowedWeapons(u) {
   const c = CLASSES[u.cls] || {}
   const base = [u.weaponType]
   if (u.cls === 'Thief') base.push('dagger')
   if (u.promoted) base.push(...(c.promotionWeaponTypes || []))
   return [...new Set(base)]
 }
-function weaponBaseName(name = '') {
+export function weaponBaseName(name = '') {
   return String(name).replace(/\++$/, '')
 }
-function isCurrentWeapon(u, w) {
+export function isCurrentWeapon(u, w) {
   return !!u?.weapon && !!w && weaponBaseName(u.weapon.name) === weaponBaseName(w.name)
 }
-function canEquipAsNewWeapon(u, w) {
+export function canEquipAsNewWeapon(u, w) {
   return u?.hp > 0 && !!w && allowedWeapons(u).includes(w.type) && !isCurrentWeapon(u, w)
 }
-function weaponScore(w) {
+export function weaponScore(w) {
   const staffFx = { sleep: 18, berserk: 24, fortify: 70 }[w.effect] || 0
   return (
     (w.mt || 0) * 3 +
@@ -154,19 +160,19 @@ function weaponScore(w) {
     staffFx
   )
 }
-function bossWeaponRanks(tier) {
-  const lateBoss = battle > 10
+export function bossWeaponRanks(tier) {
+  const lateBoss = state.battle > 10
   if (tier === BOSS_TIER_BIOME) return lateBoss ? ['A', 'S'] : ['B', 'A']
   if (tier === BOSS_TIER_REGULAR) return lateBoss ? ['B', 'A'] : ['C', 'B']
   return []
 }
-function bossWeaponPool(opts, tier) {
+export function bossWeaponPool(opts, tier) {
   const ranks = bossWeaponRanks(tier)
   if (!ranks.length) return opts
   const ranked = opts.filter((w) => ranks.includes(w.rank))
   return ranked.length ? ranked : opts
 }
-function enemyWeaponFor(u, tier) {
+export function enemyWeaponFor(u, tier) {
   const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
   if (!opts.length) return u.weapon
   if (tier === BOSS_TIER_BIOME) {
@@ -178,11 +184,11 @@ function enemyWeaponFor(u, tier) {
     const bossOpts = bossWeaponPool(opts, tier)
     return cloneWeapon(bossOpts.sort((a, b) => weaponScore(b) - weaponScore(a))[0])
   }
-  if (battle > 10) {
+  if (state.battle > 10) {
     const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
     if (good.length && rnd() < 0.85) return cloneWeapon(pick(good))
   }
-  if (battle > 4) {
+  if (state.battle > 4) {
     const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
     if (good.length && rnd() < 0.55) return cloneWeapon(pick(good))
   }

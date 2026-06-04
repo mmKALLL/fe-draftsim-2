@@ -1,14 +1,21 @@
-'use strict'
+import { BIOME_AVOID_DELTA, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
+import { activeBiomeEffects, hasBiomeEffect } from './biomes'
+import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
+import { closeModal, showModal } from './ui'
+import { $, capStat, clamp, floor, pick, rint, rnd } from './utils'
+import { state } from './state'
 
-function unitTags(u) {
+
+export function unitTags(u) {
   return CLASS_TAGS[u.displayCls] || CLASS_TAGS[u.cls] || []
 }
-function isWeaponEffective(w, d) {
+export function isWeaponEffective(w, d) {
   if (!w?.effective) return false
   const tags = unitTags(d)
   return w.effective.some((e) => (e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)))
 }
-function triangle(a, b, aw = null, bw = null) {
+export function triangle(a, b, aw = null, bw = null) {
   const beats = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
   if (!beats[a] || !beats[b]) return { atk: 0, hit: 0 }
   let sign = 0
@@ -20,7 +27,7 @@ function triangle(a, b, aw = null, bw = null) {
   const mult = (aRev || bRev) && !(aRev && bRev) ? 2 : 1
   return { atk: sign * mult, hit: sign * 15 * mult }
 }
-function biomeStatDelta(stat) {
+export function biomeStatDelta(stat) {
   const effects = activeBiomeEffects()
   let delta = 0
   if (stat === 'def') {
@@ -37,73 +44,73 @@ function biomeStatDelta(stat) {
   }
   return delta
 }
-function combatStat(u, stat) {
+export function combatStat(u, stat) {
   let value = u.stats[stat] || 0
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
 }
-function biomePhysicalPowerDelta(weapon) {
+export function biomePhysicalPowerDelta(weapon) {
   return hasBiomeEffect('strUp') && !weapon?.magic ? BIOME_STAT_DELTA : 0
 }
-function biomeAvoidDelta() {
+export function biomeAvoidDelta() {
   let delta = 0
   if (hasBiomeEffect('avoidUp')) delta += BIOME_AVOID_DELTA
   if (hasBiomeEffect('avoidDown')) delta -= BIOME_AVOID_DELTA
   return delta
 }
-function attackSpeed(u) {
+export function attackSpeed(u) {
   const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con)
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
-function combatDefense(u) {
+export function combatDefense(u) {
   return combatStat(u, 'def') + (u.weapon?.defBonus || 0)
 }
-function combatResistance(u) {
+export function combatResistance(u) {
   return combatStat(u, 'res') + (u.weapon?.resBonus || 0)
 }
-function effectiveMt(a, d) {
+export function effectiveMt(a, d) {
   const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
   return (a.weapon.mt || 0) * coeff
 }
-function attackPower(a, d) {
+export function attackPower(a, d) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
   const stat = combatStat(a, 'str')
   return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon)
 }
-function defenseAgainst(d, weapon) {
+export function defenseAgainst(d, weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)
 }
-function rawDamage(a, d) {
+export function rawDamage(a, d) {
   if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
   let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
   if (a.weapon.halfDef) def = floor(def / 2)
   return Math.max(1, attackPower(a, d) - def)
 }
-function hitRate(a, d) {
+export function hitRate(a, d) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
   return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t)
 }
-function avoid(d) {
+export function avoid(d) {
   return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta())
 }
-function displayedHit(a, d) {
+export function displayedHit(a, d) {
   return clamp(hitRate(a, d) - avoid(d), 0, 100)
 }
-function trueHitRoll(displayed) {
+export function trueHitRoll(displayed) {
   const rn = (rint(100) + 1 + rint(100) + 1) / 2
   return rn <= displayed
 }
-function critRate(a, d) {
+export function critRate(a, d) {
   if (a.weapon?.halveHp) return 0
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
   return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck')), 0, 100)
 }
-function triangleClass(a, d) {
+export function triangleClass(a, d) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'
   const wt = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
   return wt > 0 ? 'hitAdv' : wt < 0 ? 'hitDis' : 'hitNeu'
 }
-function combatPreviewHTML(actor, target) {
+export function combatPreviewHTML(actor, target) {
   if (!actor || !target || actor.hp <= 0 || target.hp <= 0) return ''
   if (actor.weapon?.staff) {
     const fx = staffEffect(actor.weapon)
@@ -118,7 +125,7 @@ function combatPreviewHTML(actor, target) {
     hitCountClass = hits >= 4 ? 'attackCount attackCountQuad' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
   return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
 }
-function classAbbrev(cls) {
+export function classAbbrev(cls) {
   const map = {
     Lord: 'Lord',
     'Blade Lord': 'Blade Lord',
@@ -150,42 +157,42 @@ function classAbbrev(cls) {
   }
   return map[cls] || String(cls).slice(0, 7)
 }
-function statLabel(entity, stat) {
+export function statLabel(entity, stat) {
   if (stat === 'str') return CLASSES[entity?.cls]?.strLabel || 'STR'
   return stat.toUpperCase()
 }
-function bossNameFor(u) {
+export function bossNameFor(u) {
   const list = BOSS_NAMES_BY_CLASS[u.displayCls] || BOSS_NAMES_BY_CLASS[u.cls]
   return list ? list[rint(list.length)] : null
 }
-function enemyDisplayName(u) {
+export function enemyDisplayName(u) {
   const bossName = u.bossTier ? bossNameFor(u) : null
   if (bossName) return bossName
   return classAbbrev(u.displayCls)
 }
-function canDouble(a, d) {
+export function canDouble(a, d) {
   return attackSpeed(a) - attackSpeed(d) >= 4
 }
-function healAmount(a) {
+export function healAmount(a) {
   return Math.max(1, (a.weapon.mt || 0) + combatStat(a, 'str'))
 }
-function fortifyAmount(a) {
+export function fortifyAmount(a) {
   return Math.max(1, combatStat(a, 'str'))
 }
-function staffEffect(w) {
+export function staffEffect(w) {
   return w?.staff ? w.effect || 'heal' : null
 }
-function isStatusStaff(w) {
+export function isStatusStaff(w) {
   const fx = staffEffect(w)
   return fx === 'sleep' || fx === 'berserk'
 }
-function statusName(fx) {
+export function statusName(fx) {
   return { sleep: 'Sleep', berserk: 'Berserk' }[fx] || ''
 }
-function statusLabel(u) {
+export function statusLabel(u) {
   return [statusName(u.status), u.poisoned ? 'Poison' : ''].filter(Boolean).join(' ')
 }
-function weaponEffectLabels(w) {
+export function weaponEffectLabels(w) {
   const labels = []
   if (w.speedBonus) labels.push(`Spd +${w.speedBonus}`)
   if (w.defBonus) labels.push(`Def +${w.defBonus}`)
@@ -204,19 +211,19 @@ function weaponEffectLabels(w) {
   if (w.drain) labels.push('Drain')
   return labels
 }
-function temporaryBuffLabel(u) {
-  const battleBuffs = Object.entries(u.tempBuffs || {})
+export function temporaryBuffLabel(u) {
+  const battleBuffs = (Object.entries(u.tempBuffs || {}) as [string, number][])
     .filter(([, amt]) => amt > 0)
     .map(([stat, amt]) => `${statLabel(u, stat)}+${amt}`)
-  const turnBuffs = Object.entries(u.turnBuffs || {})
+  const turnBuffs = (Object.entries(u.turnBuffs || {}) as [string, number][])
     .filter(([, amt]) => amt > 0)
     .map(([stat, amt]) => `${statLabel(u, stat)}+${amt} turn`)
   const buffs = [...battleBuffs, ...turnBuffs]
   if (!buffs.length) return ''
   return buffs.join(', ')
 }
-function clearBuffBucket(u, bucketName) {
-  for (const [stat, amt] of Object.entries(u[bucketName] || {})) {
+export function clearBuffBucket(u, bucketName) {
+  for (const [stat, amt] of (Object.entries(u[bucketName] || {}) as [string, number][])) {
     u.stats[stat] = Math.max(0, u.stats[stat] - amt)
     if (stat === 'hp') {
       u.maxHp = u.stats.hp
@@ -225,7 +232,7 @@ function clearBuffBucket(u, bucketName) {
   }
   u[bucketName] = {}
 }
-function clearTemporaryBuffs(units) {
+export function clearTemporaryBuffs(units) {
   units.forEach((u) => {
     clearBuffBucket(u, 'turnBuffs')
     clearBuffBucket(u, 'tempBuffs')
@@ -233,14 +240,14 @@ function clearTemporaryBuffs(units) {
     u.hp = Math.min(u.hp, u.maxHp)
   })
 }
-function clearTurnBuffs(u) {
+export function clearTurnBuffs(u) {
   clearBuffBucket(u, 'turnBuffs')
 }
-function consumableSummary(item) {
+export function consumableSummary(item) {
   if (!item) return ''
   return item.desc || ''
 }
-function consumableTargets(item, team = player, foes = enemy) {
+export function consumableTargets(item, team = state.player, foes = state.enemy) {
   if (!item) return []
   const living = team.filter((u) => u.hp > 0)
   if (item.effect === 'heal' || item.effect === 'fullHeal') return living.filter((u) => u.hp < u.maxHp)
@@ -252,10 +259,10 @@ function consumableTargets(item, team = player, foes = enemy) {
   }
   return []
 }
-function hasUsableConsumable(actor) {
-  return !!actor && consumables.some((item) => item && consumableTargets(item).length)
+export function hasUsableConsumable(actor) {
+  return !!actor && state.consumables.some((item) => item && consumableTargets(item).length)
 }
-function applyStatBuff(u, stat, amount, bucketName = 'tempBuffs') {
+export function applyStatBuff(u, stat, amount, bucketName = 'tempBuffs') {
   u[bucketName] = u[bucketName] || {}
   const current = u[bucketName][stat] || 0
   const room = Math.max(0, capStat(u, stat) - u.stats[stat])
@@ -269,20 +276,20 @@ function applyStatBuff(u, stat, amount, bucketName = 'tempBuffs') {
   }
   return gained
 }
-function applyStatus(u, fx) {
+export function applyStatus(u, fx) {
   u.status = fx
 }
-function applyPoison(u) {
+export function applyPoison(u) {
   if (u.poisoned) return false
   u.poisoned = true
   return true
 }
-function clearUnitStatus(u) {
+export function clearUnitStatus(u) {
   delete u.status
   delete u.poisoned
 }
 
-function strikeResult(a, d, suffix = '') {
+export function strikeResult(a, d, suffix = '') {
   const dh = displayedHit(a, d),
     cr = critRate(a, d),
     dmg = rawDamage(a, d)
@@ -293,7 +300,7 @@ function strikeResult(a, d, suffix = '') {
   d.hp = Math.max(0, d.hp - finalDmg)
   return { hit: true, crit, damage: before - d.hp, dh, cr, suffix }
 }
-function performStrike(a, d, log, suffix = '') {
+export function performStrike(a, d, log, suffix = '') {
   const r = strikeResult(a, d, suffix)
   if (!r.hit) {
     logLine(log, `${a.name}${suffix} attacks ${d.name}: miss (${r.dh}% displayed).`, 'miss')
@@ -303,7 +310,7 @@ function performStrike(a, d, log, suffix = '') {
   if (d.hp <= 0) logLine(log, `${d.name} falls.`, 'death')
   return r
 }
-function expectedDamage(a, d) {
+export function expectedDamage(a, d) {
   if (!a || !d || a.hp <= 0 || d.hp <= 0 || a.weapon.staff) return 0
   const hit = displayedHit(a, d) / 100,
     crit = critRate(a, d) / 100,
@@ -311,12 +318,12 @@ function expectedDamage(a, d) {
   const strikes = canDouble(a, d) ? 2 : 1
   return hit * dmg * (1 + 2 * crit) * strikes
 }
-function avgExpectedDamage(a, foes) {
+export function avgExpectedDamage(a, foes) {
   const live = foes.filter((x) => x.hp > 0)
   if (!live.length) return 0
   return live.reduce((sum, d) => sum + expectedDamage(a, d), 0) / live.length
 }
-function chooseAITarget(targets, opposingTeam) {
+export function chooseAITarget(targets, opposingTeam) {
   const live = targets.filter((x) => x.hp > 0)
   if (!live.length) return null
   const roll = rnd()
@@ -324,17 +331,17 @@ function chooseAITarget(targets, opposingTeam) {
   if (roll < 0.8) return [...live].sort((a, b) => avgExpectedDamage(b, opposingTeam) - avgExpectedDamage(a, opposingTeam))[0]
   return pick(live)
 }
-function chooseEnemyTarget() {
-  return chooseAITarget(player, enemy)
+export function chooseEnemyTarget() {
+  return chooseAITarget(state.player, state.enemy)
 }
-function autoFightTargetFor(actor, allies, foes, stavesExhausted = false) {
+export function autoFightTargetFor(actor, allies, foes, stavesExhausted = false) {
   if (actor.weapon.staff) {
     if (stavesExhausted) return null
     return isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, foes) : null
   }
   return chooseAITarget(foes, allies)
 }
-function chooseStatusStaffTarget(actor, foes) {
+export function chooseStatusStaffTarget(actor, foes) {
   const live = foes.filter((x) => x.hp > 0)
   const unstated = live.filter((x) => !x.status)
   const targets = unstated.length ? unstated : live
@@ -342,46 +349,46 @@ function chooseStatusStaffTarget(actor, foes) {
   if (rnd() < 0.65) return [...targets].sort((a, b) => displayedHit(actor, b) - displayedHit(actor, a))[0]
   return pick(targets)
 }
-function lowestInjured(allies) {
+export function lowestInjured(allies) {
   const injured = allies.filter((x) => x.hp > 0 && x.hp < x.maxHp)
   return injured.sort((a, b) => a.hp - b.hp)[0] || null
 }
-function sleep(ms) {
+export function sleep(ms) {
   return new Promise((res) => setTimeout(res, ms))
 }
-function spriteEl(u) {
-  return document.querySelector(`.combatant[data-id="${u.id}"]`)
+export function spriteEl(u) {
+  return document.querySelector<HTMLElement>(`.combatant[data-id="${u.id}"]`)
 }
-function clearHighlights() {
-  document.querySelectorAll('.combatant').forEach((el) => el.classList.remove('active', 'target', 'selectable', 'striking'))
+export function clearHighlights() {
+  document.querySelectorAll<HTMLElement>('.combatant').forEach((el) => el.classList.remove('active', 'target', 'selectable', 'striking'))
 }
-function setStatus(msg) {
+export function setStatus(msg) {
   const el = $('combatStatus')
   el.textContent = msg
   el.classList.toggle('hidden', !msg)
 }
-function updateUnitVisual(u) {
+export function updateUnitVisual(u) {
   const el = spriteEl(u)
   if (!el) return
   const pct = Math.max(0, (100 * u.hp) / u.maxHp)
-  const bar = el.querySelector('.hpbar>i'),
-    hp = el.querySelector('.hpText')
+  const bar = el.querySelector<HTMLElement>('.hpbar>i'),
+    hp = el.querySelector<HTMLElement>('.hpText')
   if (bar) bar.style.width = pct + '%'
   if (hp) hp.textContent = `${u.hp}/${u.maxHp}`
   el.classList.toggle('dead', u.hp <= 0)
 }
-function floatText(u, text, cls) {
+export function floatText(u, text, cls) {
   const el = spriteEl(u)
   if (!el) return
   const n = document.createElement('div')
   n.className = 'floatText ' + cls
   n.textContent = text
   el.appendChild(n)
-  setTimeout(() => n.remove(), cls.includes('damage') ? 950 : 650)
+  setTimeout(() => n.remove(), cls.includes('statusText') ? 1250 : cls.includes('damage') ? 950 : 650)
 }
-function selectTarget(actor, targets, prompt, cancelLabel = '') {
-  activePreviewActor = actor
-  if (cancelLabel) activeConsumableActor = actor
+export function selectTarget(actor, targets, prompt, cancelLabel = '') {
+  state.ui.activePreviewActor = actor
+  if (cancelLabel) state.ui.activeConsumableActor = actor
   renderTeams()
   setStatus(prompt || `${actor.name}'s turn: choose a target.`)
   const ae = spriteEl(actor)
@@ -391,22 +398,22 @@ function selectTarget(actor, targets, prompt, cancelLabel = '') {
     const finish = (target) => {
       if (settled) return
       settled = true
-      document.querySelectorAll('.combatant').forEach((ex) => {
+      document.querySelectorAll<HTMLElement>('.combatant').forEach((ex) => {
         ex.classList.remove('selectable')
         ex.onclick = null
       })
-      pendingTargetCancel = null
-      pendingDefaultAction = null
-      pendingDefaultLabel = ''
-      activePreviewActor = null
-      if (cancelLabel) activeConsumableActor = null
+      state.combat.pendingTargetCancel = null
+      state.combat.pendingDefaultAction = null
+      state.combat.pendingDefaultLabel = ''
+      state.ui.activePreviewActor = null
+      if (cancelLabel) state.ui.activeConsumableActor = null
       renderTeams()
       resolve(target)
     }
-    pendingTargetCancel = () => finish(null)
+    state.combat.pendingTargetCancel = () => finish(null)
     if (cancelLabel) {
-      pendingDefaultLabel = cancelLabel
-      pendingDefaultAction = () => finish(null)
+      state.combat.pendingDefaultLabel = cancelLabel
+      state.combat.pendingDefaultAction = () => finish(null)
       renderConsumables()
     }
     targets.forEach((t) => {
@@ -417,9 +424,9 @@ function selectTarget(actor, targets, prompt, cancelLabel = '') {
     })
   })
 }
-function selectPlayerAction(actor, targets, prompt, defaultLabel = '') {
-  activePreviewActor = actor
-  activeConsumableActor = actor
+export function selectPlayerAction(actor, targets, prompt, defaultLabel = '') {
+  state.ui.activePreviewActor = actor
+  state.ui.activeConsumableActor = actor
   renderTeams()
   setStatus(prompt || `${actor.name}'s turn: choose an action.`)
   const ae = spriteEl(actor)
@@ -429,26 +436,26 @@ function selectPlayerAction(actor, targets, prompt, defaultLabel = '') {
     const finish = (action) => {
       if (settled) return
       settled = true
-      document.querySelectorAll('.combatant').forEach((ex) => {
+      document.querySelectorAll<HTMLElement>('.combatant').forEach((ex) => {
         ex.classList.remove('selectable')
         ex.onclick = null
       })
-      pendingTargetCancel = null
-      pendingConsumableAction = null
-      pendingAutoFightAction = null
-      pendingDefaultAction = null
-      pendingDefaultLabel = ''
-      activePreviewActor = null
-      activeConsumableActor = null
+      state.combat.pendingTargetCancel = null
+      state.combat.pendingConsumableAction = null
+      state.combat.pendingAutoFightAction = null
+      state.combat.pendingDefaultAction = null
+      state.combat.pendingDefaultLabel = ''
+      state.ui.activePreviewActor = null
+      state.ui.activeConsumableActor = null
       renderTeams()
       resolve(action)
     }
-    pendingTargetCancel = () => finish({ type: 'cancel' })
-    pendingConsumableAction = (slot) => finish({ type: 'consumable', slot })
-    pendingAutoFightAction = () => finish({ type: 'auto' })
+    state.combat.pendingTargetCancel = () => finish({ type: 'cancel' })
+    state.combat.pendingConsumableAction = (slot) => finish({ type: 'consumable', slot })
+    state.combat.pendingAutoFightAction = () => finish({ type: 'auto' })
     if (defaultLabel) {
-      pendingDefaultLabel = defaultLabel
-      pendingDefaultAction = () => finish({ type: 'default' })
+      state.combat.pendingDefaultLabel = defaultLabel
+      state.combat.pendingDefaultAction = () => finish({ type: 'default' })
     }
     targets.forEach((t) => {
       const el = spriteEl(t)
@@ -457,17 +464,17 @@ function selectPlayerAction(actor, targets, prompt, defaultLabel = '') {
       el.onclick = () => finish({ type: 'target', target: t })
     })
     renderConsumables()
-    if (autoFight) setTimeout(() => pendingAutoFightAction?.(), 0)
+    if (state.combat.autoFight) setTimeout(() => state.combat.pendingAutoFightAction?.(), 0)
   })
 }
-function nextLivingIndex(team, start) {
+export function nextLivingIndex(team, start) {
   for (let offset = 0; offset < team.length; offset++) {
     const idx = (start + offset) % team.length
     if (team[idx]?.hp > 0) return idx
   }
   return -1
 }
-async function animateStrike(actor, target, result) {
+export async function animateStrike(actor, target, result) {
   clearHighlights()
   const ae = spriteEl(actor),
     te = spriteEl(target)
@@ -486,7 +493,7 @@ async function animateStrike(actor, target, result) {
   if (ae) ae.classList.remove('striking')
   if (target.hp <= 0) updateUnitVisual(target)
 }
-async function animateHeal(actor, target, amt) {
+export async function animateHeal(actor, target, amt) {
   clearHighlights()
   const ae = spriteEl(actor),
     te = spriteEl(target)
@@ -500,7 +507,7 @@ async function animateHeal(actor, target, amt) {
   logLine(null, `${actor.name} heals ${target.name} for ${amt}.`, 'heal')
   await sleep(300)
 }
-async function animateFortify(actor, targets, amt) {
+export async function animateFortify(actor, targets, amt) {
   clearHighlights()
   const ae = spriteEl(actor)
   if (ae) ae.classList.add('active')
@@ -518,7 +525,7 @@ async function animateFortify(actor, targets, amt) {
   logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal')
   await sleep(450)
 }
-async function animateAoeConsumable(actor, targets, item) {
+export async function animateAoeConsumable(actor, targets, item) {
   clearHighlights()
   const ae = spriteEl(actor)
   if (ae) ae.classList.add('active')
@@ -539,7 +546,7 @@ async function animateAoeConsumable(actor, targets, item) {
   fallen.forEach((name) => logLine(null, `${name} falls.`, 'death'))
   await sleep(450)
 }
-async function animateConsumable(actor, target, item) {
+export async function animateConsumable(actor, target, item) {
   clearHighlights()
   const ae = spriteEl(actor),
     te = spriteEl(target)
@@ -575,7 +582,7 @@ async function animateConsumable(actor, target, item) {
   renderSideCards()
   await sleep(350)
 }
-function confirmConsumableUse(actor, item, details) {
+export function confirmConsumableUse(actor, item, details) {
   return new Promise((resolve) => {
     showModal(
       `<h2>Use ${item.name}?</h2><p>${details || consumableSummary(item)}</p><div class="row"><button id="confirmConsumableBtn" class="good">Use</button><button id="cancelConsumableBtn">Cancel</button></div>`
@@ -590,8 +597,8 @@ function confirmConsumableUse(actor, item, details) {
     }
   })
 }
-async function useConsumableFromSlot(slot, actor) {
-  const item = consumables[slot]
+export async function useConsumableFromSlot(slot, actor) {
+  const item = state.consumables[slot]
   if (!item) {
     setStatus('That consumable slot is empty.')
     return false
@@ -612,7 +619,7 @@ async function useConsumableFromSlot(slot, actor) {
       return false
     }
     await animateAoeConsumable(actor, targets, item)
-    consumables[slot] = null
+    state.consumables[slot] = null
     renderTeams()
     return true
   }
@@ -622,28 +629,28 @@ async function useConsumableFromSlot(slot, actor) {
     return false
   }
   await animateConsumable(actor, target, item)
-  consumables[slot] = null
+  state.consumables[slot] = null
   renderTeams()
   return true
 }
-function staffStatusResult(a, d) {
+export function staffStatusResult(a, d) {
   const dh = displayedHit(a, d)
   return { hit: trueHitRoll(dh), dh, effect: staffEffect(a.weapon) }
 }
-async function animateStatusStaff(actor, target, result) {
+export async function animateStatusStaff(actor, target, result) {
   clearHighlights()
   const ae = spriteEl(actor),
     te = spriteEl(target)
   if (ae) ae.classList.add('active')
   if (te) te.classList.add('target')
   await sleep(300)
-  if (result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'missText')
+  if (result.hit) floatText(target, statusName(result.effect).toUpperCase(), 'statusText')
   else floatText(target, 'MISS', 'missText')
   updateUnitVisual(target)
   renderSideCards()
-  await sleep(350)
+  await sleep(result.hit ? 800 : 350)
 }
-async function animateWait(actor, msg, cls = 'miss') {
+export async function animateWait(actor, msg, cls = 'miss') {
   clearHighlights()
   const ae = spriteEl(actor)
   if (ae) ae.classList.add('active')
@@ -652,7 +659,7 @@ async function animateWait(actor, msg, cls = 'miss') {
   floatText(actor, 'WAIT', 'missText')
   await sleep(600)
 }
-async function applyEndOfTurnStatus(actor) {
+export async function applyEndOfTurnStatus(actor) {
   if (!actor?.poisoned || actor.hp <= 0) return
   const damage = Math.max(1, floor(actor.maxHp * 0.2))
   actor.hp = Math.max(0, actor.hp - damage)
@@ -663,7 +670,7 @@ async function applyEndOfTurnStatus(actor) {
   if (actor.hp <= 0) logLine(null, `${actor.name} falls to poison.`, 'death')
   await sleep(350)
 }
-async function resolveStaffTurn(actor, allies, foes, forcedTarget = null) {
+export async function resolveStaffTurn(actor, allies, foes, forcedTarget = null) {
   const fx = staffEffect(actor.weapon)
   if (fx === 'fortify') {
     const targets = allies.filter((x) => x.hp > 0 && x.hp < x.maxHp)
@@ -695,7 +702,7 @@ async function resolveStaffTurn(actor, allies, foes, forcedTarget = null) {
   }
   await animateWait(actor, `${actor.name} waits; no ally to heal.`)
 }
-async function consumeTurnStatus(actor, allies, foes) {
+export async function consumeTurnStatus(actor, allies, foes) {
   if (!actor.status) return false
   const fx = actor.status
   delete actor.status
@@ -718,7 +725,7 @@ async function consumeTurnStatus(actor, allies, foes) {
   }
   return false
 }
-async function resolveActorTurn(actor, allies, foes, forcedTarget = null, stavesExhausted = false) {
+export async function resolveActorTurn(actor, allies, foes, forcedTarget = null, stavesExhausted = false) {
   if (!actor || actor.hp <= 0) return
   if (actor.weapon.staff) {
     if (stavesExhausted) {
@@ -749,9 +756,9 @@ async function resolveActorTurn(actor, allies, foes, forcedTarget = null, staves
       await animateStrike(actor, target, r)
       if (actor.weapon?.poison && r.hit && target.hp > 0 && applyPoison(target)) {
         logLine(null, `${target.name} is poisoned.`, 'crit')
-        floatText(target, 'POISON', 'missText')
+        floatText(target, 'POISON', 'statusText')
         renderSideCards()
-        await sleep(250)
+        await sleep(650)
       }
       if (actor.weapon?.drain && r.hit && r.damage > 0) {
         const before = actor.hp
