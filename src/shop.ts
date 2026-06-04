@@ -1,16 +1,28 @@
-'use strict'
+import { SHOP_BOOST_OFFERS, SHOP_BOOST_PRICES, SHOP_CONSUMABLE_OFFERS, SHOP_CONSUMABLE_PRICES, SHOP_FORGE_PRICE, SHOP_WEAPON_OFFERS, SHOP_WEAPON_PRICES } from '../constants'
+import { WEAPONS } from '../data'
+import { setShopOpen } from './biomes'
+import { consumableSummary, statLabel } from './combat'
+import { beginNextBattle } from './game'
+import { growthSummaryHTML, logLine, renderTeams, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
+import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, pickRewardConsumable, pickRewardWeapon } from './rewards'
+import { addGold, formatGold, goldHTML, spendGold } from './state'
+import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } from './ui'
+import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon } from './units'
+import { $, capStat } from './utils'
+import { state } from './state'
 
-function shopWeaponPrice(w) {
+
+export function shopWeaponPrice(w) {
   const rank = String(w.rank || 'E').toUpperCase()
   return SHOP_WEAPON_PRICES[rank] || SHOP_WEAPON_PRICES.E
 }
-function shopConsumablePrice(item) {
+export function shopConsumablePrice(item) {
   return SHOP_CONSUMABLE_PRICES[item.tier || 'normal'] || SHOP_CONSUMABLE_PRICES.normal
 }
-function shopBoostPrice(r) {
+export function shopBoostPrice(r) {
   return SHOP_BOOST_PRICES[r.stat] || 800
 }
-function uniqueShopOffers(count, makeOffer, keyFn) {
+export function uniqueShopOffers(count, makeOffer, keyFn) {
   const offers = [],
     seen = new Set()
   let guard = 0
@@ -24,13 +36,13 @@ function uniqueShopOffers(count, makeOffer, keyFn) {
   }
   return offers
 }
-function shopWeaponPool() {
-  return WEAPONS.filter((w) => player.some((u) => canEquipAsNewWeapon(u, w)))
+export function shopWeaponPool() {
+  return WEAPONS.filter((w) => state.player.some((u) => canEquipAsNewWeapon(u, w)))
 }
-function eligibleWeaponUsers(w) {
-  return player.filter((u) => canEquipAsNewWeapon(u, w))
+export function eligibleWeaponUsers(w) {
+  return state.player.filter((u) => canEquipAsNewWeapon(u, w))
 }
-function shopWeaponOffer() {
+export function shopWeaponOffer() {
   const pool = shopWeaponPool()
   if (!pool.length) return null
   const item = cloneWeapon(pickRewardWeapon(pool, false))
@@ -43,7 +55,7 @@ function shopWeaponOffer() {
     price: shopWeaponPrice(item),
   }
 }
-function shopConsumableOffer() {
+export function shopConsumableOffer() {
   const item = pickRewardConsumable(false)
   return {
     type: 'consumable',
@@ -54,13 +66,13 @@ function shopConsumableOffer() {
     price: shopConsumablePrice(item),
   }
 }
-function shopBoostOffer() {
+export function shopBoostOffer() {
   const boost = boostReward(false)
   boost.shopKind = 'boost'
   boost.price = shopBoostPrice(boost)
   return boost
 }
-function shopForgeOffer() {
+export function shopForgeOffer() {
   return {
     type: 'forge',
     shopKind: 'forge',
@@ -69,7 +81,7 @@ function shopForgeOffer() {
     price: SHOP_FORGE_PRICE,
   }
 }
-function makeShopOffers() {
+export function makeShopOffers() {
   return [
     ...uniqueShopOffers(SHOP_WEAPON_OFFERS, shopWeaponOffer, (offer) => offer.item.name),
     ...uniqueShopOffers(SHOP_CONSUMABLE_OFFERS, shopConsumableOffer, (offer) => offer.item.id),
@@ -77,13 +89,13 @@ function makeShopOffers() {
     shopForgeOffer(),
   ]
 }
-function shopOfferClass(offer) {
+export function shopOfferClass(offer) {
   if (offer.type === 'gold') return ' reward-gold'
   return offer.item?.tier ? ` reward-${offer.item.tier}` : ''
 }
-function shopOfferHTML(offer, i) {
+export function shopOfferHTML(offer, i) {
   const sold = !!offer.sold
-  const affordable = gold >= offer.price
+  const affordable = state.gold >= offer.price
   const unavailable = offer.type === 'forge' && !forgeTargets().length
   const action = offer.type === 'forge' ? 'Forge' : 'Buy'
   const buttonLabel = sold ? 'Sold' : `${action} ${goldHTML(offer.price)}`
@@ -91,14 +103,14 @@ function shopOfferHTML(offer, i) {
   const meta = `<div class="small rewardMeta">${goldHTML(offer.price)}</div>`
   return selectionChoiceHTML(offer.title, `${offer.desc}${meta}`, `data-shop-buy="${i}"${disabled}`, buttonLabel, shopOfferClass(offer), 'good', 'shopItem', 'small')
 }
-function renderShop(message = '') {
+export function renderShop(message = '') {
   const groups = {
-    weapon: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'weapon'),
-    consumable: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'consumable'),
-    boost: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'boost'),
-    forge: shopOffers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'forge'),
+    weapon: state.shop.offers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'weapon'),
+    consumable: state.shop.offers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'consumable'),
+    boost: state.shop.offers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'boost'),
+    forge: state.shop.offers.map((offer, i) => ({ offer, i })).filter(({ offer }) => offer.shopKind === 'forge'),
   }
-  let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need? (Gold: ${goldHTML(gold)})</h3></div></div>`
+  let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need? (Gold: ${goldHTML(state.gold)})</h3></div></div>`
   if (message) html += `<div class="notice">${message}</div>`
 
   html += `<section class="shopSection"><h3>Weapons</h3>`
@@ -114,29 +126,29 @@ function renderShop(message = '') {
   setShopOpen(true)
   $('shopScreen').innerHTML = html
   $('shopScreen')
-    .querySelectorAll('[data-shop-buy]')
+    .querySelectorAll<HTMLElement>('[data-shop-buy]')
     .forEach((btn) => (btn.onclick = () => buyShopOffer(+btn.dataset.shopBuy)))
   $('leaveShopBtn').onclick = leaveShop
 }
-function startShop() {
-  awaitingReward = true
-  shopOffers = makeShopOffers()
+export function startShop() {
+  state.ui.awaitingReward = true
+  state.shop.offers = makeShopOffers()
   renderTeams()
   renderShop("You browse the store's fine selection...")
 }
-function leaveShop() {
+export function leaveShop() {
   closeModal()
-  awaitingReward = false
-  shopOffers = []
+  state.ui.awaitingReward = false
+  state.shop.offers = []
   setShopOpen(false)
-  logLine(null, `Left the shop with ${formatGold(gold)}.`, 'goldLog')
+  logLine(null, `Left the shop with ${formatGold(state.gold)}.`, 'goldLog')
   renderTeams()
   beginNextBattle()
 }
-function buyShopOffer(i) {
-  const offer = shopOffers[i]
+export function buyShopOffer(i) {
+  const offer = state.shop.offers[i]
   if (!offer || offer.sold) return
-  if (gold < offer.price) {
+  if (state.gold < offer.price) {
     renderShop(`Not enough gold for ${offer.title}.`)
     return
   }
@@ -163,16 +175,16 @@ function buyShopOffer(i) {
     chooseShopBoostTarget(i)
   }
 }
-function forgeTargets() {
-  return player.filter((u) => u.weapon && !u.weapon.staff)
+export function forgeTargets() {
+  return state.player.filter((u) => u.weapon && !u.weapon.staff)
 }
-function forgePreview(w) {
+export function forgePreview(w) {
   const preview = cloneWeapon(w)
   forgeWeapon(preview)
   return preview
 }
-function chooseShopForgeTarget(i) {
-  const offer = shopOffers[i]
+export function chooseShopForgeTarget(i) {
+  const offer = state.shop.offers[i]
   const eligible = forgeTargets()
   if (!eligible.length) {
     renderShop('No eligible equipped weapon to forge.')
@@ -185,7 +197,7 @@ function chooseShopForgeTarget(i) {
   })
   html += '<button id="cancelShopForgeBtn">Cancel</button>'
   showModal(html)
-  document.querySelectorAll('[data-shop-forge-target]').forEach(
+  document.querySelectorAll<HTMLElement>('[data-shop-forge-target]').forEach(
     (btn) =>
       (btn.onclick = () => {
         const u = eligible[+btn.dataset.shopForgeTarget]
@@ -209,8 +221,8 @@ function chooseShopForgeTarget(i) {
   )
   $('cancelShopForgeBtn').onclick = closeModal
 }
-function chooseShopWeaponTarget(i) {
-  const offer = shopOffers[i],
+export function chooseShopWeaponTarget(i) {
+  const offer = state.shop.offers[i],
     eligible = eligibleWeaponUsers(offer.item)
   if (!eligible.length) {
     renderShop(`No eligible wielder for ${offer.item.name}.`)
@@ -222,7 +234,7 @@ function chooseShopWeaponTarget(i) {
   })
   html += '<button id="cancelShopWeaponBtn">Cancel</button>'
   showModal(html)
-  document.querySelectorAll('[data-shop-weapon-target]').forEach(
+  document.querySelectorAll<HTMLElement>('[data-shop-weapon-target]').forEach(
     (btn) =>
       (btn.onclick = () => {
         const u = eligible[+btn.dataset.shopWeaponTarget]
@@ -240,15 +252,15 @@ function chooseShopWeaponTarget(i) {
   )
   $('cancelShopWeaponBtn').onclick = closeModal
 }
-function chooseShopConsumableReplacement(i) {
-  const offer = shopOffers[i]
+export function chooseShopConsumableReplacement(i) {
+  const offer = state.shop.offers[i]
   let html = `<h2>${offer.item.name}: choose slot</h2><div class="small">Cost ${goldHTML(offer.price)}. ${consumableSummary(offer.item)}</div>`
-  consumables.forEach((item, slot) => {
+  state.consumables.forEach((item, slot) => {
     html += `<div class="choice"><div><h4>Slot ${slot + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-shop-replace-consumable="${slot}" class="good">Replace</button></div>`
   })
   html += '<button id="backToShopBtn">Back</button>'
   showModal(html)
-  document.querySelectorAll('[data-shop-replace-consumable]').forEach(
+  document.querySelectorAll<HTMLElement>('[data-shop-replace-consumable]').forEach(
     (btn) =>
       (btn.onclick = () => {
         if (!spendGold(offer.price)) {
@@ -264,8 +276,8 @@ function chooseShopConsumableReplacement(i) {
   )
   $('backToShopBtn').onclick = closeModal
 }
-function chooseShopBoostTarget(i) {
-  const offer = shopOffers[i]
+export function chooseShopBoostTarget(i) {
+  const offer = state.shop.offers[i]
   const targets = boostTargetOptions(offer)
   if (!targets.length) {
     closeModal()
@@ -283,10 +295,10 @@ function chooseShopBoostTarget(i) {
   })
   html += '<button id="backToShopBtn">Back</button>'
   showModal(html)
-  document.querySelectorAll('[data-shop-boost-target]').forEach(
+  document.querySelectorAll<HTMLElement>('[data-shop-boost-target]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        const u = player[+btn.dataset.shopBoostTarget]
+        const u = state.player[+btn.dataset.shopBoostTarget]
         if (!canApplyBoost(offer, u)) {
           closeModal()
           renderShop(`${u.name} cannot use ${boosterName(offer.stat)}.`)
@@ -306,20 +318,20 @@ function chooseShopBoostTarget(i) {
   )
   $('backToShopBtn').onclick = closeModal
 }
-function storeConsumable(item, slot = firstEmptyConsumableSlot()) {
+export function storeConsumable(item, slot = firstEmptyConsumableSlot()) {
   const targetSlot = slot >= 0 ? slot : 0
-  consumables[targetSlot] = cloneConsumable(item)
+  state.consumables[targetSlot] = cloneConsumable(item)
   renderTeams()
   return targetSlot
 }
-function chooseConsumableReplacement(r, backToRewards = null) {
+export function chooseConsumableReplacement(r, backToRewards = null) {
   let html = `<h2>${r.item.name}: choose slot</h2><div class="small">${consumableSummary(r.item)}</div>`
-  consumables.forEach((item, i) => {
+  state.consumables.forEach((item, i) => {
     html += `<div class="choice"><div><h4>Slot ${i + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-replace-consumable="${i}" class="good">Replace</button></div>`
   })
   if (backToRewards) html += '<button id="backToRewardBtn">Back</button>'
   showModal(html)
-  document.querySelectorAll('[data-replace-consumable]').forEach(
+  document.querySelectorAll<HTMLElement>('[data-replace-consumable]').forEach(
     (btn) =>
       (btn.onclick = () => {
         storeConsumable(r.item, +btn.dataset.replaceConsumable)
@@ -332,7 +344,7 @@ function chooseConsumableReplacement(r, backToRewards = null) {
     if (backBtn) backBtn.onclick = backToRewards
   }
 }
-function applyReward(r, backToRewards = null) {
+export function applyReward(r, backToRewards = null) {
   if (r.type === 'item') {
     r.unit.weapon = r.item
     closeModal()

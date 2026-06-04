@@ -1,25 +1,30 @@
-'use strict'
+import { $, pick } from './utils'
+import { state } from './state'
+import { startRandomGame, startDraftGame, showHelpRules, openMusic, showMenu } from './ui'
+import { renderDraft, randomDraftOptions, emptyRosterChoices } from './render'
+import { setAutoFight } from './biomes'
+import { startRun, debugWinBattle, debugAddGeosphere } from './game'
 
 $('menuRandomBtn').onclick = startRandomGame
 $('menuDraftBtn').onclick = startDraftGame
 $('menuHelpBtn').onclick = showHelpRules
 $('menuMusicBtn').onclick = openMusic
 $('randomPickBtn').onclick = () => {
-  chosen = draftOptions.map((slot) => pick(slot))
+  state.draft.chosen = state.draft.options.map((slot) => pick(slot))
   renderDraft()
 }
 $('rerollBtn').onclick = () => {
-  draftOptions = randomDraftOptions()
-  chosen = emptyRosterChoices()
+  state.draft.options = randomDraftOptions()
+  state.draft.chosen = emptyRosterChoices()
   renderDraft()
 }
-$('autoFightBtn').onclick = () => setAutoFight(!autoFight)
+$('autoFightBtn').onclick = () => setAutoFight(!state.combat.autoFight)
 $('startBtn').onclick = startRun
 $('resetBtn').onclick = () => location.reload()
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && pendingTargetCancel) {
+  if (e.key === 'Escape' && state.combat.pendingTargetCancel) {
     e.preventDefault()
-    pendingTargetCancel()
+    state.combat.pendingTargetCancel()
     return
   }
   if (e.shiftKey && e.key.toLowerCase() === 'w') {
