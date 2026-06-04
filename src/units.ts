@@ -5,10 +5,10 @@ import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
 import { state } from './state'
-import type { StatKey } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
-export function promote(u, showLog = true) {
+export function promote(u: Unit, showLog = true) {
   if (u.promoted) return
   const c = CLASSES[u.cls],
     promo = c.promo || {}
@@ -27,14 +27,14 @@ export function promote(u, showLog = true) {
 export function promotionUnlockedForRegularEnemies() {
   return state.battle > PROMOTION_UNLOCK_AFTER_BATTLE
 }
-export function currentInternalLevel(u) {
+export function currentInternalLevel(u: Unit) {
   return u.internalLevel || (u.promoted ? 20 + u.lvl : u.lvl)
 }
-export function syncDisplayLevel(u) {
+export function syncDisplayLevel(u: Unit) {
   const internal = currentInternalLevel(u)
   u.lvl = u.promoted ? clamp(internal - 20, 1, 20) : clamp(internal, 1, 20)
 }
-export function applyGrowthLevel(u) {
+export function applyGrowthLevel(u: Unit) {
   const before = { ...u.stats }
   for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'] as StatKey[]) {
     if (rint(100) + 1 <= u.growths[k]) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
@@ -43,7 +43,7 @@ export function applyGrowthLevel(u) {
   u.hp = Math.min(u.hp, u.maxHp)
   return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].filter((k) => u.stats[k] > before[k])
 }
-export function advanceInternalLevel(u, allowPromotion, showLog = true) {
+export function advanceInternalLevel(u: Unit, allowPromotion: any, showLog = true) {
   if (u.promoted && u.lvl >= 20) return false
   if (!u.promoted && u.lvl >= 20 && allowPromotion) {
     promote(u, showLog)
@@ -58,17 +58,17 @@ export function advanceInternalLevel(u, allowPromotion, showLog = true) {
   }
   return true
 }
-export function levelUp(u, showLog = true) {
+export function levelUp(u: Unit, showLog = true) {
   if (u.promoted && u.lvl >= 20) return false
   return advanceInternalLevel(u, true, showLog)
 }
-export function advanceTwoLevels(units) {
-  units.forEach((u) => {
+export function advanceTwoLevels(units: Unit[]) {
+  units.forEach((u: Unit) => {
     for (let i = 0; i < 2; i++) levelUp(u, true)
     u.hp = u.maxHp
   })
 }
-export function freshFromBase(base, enemy = false, targetLevel = 1, promoted = false) {
+export function freshFromBase(base: any, enemy = false, targetLevel = 1, promoted = false) {
   const c = CLASSES[base.cls],
     u: any = {
       id: Math.random().toString(36).slice(2),
@@ -99,30 +99,30 @@ export function freshFromBase(base, enemy = false, targetLevel = 1, promoted = f
   u.hp = u.maxHp
   return u
 }
-export function startingWeapon(type) {
+export function startingWeapon(type: any) {
   const map = { sword: 'Iron Sword', lance: 'Iron Lance', axe: 'Iron Axe', bow: 'Iron Bow', anima: 'Fire', light: 'Lightning', dark: 'Flux', staff: 'Heal Staff' }
   return cloneWeapon(WEAPONS.find((w) => w.name === map[type]))
 }
-export function cloneWeapon(w) {
+export function cloneWeapon(w: Weapon) {
   return { ...w }
 }
-export function forgeWeapon(w) {
+export function forgeWeapon(w: Weapon) {
   if (!w || w.staff) return false
   w.name += '+'
   w.mt = (w.mt || 0) + 2
   w.hit = (w.hit || 0) + 5
   return true
 }
-export function cloneConsumable(item) {
+export function cloneConsumable(item: any) {
   return item ? { ...item } : null
 }
-export function consumableById(id) {
+export function consumableById(id: any) {
   return CONSUMABLES.find((item) => item.id === id)
 }
 export function startingConsumables() {
   return [cloneConsumable(consumableById('vulnerary')), cloneConsumable(consumableById('speed_tonic')), null]
 }
-export function allowedWeapons(u) {
+export function allowedWeapons(u: Unit) {
   const c = CLASSES[u.cls] || {}
   const base = [u.weaponType]
   if (u.cls === 'Thief') base.push('dagger')
@@ -132,13 +132,13 @@ export function allowedWeapons(u) {
 export function weaponBaseName(name = '') {
   return String(name).replace(/\++$/, '')
 }
-export function isCurrentWeapon(u, w) {
+export function isCurrentWeapon(u: Unit, w: Weapon) {
   return !!u?.weapon && !!w && weaponBaseName(u.weapon.name) === weaponBaseName(w.name)
 }
-export function canEquipAsNewWeapon(u, w) {
+export function canEquipAsNewWeapon(u: Unit, w: Weapon) {
   return u?.hp > 0 && !!w && allowedWeapons(u).includes(w.type) && !isCurrentWeapon(u, w)
 }
-export function weaponScore(w) {
+export function weaponScore(w: Weapon) {
   const staffFx = { sleep: 18, berserk: 24, fortify: 70 }[w.effect] || 0
   return (
     (w.mt || 0) * 3 +
@@ -160,19 +160,19 @@ export function weaponScore(w) {
     staffFx
   )
 }
-export function bossWeaponRanks(tier) {
+export function bossWeaponRanks(tier: any) {
   const lateBoss = state.battle > 10
   if (tier === BOSS_TIER_BIOME) return lateBoss ? ['A', 'S'] : ['B', 'A']
   if (tier === BOSS_TIER_REGULAR) return lateBoss ? ['B', 'A'] : ['C', 'B']
   return []
 }
-export function bossWeaponPool(opts, tier) {
+export function bossWeaponPool(opts: any, tier: any) {
   const ranks = bossWeaponRanks(tier)
   if (!ranks.length) return opts
-  const ranked = opts.filter((w) => ranks.includes(w.rank))
+  const ranked = opts.filter((w: Weapon) => ranks.includes(w.rank))
   return ranked.length ? ranked : opts
 }
-export function enemyWeaponFor(u, tier) {
+export function enemyWeaponFor(u: Unit, tier: any) {
   const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
   if (!opts.length) return u.weapon
   if (tier === BOSS_TIER_BIOME) {
@@ -182,7 +182,7 @@ export function enemyWeaponFor(u, tier) {
   }
   if (tier === BOSS_TIER_REGULAR) {
     const bossOpts = bossWeaponPool(opts, tier)
-    return cloneWeapon(bossOpts.sort((a, b) => weaponScore(b) - weaponScore(a))[0])
+    return cloneWeapon(bossOpts.sort((a: Unit, b: any) => weaponScore(b) - weaponScore(a))[0])
   }
   if (state.battle > 10) {
     const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')

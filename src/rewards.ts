@@ -9,6 +9,7 @@ import { levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, levelUp } from './units'
 import { $, capStat, pick, rnd } from './utils'
 import { state } from './state'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
 export function showRewards(opening = false) {
@@ -18,11 +19,11 @@ export function showRewards(opening = false) {
   const title = opening ? 'Choose an opening reward' : 'Choose a reward'
   renderRewardSelection(title, rewards)
 }
-export function renderRewardSelection(title, rewards) {
-  const skipReward = rewards.find((r) => r.type === 'gold')
-  const choiceRewards = rewards.filter((r) => r.type !== 'gold')
+export function renderRewardSelection(title: string, rewards: any) {
+  const skipReward = rewards.find((r: any) => r.type === 'gold')
+  const choiceRewards = rewards.filter((r: any) => r.type !== 'gold')
   let html = `<h2>${title}</h2><div class="rewardGrid">`
-  choiceRewards.forEach((r, i) => {
+  choiceRewards.forEach((r: any, i: number) => {
     const rewardClass = r.item?.tier ? ` reward-${r.item.tier || 'normal'}` : ''
     html += selectionChoiceHTML(r.title, r.desc, `data-i="${i}"`, 'Choose', rewardClass)
   })
@@ -34,16 +35,16 @@ export function renderRewardSelection(title, rewards) {
   if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
 }
 
-export function isGoodRewardWeapon(w) {
+export function isGoodRewardWeapon(w: Weapon) {
   return w.tier !== 'normal'
 }
 export function rewardsExcludeRare() {
   return state.battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
 }
-export function isNonRareRewardItem(item) {
+export function isNonRareRewardItem(item: any) {
   return item.tier !== 'rare'
 }
-export function rewardWeaponPool(u, goodOnly = false) {
+export function rewardWeaponPool(u: Unit, goodOnly = false) {
   const opts = WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
   if (rewardsExcludeRare()) return opts.filter(isNonRareRewardItem)
   if (!goodOnly) return opts
@@ -62,8 +63,8 @@ export function rewardConsumablePool(goodOnly = false) {
   const good = CONSUMABLES.filter((item) => item.tier !== 'normal')
   return good.length ? good : CONSUMABLES
 }
-export function weightedTier(weights) {
-  const total = weights.reduce((sum, [, weight]) => sum + weight, 0)
+export function weightedTier(weights: any) {
+  const total = weights.reduce((sum: any, [, weight]) => sum + weight, 0)
   let roll = rnd() * total
   for (const [tier, weight] of weights) {
     roll -= weight
@@ -74,7 +75,7 @@ export function weightedTier(weights) {
 export function completedRewardFights() {
   return Math.max(0, state.battle)
 }
-export function rewardTierWeights(weightSet, goodOnly = false) {
+export function rewardTierWeights(weightSet: any, goodOnly = false) {
   if (goodOnly) return rewardsExcludeRare() ? weightSet.good.filter(([tier]) => tier !== 'rare') : weightSet.good
   const fights = completedRewardFights()
   const weights = weightSet.normal.map(([tier, weight]) => {
@@ -84,11 +85,11 @@ export function rewardTierWeights(weightSet, goodOnly = false) {
   })
   return rewardsExcludeRare() ? weights.filter(([tier]) => tier !== 'rare') : weights
 }
-export function pickRewardWeapon(opts, goodOnly = false) {
+export function pickRewardWeapon(opts: any, goodOnly = false) {
   const weights = rewardTierWeights(WEAPON_TIER_WEIGHTS, goodOnly)
   for (let i = 0; i < 8; i++) {
     const tier = weightedTier(weights)
-    const tierOpts = opts.filter((w) => w.tier === tier)
+    const tierOpts = opts.filter((w: Weapon) => w.tier === tier)
     if (tierOpts.length) return pick(tierOpts)
   }
   return pick(opts)
@@ -136,7 +137,7 @@ export function goldReward(amount = REWARD_SKIP_GOLD) {
     gold: amount,
   }
 }
-export function sameReward(a, b) {
+export function sameReward(a: Unit, b: any) {
   if (a.type !== b.type) return false
   if (a.type === 'item') return a.unit === b.unit && a.item.name === b.item.name
   if (a.type === 'consumable') return a.item.id === b.item.id
@@ -170,7 +171,7 @@ export function boostReward(targeted = true) {
   }
   return targeted ? targetedBoostReward(reward) : reward
 }
-export function targetedBoostReward(r) {
+export function targetedBoostReward(r: any) {
   const targets = boostTargetOptions(r)
   if (!targets.length) return r
   const { unit } = pick(targets)
@@ -181,7 +182,7 @@ export function targetedBoostReward(r) {
     desc: boostRewardDescription(r, unit),
   }
 }
-export function boostRewardDescription(r, u) {
+export function boostRewardDescription(r: any, u: Unit) {
   if (r.stat === 'level') {
     const growths = `<div class="small rewardMeta">Growths ${growthSummaryHTML(u)}</div>`
     return `Immediately levels up ${u.name} ${levelLabel(u)} -> L${u.lvl + 1}.${growths}`
@@ -191,10 +192,10 @@ export function boostRewardDescription(r, u) {
   const after = Math.min(capStat(u, r.stat), before + r.amt)
   return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).${boostDetailHTML(r, u)}`
 }
-export function equippedWeaponWeightText(u) {
+export function equippedWeaponWeightText(u: Unit) {
   return u.weapon ? `Equipped: ${u.weapon.name}, Wt ${u.weapon.wt || 0}` : 'Equipped: none'
 }
-export function boostDetailHTML(r, u) {
+export function boostDetailHTML(r: any, u: Unit) {
   if (r.stat === 'con') return `<div class="small rewardMeta">${equippedWeaponWeightText(u)}</div>`
   return ''
 }
@@ -207,7 +208,7 @@ export function levelBoostReward() {
     desc: 'Immediately gives a chosen unit +1 level.',
   }
 }
-export function boosterName(stat) {
+export function boosterName(stat: StatKey) {
   return {
     hp: 'Angelic Robe',
     str: 'Energy Ring',
@@ -220,14 +221,14 @@ export function boosterName(stat) {
     level: 'Tome of Knowledge',
   }[stat]
 }
-export function canApplyBoost(r, u) {
+export function canApplyBoost(r: any, u: Unit) {
   if (r.stat === 'level') return !(u.promoted && u.lvl >= 20)
   return u.stats[r.stat] < capStat(u, r.stat)
 }
-export function boostTargetOptions(r) {
+export function boostTargetOptions(r: any) {
   return state.player.map((unit, index) => ({ unit, index })).filter(({ unit }) => canApplyBoost(r, unit))
 }
-export function applyBoostToUnit(r, u) {
+export function applyBoostToUnit(r: any, u: Unit) {
   if (r.stat === 'level') {
     const gained = levelUp(u, true)
     u.hp = u.maxHp

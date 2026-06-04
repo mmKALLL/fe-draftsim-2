@@ -7,12 +7,13 @@ import { startShop } from './shop'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
 import { state } from './state'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
-export function levelLabel(u) {
+export function levelLabel(u: Unit) {
   return `L${u.lvl}`
 }
-export function chooseBoostTarget(r, backToRewards = null) {
+export function chooseBoostTarget(r: any, backToRewards = null) {
   const targets = boostTargetOptions(r)
   if (!targets.length) {
     if (backToRewards) {
@@ -47,7 +48,7 @@ export function chooseBoostTarget(r, backToRewards = null) {
       })
   )
 }
-export function afterReward(msg, cls = 'heal') {
+export function afterReward(msg: string, cls = 'heal') {
   state.ui.awaitingReward = false
   logLine(null, msg, cls)
   renderTeams()
@@ -72,7 +73,7 @@ export function showWin() {
 export function showGameOver() {
   showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="good">Try again</button>`)
 }
-export function showModal(html) {
+export function showModal(html: any) {
   $('modalBody').innerHTML = html
   $('modal').classList.remove('hidden')
 }

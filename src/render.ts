@@ -8,6 +8,7 @@ import { levelLabel } from './ui'
 import { startingWeapon } from './units'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
 export function selectedRosterCount() {
@@ -36,10 +37,10 @@ export function randomDraftOptions() {
   }
   return slots
 }
-export function padCell(v, w = 2) {
+export function padCell(v: any, w = 2) {
   return String(v).padStart(w, ' ')
 }
-export function growthCompareHTML(b) {
+export function growthCompareHTML(b: any) {
   const s = b.stats,
     g = b.growths
   const power = statLabel(b, 'str')
@@ -84,7 +85,7 @@ export function renderDraft() {
     list.appendChild(slotEl)
   })
 }
-export function weaponStatHTML(w) {
+export function weaponStatHTML(w: Weapon) {
   if (!w) return ''
   const fx = staffEffect(w)
   const labels = w.staff
@@ -113,7 +114,7 @@ export function weaponStatHTML(w) {
   if (eff.length) labels.push([eff.join(', '), ''])
   return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
 }
-export function statHTML(u, showGrowths = false) {
+export function statHTML(u: Unit, showGrowths = false) {
   return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
     .map((k) => {
       const growth = u.growths[k] == null ? '--' : u.growths[k]
@@ -121,28 +122,28 @@ export function statHTML(u, showGrowths = false) {
     })
     .join('')
 }
-export function growthSummaryHTML(u) {
+export function growthSummaryHTML(u: Unit) {
   const g = u.growths
   return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
 }
-export function heldItemFromRef(ref) {
+export function heldItemFromRef(ref: any) {
   if (!ref) return null
   if (typeof ref === 'string') return HELD_ITEMS.find((item) => item.id === ref) || null
   return ref
 }
-export function skillFromRef(ref) {
+export function skillFromRef(ref: any) {
   if (!ref) return null
   if (typeof ref === 'string') return TEACHABLE_SKILLS.find((skill) => skill.id === ref) || null
   return ref
 }
-export function rarityClass(rarity) {
+export function rarityClass(rarity: any) {
   return rarity ? ` reward-${rarity}` : ''
 }
-export function detailEntryHTML(title, value, desc = '', rarity = '') {
+export function detailEntryHTML(title: string, value: any, desc = '', rarity = '') {
   const descHTML = desc ? `<div class="small">${desc}</div>` : ''
   return `<div class="unitDetailEntry${rarityClass(rarity)}"><div class="row space"><b>${title}</b><span>${value}</span></div>${descHTML}</div>`
 }
-export function unitDetailsHTML(u) {
+export function unitDetailsHTML(u: Unit) {
   const held = heldItemFromRef(u.heldItem || u.heldItemId || u.item)
   const skillRefs = Array.isArray(u.skills) ? u.skills : Array.isArray(u.skillIds) ? u.skillIds : []
   const skills = skillRefs.map(skillFromRef).filter(Boolean)
@@ -150,11 +151,11 @@ export function unitDetailsHTML(u) {
     ? detailEntryHTML('Held item', held.name, held.desc, held.tier)
     : detailEntryHTML('Held item', 'None')
   const skillsHTML = skills.length
-    ? skills.map((skill) => detailEntryHTML('Skill', skill.name, skill.desc, skill.rarity)).join('')
+    ? skills.map((skill: any) => detailEntryHTML('Skill', skill.name, skill.desc, skill.rarity)).join('')
     : detailEntryHTML('Skills', 'None')
   return `<div class="unitDetails">${heldHTML}${skillsHTML}</div>`
 }
-export function unitCard(u) {
+export function unitCard(u: Unit) {
   const wt = u.weapon ? ` · ${u.weapon.name}` : ''
   const st = statusLabel(u)
   const status = st ? ` · ${st}` : ''
@@ -230,7 +231,7 @@ export function renderTeams() {
   $('redSprites').innerHTML = state.enemy.map((u) => combatantSpriteSlot(u, true)).join('')
   updateAutoFightButton()
 }
-export function combatantSpriteSlot(u, isEnemy = false) {
+export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const preview = isEnemy ? combatPreviewHTML(state.ui.activePreviewActor, u) : ''
   const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
   const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
@@ -243,18 +244,18 @@ export function combatantSpriteSlot(u, isEnemy = false) {
   const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
   return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
-export function logLine(logEl, msg, cls = '') {
+export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')
   p.className = cls
   p.textContent = msg
   ;(logEl || $('log')).prepend(p)
 }
 
-export function selectionChoiceHTML(title, desc, buttonAttr, buttonLabel, extraClass = '', buttonClass = 'good', shellClass = 'choice', descClass = '') {
+export function selectionChoiceHTML(title: string, desc: any, buttonAttr: any, buttonLabel: any, extraClass = '', buttonClass = 'good', shellClass = 'choice', descClass = '') {
   const descClassAttr = descClass ? ` class="${descClass}"` : ''
   return `<div class="${shellClass}${extraClass}"><div><h4>${title}</h4><div${descClassAttr}>${desc}</div></div><button ${buttonAttr} class="${buttonClass}">${buttonLabel}</button></div>`
 }
-export function weaponSummary(w, forForge = false) {
+export function weaponSummary(w: Weapon, forForge = false) {
   const fx = staffEffect(w)
   const effects = weaponEffectLabels(w)
   const effectText = effects.length ? `, ${effects.join(', ')}` : ''
@@ -264,19 +265,19 @@ export function weaponSummary(w, forForge = false) {
   if (forForge) return `Mt ${w.mt}, Hit ${w.hit}`
   return `Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}, Rank ${w.rank}${effectText}`
 }
-export function weaponSpeedImpact(unit, item) {
+export function weaponSpeedImpact(unit: Unit, item: any) {
   const speedImpact = Math.min(0, unit.stats.con - item.wt + (item.speedBonus || 0))
   const symbol = speedImpact < 0 ? '-' : speedImpact === 0 ? '±' : '+'
   return `${symbol}${Math.abs(speedImpact)}`
 }
-export function weaponReplacementText(unit) {
+export function weaponReplacementText(unit: Unit) {
   return unit.weapon ? `${unit.weapon.name} (${weaponSummary(unit.weapon)})` : 'nothing'
 }
-export function weaponOfferTitle(item, unit = null) {
+export function weaponOfferTitle(item: any, unit = null) {
   if (!unit) return item.name
   return `${item.name} to ${unit.name} (Con: ${unit.stats.con}, Speed ${weaponSpeedImpact(unit, item)})`
 }
-export function weaponOfferDescription(item, unit = null, opts: any = {}) {
+export function weaponOfferDescription(item: any, unit = null, opts: any = {}) {
   const action = opts.action || 'Equip'
   const includeTier = opts.includeTier !== false
   const lead = unit ? `${action} ${unit.name} with ${item.name}` : `${action} ${item.name}`

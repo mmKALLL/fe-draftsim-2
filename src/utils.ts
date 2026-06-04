@@ -2,7 +2,9 @@ import type { StatKey } from '../types'
 
 export const MUSIC_URL = 'https://www.youtube.com/watch?v=yIDBhuYldSk&t=19m58s'
 
-export const $ = (id = ''): HTMLElement | null => document.getElementById(id)
+// All call sites target static IDs defined in index.html, so we assert non-null
+// here; the few existing `if (el)` guards remain harmless.
+export const $ = (id = ''): HTMLElement => document.getElementById(id)!
 
 let seed = Math.floor(Math.random() * 999999)
 const seedLabel = $('seedLabel')

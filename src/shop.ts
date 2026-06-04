@@ -10,19 +10,20 @@ import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } fro
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon } from './units'
 import { $, capStat } from './utils'
 import { state } from './state'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
-export function shopWeaponPrice(w) {
+export function shopWeaponPrice(w: Weapon) {
   const rank = String(w.rank || 'E').toUpperCase()
   return SHOP_WEAPON_PRICES[rank] || SHOP_WEAPON_PRICES.E
 }
-export function shopConsumablePrice(item) {
+export function shopConsumablePrice(item: any) {
   return SHOP_CONSUMABLE_PRICES[item.tier || 'normal'] || SHOP_CONSUMABLE_PRICES.normal
 }
-export function shopBoostPrice(r) {
+export function shopBoostPrice(r: any) {
   return SHOP_BOOST_PRICES[r.stat] || 800
 }
-export function uniqueShopOffers(count, makeOffer, keyFn) {
+export function uniqueShopOffers(count: number, makeOffer: any, keyFn: any) {
   const offers = [],
     seen = new Set()
   let guard = 0
@@ -39,7 +40,7 @@ export function uniqueShopOffers(count, makeOffer, keyFn) {
 export function shopWeaponPool() {
   return WEAPONS.filter((w) => state.player.some((u) => canEquipAsNewWeapon(u, w)))
 }
-export function eligibleWeaponUsers(w) {
+export function eligibleWeaponUsers(w: Weapon) {
   return state.player.filter((u) => canEquipAsNewWeapon(u, w))
 }
 export function shopWeaponOffer() {
@@ -83,17 +84,17 @@ export function shopForgeOffer() {
 }
 export function makeShopOffers() {
   return [
-    ...uniqueShopOffers(SHOP_WEAPON_OFFERS, shopWeaponOffer, (offer) => offer.item.name),
-    ...uniqueShopOffers(SHOP_CONSUMABLE_OFFERS, shopConsumableOffer, (offer) => offer.item.id),
-    ...uniqueShopOffers(SHOP_BOOST_OFFERS, shopBoostOffer, (offer) => offer.title),
+    ...uniqueShopOffers(SHOP_WEAPON_OFFERS, shopWeaponOffer, (offer: ShopOffer) => offer.item.name),
+    ...uniqueShopOffers(SHOP_CONSUMABLE_OFFERS, shopConsumableOffer, (offer: ShopOffer) => offer.item.id),
+    ...uniqueShopOffers(SHOP_BOOST_OFFERS, shopBoostOffer, (offer: ShopOffer) => offer.title),
     shopForgeOffer(),
   ]
 }
-export function shopOfferClass(offer) {
+export function shopOfferClass(offer: ShopOffer) {
   if (offer.type === 'gold') return ' reward-gold'
   return offer.item?.tier ? ` reward-${offer.item.tier}` : ''
 }
-export function shopOfferHTML(offer, i) {
+export function shopOfferHTML(offer: ShopOffer, i: number) {
   const sold = !!offer.sold
   const affordable = state.gold >= offer.price
   const unavailable = offer.type === 'forge' && !forgeTargets().length
@@ -145,7 +146,7 @@ export function leaveShop() {
   renderTeams()
   beginNextBattle()
 }
-export function buyShopOffer(i) {
+export function buyShopOffer(i: number) {
   const offer = state.shop.offers[i]
   if (!offer || offer.sold) return
   if (state.gold < offer.price) {
@@ -178,12 +179,12 @@ export function buyShopOffer(i) {
 export function forgeTargets() {
   return state.player.filter((u) => u.weapon && !u.weapon.staff)
 }
-export function forgePreview(w) {
+export function forgePreview(w: Weapon) {
   const preview = cloneWeapon(w)
   forgeWeapon(preview)
   return preview
 }
-export function chooseShopForgeTarget(i) {
+export function chooseShopForgeTarget(i: number) {
   const offer = state.shop.offers[i]
   const eligible = forgeTargets()
   if (!eligible.length) {
@@ -221,7 +222,7 @@ export function chooseShopForgeTarget(i) {
   )
   $('cancelShopForgeBtn').onclick = closeModal
 }
-export function chooseShopWeaponTarget(i) {
+export function chooseShopWeaponTarget(i: number) {
   const offer = state.shop.offers[i],
     eligible = eligibleWeaponUsers(offer.item)
   if (!eligible.length) {
@@ -252,7 +253,7 @@ export function chooseShopWeaponTarget(i) {
   )
   $('cancelShopWeaponBtn').onclick = closeModal
 }
-export function chooseShopConsumableReplacement(i) {
+export function chooseShopConsumableReplacement(i: number) {
   const offer = state.shop.offers[i]
   let html = `<h2>${offer.item.name}: choose slot</h2><div class="small">Cost ${goldHTML(offer.price)}. ${consumableSummary(offer.item)}</div>`
   state.consumables.forEach((item, slot) => {
@@ -276,7 +277,7 @@ export function chooseShopConsumableReplacement(i) {
   )
   $('backToShopBtn').onclick = closeModal
 }
-export function chooseShopBoostTarget(i) {
+export function chooseShopBoostTarget(i: number) {
   const offer = state.shop.offers[i]
   const targets = boostTargetOptions(offer)
   if (!targets.length) {
@@ -318,13 +319,13 @@ export function chooseShopBoostTarget(i) {
   )
   $('backToShopBtn').onclick = closeModal
 }
-export function storeConsumable(item, slot = firstEmptyConsumableSlot()) {
+export function storeConsumable(item: any, slot = firstEmptyConsumableSlot()) {
   const targetSlot = slot >= 0 ? slot : 0
   state.consumables[targetSlot] = cloneConsumable(item)
   renderTeams()
   return targetSlot
 }
-export function chooseConsumableReplacement(r, backToRewards = null) {
+export function chooseConsumableReplacement(r: any, backToRewards = null) {
   let html = `<h2>${r.item.name}: choose slot</h2><div class="small">${consumableSummary(r.item)}</div>`
   state.consumables.forEach((item, i) => {
     html += `<div class="choice"><div><h4>Slot ${i + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-replace-consumable="${i}" class="good">Replace</button></div>`
@@ -344,7 +345,7 @@ export function chooseConsumableReplacement(r, backToRewards = null) {
     if (backBtn) backBtn.onclick = backToRewards
   }
 }
-export function applyReward(r, backToRewards = null) {
+export function applyReward(r: any, backToRewards = null) {
   if (r.type === 'item') {
     r.unit.weapon = r.item
     closeModal()

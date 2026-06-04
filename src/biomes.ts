@@ -4,9 +4,10 @@ import { htmlAttr, mapSpriteForFocus } from './assets'
 import { setStatus } from './combat'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
-export function shuffledCopy(items) {
+export function shuffledCopy(items: any) {
   const out = [...items]
   for (let i = out.length - 1; i > 0; i--) {
     const j = rint(i + 1)
@@ -35,10 +36,10 @@ export function activeBiomeEntry() {
 export function activeBiomeEffects() {
   return activeBiomeEntry()?.biome.effects || []
 }
-export function hasBiomeEffect(effect) {
+export function hasBiomeEffect(effect: string) {
   return activeBiomeEffects().includes(effect)
 }
-export function biomeEffectLabel(effect) {
+export function biomeEffectLabel(effect: string) {
   const labels = {
     avoidUp: `Avo +${BIOME_AVOID_DELTA}`,
     avoidDown: `Avo -${BIOME_AVOID_DELTA}`,
@@ -53,23 +54,23 @@ export function biomeEffectLabel(effect) {
   }
   return labels[effect] || effect
 }
-export function biomeEffectLabels(biome) {
+export function biomeEffectLabels(biome: any) {
   return biome.effects.length ? biome.effects.map(biomeEffectLabel) : ['Neutral']
 }
-export function focusLabel(focus) {
+export function focusLabel(focus: BiomeFocus) {
   return focus.label || focus.cls
 }
-export function focusMatchesBase(focus, base) {
+export function focusMatchesBase(focus: BiomeFocus, base: any) {
   return base.cls === focus.cls && (!focus.weaponType || base.weaponType === focus.weaponType)
 }
-export function pickBaseFromPool(pool, focusList = null) {
+export function pickBaseFromPool(pool: any, focusList = null) {
   const candidates = focusList?.length
-    ? pool.map((b, idx) => ({ b, idx })).filter(({ b }) => focusList.some((focus) => focusMatchesBase(focus, b)))
-    : pool.map((b, idx) => ({ b, idx }))
-  const picked: any = pick(candidates.length ? candidates : pool.map((b, idx) => ({ b, idx })))
+    ? pool.map((b: any, idx: number) => ({ b, idx })).filter(({ b }) => focusList.some((focus: BiomeFocus) => focusMatchesBase(focus, b)))
+    : pool.map((b: any, idx: number) => ({ b, idx }))
+  const picked: any = pick(candidates.length ? candidates : pool.map((b: any, idx: number) => ({ b, idx })))
   return pool.splice(picked.idx, 1)[0]
 }
-export function enemyFocusForSlot(isBossSlot, bossTier) {
+export function enemyFocusForSlot(isBossSlot: any, bossTier: any) {
   if (isBossSlot) {
     const bossFocus = bossFocusForBattle(state.battle)
     return bossFocus ? [bossFocus] : null
@@ -85,7 +86,7 @@ export function bossFocusForBattle(n = state.battle) {
   if (cycle === BIOME_CYCLE_LENGTH) return entry.bossFocus[1]
   return null
 }
-export function biomeUnitIconHTML(focus, bossIndex, promoted = false) {
+export function biomeUnitIconHTML(focus: BiomeFocus, bossIndex: any, promoted = false) {
   const label = `${bossIndex === 0 ? 'Boss' : 'Arena boss'}: ${focusLabel(focus)}`
   return `<span title="${htmlAttr(label)}">${mapSpriteForFocus(focus, 'red', promoted)}</span>`
 }
@@ -103,7 +104,7 @@ export function renderBiomeMap() {
         classes = i < activeIndex ? 'biomeNode done' : i === activeIndex ? 'biomeNode active' : 'biomeNode',
         effects = biomeEffectLabels(biome),
         title = `${biome.name}: ${effects.join(', ')}. Bosses: ${entry.bossFocus.map(focusLabel).join(' / ')}`
-      return `<div class="${classes}" title="${htmlAttr(title)}"><img class="biomeTile" src="assets/femp/biomes/${htmlAttr(biome.id)}.jpg" alt="" aria-hidden="true"><div class="biomeUnits">${entry.bossFocus.map((focus, bossIndex) => biomeUnitIconHTML(focus, bossIndex, i >= 2)).join('')}</div><div class="biomeInfo"><div class="biomeName">${biome.name}</div><div class="biomeEffects">${effects.map((effect) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div></div>`
+      return `<div class="${classes}" title="${htmlAttr(title)}"><img class="biomeTile" src="assets/femp/biomes/${htmlAttr(biome.id)}.jpg" alt="" aria-hidden="true"><div class="biomeUnits">${entry.bossFocus.map((focus: BiomeFocus, bossIndex: any) => biomeUnitIconHTML(focus, bossIndex, i >= 2)).join('')}</div><div class="biomeInfo"><div class="biomeName">${biome.name}</div><div class="biomeEffects">${effects.map((effect: string) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div></div>`
     })
     .join('')
 }
@@ -118,7 +119,7 @@ export function updateMainModeTitle() {
   if (!title) return
   title.innerHTML = state.shop.open ? 'Shop' : arenaTitleHTML()
 }
-export function setShopOpen(open) {
+export function setShopOpen(open: any) {
   state.shop.open = open
   const battleView = $('battleView'),
     shopScreen = $('shopScreen'),
@@ -138,7 +139,7 @@ export function updateAutoFightButton() {
   btn.setAttribute('aria-pressed', state.combat.autoFight ? 'true' : 'false')
   btn.textContent = state.combat.autoFight ? 'Auto-fight: On' : 'Auto-fight: Off'
 }
-export function setAutoFight(enabled, silent = false) {
+export function setAutoFight(enabled: any, silent = false) {
   if (!state.combat.running && enabled) return
   state.combat.autoFight = enabled
   updateAutoFightButton()

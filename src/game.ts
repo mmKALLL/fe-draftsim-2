@@ -10,6 +10,7 @@ import { levelLabel, showGameOver, showWin } from './ui'
 import { advanceTwoLevels, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
 export function startRun() {
@@ -33,7 +34,7 @@ export function startRun() {
   logLine(null, `${state.player[0].name} leads the party and starts at ${levelLabel(state.player[0])}.`, 'heal')
   showRewards(true)
 }
-export function bossTierForBattle(n) {
+export function bossTierForBattle(n: any) {
   const cycle = ((n - 1) % BIOME_CYCLE_LENGTH) + 1
   if (cycle === BIOME_CYCLE_LENGTH) return BOSS_TIER_BIOME
   if (cycle === 3) return BOSS_TIER_REGULAR

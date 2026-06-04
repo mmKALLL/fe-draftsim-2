@@ -2,6 +2,7 @@ import { FEMP_ASSET_ROOT, FEMP_IMAGE_EXTS, MAP_SPRITE_SLOT_H } from '../constant
 import { CLASSES, CUSTOM_MAP_SPRITE_STEMS, FEMP_NAME_OVERRIDES, palettes } from '../data'
 import { focusLabel } from './biomes'
 import { $ } from './utils'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
 export function svgDataUri(kind = 'lord', team = 'blue', promoted = false) {
@@ -15,7 +16,7 @@ export function svgDataUri(kind = 'lord', team = 'blue', promoted = false) {
   const sword = kind === 'lord' || kind === 'merc' || kind === 'myrm' || kind === 'thief'
   const staff = kind === 'cleric'
   const scale = 4
-  function rect(x, y, w, h, c) {
+  function rect(x: number, y: number, w: number, h: number, c: string) {
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`
   }
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">`
@@ -77,7 +78,7 @@ export function mugshotDataUri(name = '', kind = 'lord', team = 'blue', promoted
     jaw = (h >> 6) % 3
   const hat = ['mage', 'monk', 'shaman', 'cleric'].includes(kind)
   const helm = ['knight', 'wyvern', 'cavalier'].includes(kind)
-  function r(x, y, w, h, c) {
+  function r(x: number, y: number, w: number, h: number, c: string) {
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`
   }
   let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">`
@@ -120,7 +121,7 @@ export function titleStem(stem = '') {
   return stem ? stem.charAt(0).toUpperCase() + stem.slice(1) : stem
 }
 export const failedAssetPaths = new Set()
-export function assetPathVariants(folder, stem) {
+export function assetPathVariants(folder: any, stem: any) {
   if (!folder || !stem) return []
   const key = String(stem)
   const stems = [key, titleStem(key), key.toUpperCase()].filter(Boolean)
@@ -132,25 +133,25 @@ export function assetChain(items: unknown[]): string[] {
 export function htmlAttr(s = '') {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
 }
-export function fallbackSource(fallback) {
+export function fallbackSource(fallback: any) {
   if (!fallback) return ''
   if (typeof fallback === 'string') return fallback
   if (fallback.type === 'portrait') return mugshotDataUri(fallback.name, fallback.kind, fallback.team, fallback.promoted)
   if (fallback.type === 'battle') return svgDataUri(fallback.kind, fallback.team, fallback.promoted)
   return ''
 }
-export function fallbackAttr(fallback) {
+export function fallbackAttr(fallback: any) {
   return fallback ? ` data-fallback="${htmlAttr(JSON.stringify(fallback))}"` : ''
 }
-export function portraitFileStem(name) {
+export function portraitFileStem(name: string) {
   return FEMP_NAME_OVERRIDES[name] || assetSlug(name)
 }
-export function customMapSpriteStem(u) {
+export function customMapSpriteStem(u: Unit) {
   if (u.isEnemy && u.kind === 'lord') return 'lundgren'
   const label = u.baseName || u.name
   return CUSTOM_MAP_SPRITE_STEMS[label] || null
 }
-export function battleFileStem(kind) {
+export function battleFileStem(kind: string) {
   const map = {
     lord: 'lord',
     merc: 'merc',
@@ -170,30 +171,30 @@ export function battleFileStem(kind) {
   }
   return map[kind] || assetSlug(kind)
 }
-export function genericPortraitPaths(kind, promoted = false) {
+export function genericPortraitPaths(kind: string, promoted = false) {
   const baseStem = battleFileStem(kind)
   const stems = promoted ? [`${baseStem}_promoted`, baseStem, 'generic'] : [baseStem, 'generic']
   return stems.flatMap((stem) => assetPathVariants('enemy-portraits', stem))
 }
-export function fallbackPortrait(name, kind, team, promoted) {
+export function fallbackPortrait(name: string, kind: string, team: any, promoted: boolean) {
   return { type: 'portrait', name, kind, team, promoted }
 }
-export function fallbackBattle(kind, team, promoted) {
+export function fallbackBattle(kind: string, team: any, promoted: boolean) {
   return { type: 'battle', kind, team, promoted }
 }
-export function assetImg(cls, primary, fallbacks, fallbackData, alt = '') {
+export function assetImg(cls: string, primary: any, fallbacks: any, fallbackData: any, alt = '') {
   const [src, ...chain] = assetChain([primary, ...fallbacks])
   const encoded = chain.map(htmlAttr).join('|')
   return `<img class="${cls}" src="${htmlAttr(src || fallbackSource(fallbackData))}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0"${fallbackAttr(fallbackData)} onerror="assetFallback(this)">`
 }
-export function assetSheet(cls, primary, fallbacks, fallbackData, alt = '', opts: any = {}) {
+export function assetSheet(cls: string, primary: any, fallbacks: any, fallbackData: any, alt = '', opts: any = {}) {
   const [src, ...chain] = assetChain([primary, ...fallbacks])
   const encoded = chain.map(htmlAttr).join('|')
   const spriteWidth = opts.spriteWidth || 64,
     slotHeight = opts.slotHeight || MAP_SPRITE_SLOT_H
   return `<span class="${cls}" style="--frames:1;--sprite-offset:0px;--sprite-distance:${spriteWidth}px" data-sprite-width="${spriteWidth}" data-sprite-slot-h="${slotHeight}"><img class="mapSpriteSheet" src="${htmlAttr(src || fallbackSource(fallbackData))}" alt="${htmlAttr(alt)}" data-chain="${encoded}" data-chain-i="0"${fallbackAttr(fallbackData)} onerror="assetFallback(this)" onload="assetSheetLoaded(this)"></span>`
 }
-export function assetFallback(img) {
+export function assetFallback(img: HTMLImageElement) {
   const failed = img.getAttribute('src') || ''
   if (failed && !failed.startsWith('data:')) failedAssetPaths.add(failed)
   const chain = (img.dataset.chain || '').split('|').filter(Boolean)
@@ -208,7 +209,7 @@ export function assetFallback(img) {
     if (fallback && img.src !== fallback) img.src = fallback
   }
 }
-export function assetSheetLoaded(img) {
+export function assetSheetLoaded(img: HTMLImageElement) {
   const wrap = img.closest('.mapSprite')
   if (!wrap || !img.naturalWidth || !img.naturalHeight) return
   const spriteWidth = Number(wrap.dataset.spriteWidth || 64),
@@ -224,12 +225,12 @@ export function assetSheetLoaded(img) {
   wrap.style.setProperty('--sprite-distance', `${frames * frameDisplayH}px`)
   img.style.width = `${img.naturalWidth * scale}px`
 }
-export function portraitImgForBase(b, c) {
+export function portraitImgForBase(b: any, c: any) {
   const stem = portraitFileStem(b.name)
   const paths = [...assetPathVariants('portraits', stem), ...genericPortraitPaths(c.kind, false)]
   return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(b.name, c.kind, b.palette, false), b.name)
 }
-export function portraitImgForUnit(u) {
+export function portraitImgForUnit(u: Unit) {
   if (u.isEnemy) {
     const bossStem = u.bossTier ? portraitFileStem(u.name) : null
     const paths = [...(bossStem ? assetPathVariants('boss-portraits', bossStem) : []), ...genericPortraitPaths(u.kind, u.promoted)]
@@ -240,7 +241,7 @@ export function portraitImgForUnit(u) {
   const paths = [...assetPathVariants('portraits', stem), ...genericPortraitPaths(u.kind, u.promoted)]
   return assetImg('portrait', paths[0], paths.slice(1), fallbackPortrait(label, u.kind, u.team, u.promoted), label)
 }
-export function battleImgForUnit(u) {
+export function battleImgForUnit(u: Unit) {
   const stem = battleFileStem(u.kind)
   const promotedStem = u.promoted ? `${stem}_promoted` : stem
   const teamFolder = u.team === 'red' ? 'map/red' : 'map/blue'
@@ -264,7 +265,7 @@ export function battleImgForUnit(u) {
         ]
   return assetSheet('battleSprite mapSprite', paths[0], paths.slice(1), fallbackBattle(u.kind, u.team, u.promoted), u.displayCls || u.cls || u.kind)
 }
-export function mapSpriteForFocus(focus, team = 'red', promoted = false) {
+export function mapSpriteForFocus(focus: BiomeFocus, team = 'red', promoted = false) {
   const kind = CLASSES[focus.cls]?.kind || 'lord'
   const stem = battleFileStem(kind)
   const promotedStem = promoted ? `${stem}_promoted` : stem
