@@ -5,9 +5,11 @@ export type WeaponType = 'sword' | 'dagger' | 'lance' | 'axe' | 'bow' | 'anima' 
 export type Rarity = 'normal' | 'uncommon' | 'rare'
 export type PaletteKey = 'blue' | 'red' | 'green' | 'purple' | 'gold'
 
-export type StatBlock = Record<StatKey, number>
+// Numeric string index: stat blocks are iterated dynamically by stat key
+// throughout the game; named keys still provide autocomplete.
+export type StatBlock = Record<StatKey, number> & { [key: string]: number }
 export type BaseStatBlock = StatBlock & { bTotal: number }
-export type GrowthBlock = Record<GrowthStatKey, number> & { gTotal: number }
+export type GrowthBlock = Record<GrowthStatKey, number> & { gTotal: number; [key: string]: number }
 export type PartialStatBlock = Partial<Record<StatKey, number>>
 
 export type ClassData = {

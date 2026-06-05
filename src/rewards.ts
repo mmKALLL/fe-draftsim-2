@@ -30,7 +30,7 @@ export function renderRewardSelection(title: string, rewards: any) {
   html += '</div>'
   if (skipReward) html += `<div class="rewardSkipWrap"><button data-skip-reward class="rewardSkip">Skip reward: gain ${goldHTML(skipReward.gold)}</button></div>`
   showModal(html)
-  document.querySelectorAll<HTMLElement>('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i], () => renderRewardSelection(title, rewards))))
+  document.querySelectorAll<HTMLElement>('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i!], () => renderRewardSelection(title, rewards))))
   const skipBtn = document.querySelector<HTMLElement>('[data-skip-reward]')
   if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
 }
@@ -64,7 +64,7 @@ export function rewardConsumablePool(goodOnly = false) {
   return good.length ? good : CONSUMABLES
 }
 export function weightedTier(weights: any) {
-  const total = weights.reduce((sum: any, [, weight]) => sum + weight, 0)
+  const total = weights.reduce((sum: any, [, weight]: [string, number]) => sum + weight, 0)
   let roll = rnd() * total
   for (const [tier, weight] of weights) {
     roll -= weight
@@ -76,14 +76,14 @@ export function completedRewardFights() {
   return Math.max(0, state.battle)
 }
 export function rewardTierWeights(weightSet: any, goodOnly = false) {
-  if (goodOnly) return rewardsExcludeRare() ? weightSet.good.filter(([tier]) => tier !== 'rare') : weightSet.good
+  if (goodOnly) return rewardsExcludeRare() ? weightSet.good.filter(([tier]: [string, number]) => tier !== 'rare') : weightSet.good
   const fights = completedRewardFights()
-  const weights = weightSet.normal.map(([tier, weight]) => {
+  const weights = weightSet.normal.map(([tier, weight]: [string, number]) => {
     if (tier === 'uncommon') return [tier, weight + fights * 2]
     if (tier === 'rare') return [tier, weight + fights]
     return [tier, weight]
   })
-  return rewardsExcludeRare() ? weights.filter(([tier]) => tier !== 'rare') : weights
+  return rewardsExcludeRare() ? weights.filter(([tier]: [string, number]) => tier !== 'rare') : weights
 }
 export function pickRewardWeapon(opts: any, goodOnly = false) {
   const weights = rewardTierWeights(WEAPON_TIER_WEIGHTS, goodOnly)
@@ -108,7 +108,7 @@ export function weaponReward(goodOnly = false) {
   const candidates = state.player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
   const itemUnit = pick(candidates.length ? candidates : state.player)
   const opts = rewardWeaponPool(itemUnit, goodOnly)
-  const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly))
+  const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly) as Weapon)
   return {
     type: 'item',
     title: weaponOfferTitle(item, itemUnit),
@@ -137,17 +137,17 @@ export function goldReward(amount = REWARD_SKIP_GOLD) {
     gold: amount,
   }
 }
-export function sameReward(a: Unit, b: any) {
+export function sameReward(a: any, b: any) {
   if (a.type !== b.type) return false
   if (a.type === 'item') return a.unit === b.unit && a.item.name === b.item.name
   if (a.type === 'consumable') return a.item.id === b.item.id
   return false
 }
-export function makeRewards(bossTier = null, opening = false) {
+export function makeRewards(bossTier: string | null = null, opening = false) {
   const weaponCount = 2
   const goodOnly = bossTier === BOSS_TIER_BIOME
   const allowConsumables = opening || !bossTier
-  const weaponRewards = []
+  const weaponRewards: any[] = []
   for (let i = 0; i < weaponCount; i++) {
     let next = allowConsumables && rnd() < CONSUMABLE_REWARD_CHANCE ? consumableReward(goodOnly) : weaponReward(goodOnly),
       guard = 0
@@ -159,7 +159,7 @@ export function makeRewards(bossTier = null, opening = false) {
   return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
 }
 export function boostReward(targeted = true) {
-  const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
+  const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[]
   let reward
   if (boostTargetOptions({ stat: 'level' }).length && rnd() < 0.22) reward = levelBoostReward()
   else {

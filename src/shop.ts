@@ -15,13 +15,13 @@ import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOff
 
 export function shopWeaponPrice(w: Weapon) {
   const rank = String(w.rank || 'E').toUpperCase()
-  return SHOP_WEAPON_PRICES[rank] || SHOP_WEAPON_PRICES.E
+  return SHOP_WEAPON_PRICES[rank as keyof typeof SHOP_WEAPON_PRICES] || SHOP_WEAPON_PRICES.E
 }
 export function shopConsumablePrice(item: any) {
-  return SHOP_CONSUMABLE_PRICES[item.tier || 'normal'] || SHOP_CONSUMABLE_PRICES.normal
+  return SHOP_CONSUMABLE_PRICES[(item.tier || 'normal') as keyof typeof SHOP_CONSUMABLE_PRICES] || SHOP_CONSUMABLE_PRICES.normal
 }
 export function shopBoostPrice(r: any) {
-  return SHOP_BOOST_PRICES[r.stat] || 800
+  return SHOP_BOOST_PRICES[r.stat as keyof typeof SHOP_BOOST_PRICES] || 800
 }
 export function uniqueShopOffers(count: number, makeOffer: any, keyFn: any) {
   const offers = [],
@@ -46,7 +46,7 @@ export function eligibleWeaponUsers(w: Weapon) {
 export function shopWeaponOffer() {
   const pool = shopWeaponPool()
   if (!pool.length) return null
-  const item = cloneWeapon(pickRewardWeapon(pool, false))
+  const item = cloneWeapon(pickRewardWeapon(pool, false) as Weapon)
   return {
     type: 'item',
     shopKind: 'weapon',
@@ -128,7 +128,7 @@ export function renderShop(message = '') {
   $('shopScreen').innerHTML = html
   $('shopScreen')
     .querySelectorAll<HTMLElement>('[data-shop-buy]')
-    .forEach((btn) => (btn.onclick = () => buyShopOffer(+btn.dataset.shopBuy)))
+    .forEach((btn) => (btn.onclick = () => buyShopOffer(+btn.dataset.shopBuy!)))
   $('leaveShopBtn').onclick = leaveShop
 }
 export function startShop() {
@@ -201,7 +201,7 @@ export function chooseShopForgeTarget(i: number) {
   document.querySelectorAll<HTMLElement>('[data-shop-forge-target]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        const u = eligible[+btn.dataset.shopForgeTarget]
+        const u = eligible[+btn.dataset.shopForgeTarget!]
         if (!u?.weapon || u.weapon.staff) {
           closeModal()
           renderShop('That weapon cannot be forged.')
@@ -238,7 +238,7 @@ export function chooseShopWeaponTarget(i: number) {
   document.querySelectorAll<HTMLElement>('[data-shop-weapon-target]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        const u = eligible[+btn.dataset.shopWeaponTarget]
+        const u = eligible[+btn.dataset.shopWeaponTarget!]
         if (!spendGold(offer.price)) {
           closeModal()
           renderShop(`Not enough gold for ${offer.item.name}.`)
@@ -257,7 +257,7 @@ export function chooseShopConsumableReplacement(i: number) {
   const offer = state.shop.offers[i]
   let html = `<h2>${offer.item.name}: choose slot</h2><div class="small">Cost ${goldHTML(offer.price)}. ${consumableSummary(offer.item)}</div>`
   state.consumables.forEach((item, slot) => {
-    html += `<div class="choice"><div><h4>Slot ${slot + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-shop-replace-consumable="${slot}" class="good">Replace</button></div>`
+    html += `<div class="choice"><div><h4>Slot ${slot + 1}: ${item?.name ?? 'Empty'}</h4><div>${consumableSummary(item)}</div></div><button data-shop-replace-consumable="${slot}" class="good">Replace</button></div>`
   })
   html += '<button id="backToShopBtn">Back</button>'
   showModal(html)
@@ -269,7 +269,7 @@ export function chooseShopConsumableReplacement(i: number) {
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
         }
-        storeConsumable(offer.item, +btn.dataset.shopReplaceConsumable)
+        storeConsumable(offer.item, +btn.dataset.shopReplaceConsumable!)
         offer.sold = true
         closeModal()
         renderShop(`Stored ${offer.item.name}.`)
@@ -299,7 +299,7 @@ export function chooseShopBoostTarget(i: number) {
   document.querySelectorAll<HTMLElement>('[data-shop-boost-target]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        const u = state.player[+btn.dataset.shopBoostTarget]
+        const u = state.player[+btn.dataset.shopBoostTarget!]
         if (!canApplyBoost(offer, u)) {
           closeModal()
           renderShop(`${u.name} cannot use ${boosterName(offer.stat)}.`)
@@ -325,17 +325,17 @@ export function storeConsumable(item: any, slot = firstEmptyConsumableSlot()) {
   renderTeams()
   return targetSlot
 }
-export function chooseConsumableReplacement(r: any, backToRewards = null) {
+export function chooseConsumableReplacement(r: any, backToRewards: (() => void) | null = null) {
   let html = `<h2>${r.item.name}: choose slot</h2><div class="small">${consumableSummary(r.item)}</div>`
   state.consumables.forEach((item, i) => {
-    html += `<div class="choice"><div><h4>Slot ${i + 1}: ${item.name}</h4><div>${consumableSummary(item)}</div></div><button data-replace-consumable="${i}" class="good">Replace</button></div>`
+    html += `<div class="choice"><div><h4>Slot ${i + 1}: ${item?.name ?? 'Empty'}</h4><div>${consumableSummary(item)}</div></div><button data-replace-consumable="${i}" class="good">Replace</button></div>`
   })
   if (backToRewards) html += '<button id="backToRewardBtn">Back</button>'
   showModal(html)
   document.querySelectorAll<HTMLElement>('[data-replace-consumable]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        storeConsumable(r.item, +btn.dataset.replaceConsumable)
+        storeConsumable(r.item, +btn.dataset.replaceConsumable!)
         closeModal()
         afterReward(`Stored ${r.item.name}.`)
       })
@@ -345,7 +345,7 @@ export function chooseConsumableReplacement(r: any, backToRewards = null) {
     if (backBtn) backBtn.onclick = backToRewards
   }
 }
-export function applyReward(r: any, backToRewards = null) {
+export function applyReward(r: any, backToRewards: (() => void) | null = null) {
   if (r.type === 'item') {
     r.unit.weapon = r.item
     closeModal()

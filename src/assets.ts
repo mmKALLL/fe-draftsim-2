@@ -6,7 +6,7 @@ import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOff
 
 
 export function svgDataUri(kind = 'lord', team = 'blue', promoted = false) {
-  const p = palettes[team] || palettes.blue,
+  const p = (palettes as Record<string, string[]>)[team] || palettes.blue,
     [dark, main, light, white, hair, skin, black] = p
   const cape = kind === 'mage' || kind === 'monk' || kind === 'cleric' || kind === 'shaman'
   const armor = kind === 'knight' || kind === 'cavalier' || kind === 'wyvern'
@@ -64,7 +64,7 @@ export function svgDataUri(kind = 'lord', team = 'blue', promoted = false) {
 }
 
 export function mugshotDataUri(name = '', kind = 'lord', team = 'blue', promoted = false) {
-  const p = palettes[team] || palettes.blue
+  const p = (palettes as Record<string, string[]>)[team] || palettes.blue
   const [dark, main, light, white, hairBase, skin, black] = p
   let h = 0
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0
@@ -152,7 +152,7 @@ export function customMapSpriteStem(u: Unit) {
   return CUSTOM_MAP_SPRITE_STEMS[label] || null
 }
 export function battleFileStem(kind: string) {
-  const map = {
+  const map: Record<string, string> = {
     lord: 'lord',
     merc: 'merc',
     myrm: 'myrm',
@@ -210,7 +210,7 @@ export function assetFallback(img: HTMLImageElement) {
   }
 }
 export function assetSheetLoaded(img: HTMLImageElement) {
-  const wrap = img.closest('.mapSprite')
+  const wrap = img.closest('.mapSprite') as HTMLElement | null
   if (!wrap || !img.naturalWidth || !img.naturalHeight) return
   const spriteWidth = Number(wrap.dataset.spriteWidth || 64),
     slotHeight = Number(wrap.dataset.spriteSlotH || MAP_SPRITE_SLOT_H)

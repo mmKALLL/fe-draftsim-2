@@ -53,7 +53,7 @@ export function advanceInternalLevel(u: Unit, allowPromotion: any, showLog = tru
   u.internalLevel = Math.min(40, currentInternalLevel(u) + 1)
   syncDisplayLevel(u)
   if (showLog) {
-    const gainsText = gains.map((k) => statLabel(u, k)).join(', ') || 'no stats'
+    const gainsText = gains.map((k) => statLabel(u, k as StatKey)).join(', ') || 'no stats'
     logLine(null, `${u.name} reached ${levelLabel(u)}: ${gainsText}.`, 'heal')
   }
   return true
@@ -100,8 +100,8 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
   return u
 }
 export function startingWeapon(type: any) {
-  const map = { sword: 'Iron Sword', lance: 'Iron Lance', axe: 'Iron Axe', bow: 'Iron Bow', anima: 'Fire', light: 'Lightning', dark: 'Flux', staff: 'Heal Staff' }
-  return cloneWeapon(WEAPONS.find((w) => w.name === map[type]))
+  const map: Record<string, string> = { sword: 'Iron Sword', lance: 'Iron Lance', axe: 'Iron Axe', bow: 'Iron Bow', anima: 'Fire', light: 'Lightning', dark: 'Flux', staff: 'Heal Staff' }
+  return cloneWeapon(WEAPONS.find((w) => w.name === map[type])!)
 }
 export function cloneWeapon(w: Weapon) {
   return { ...w }
@@ -139,7 +139,7 @@ export function canEquipAsNewWeapon(u: Unit, w: Weapon) {
   return u?.hp > 0 && !!w && allowedWeapons(u).includes(w.type) && !isCurrentWeapon(u, w)
 }
 export function weaponScore(w: Weapon) {
-  const staffFx = { sleep: 18, berserk: 24, fortify: 70 }[w.effect] || 0
+  const staffFx = ({ sleep: 18, berserk: 24, fortify: 70 } as Record<string, number>)[w.effect || ''] || 0
   return (
     (w.mt || 0) * 3 +
     (w.hit || 0) / 10 +
@@ -182,7 +182,7 @@ export function enemyWeaponFor(u: Unit, tier: any) {
   }
   if (tier === BOSS_TIER_REGULAR) {
     const bossOpts = bossWeaponPool(opts, tier)
-    return cloneWeapon(bossOpts.sort((a: Unit, b: any) => weaponScore(b) - weaponScore(a))[0])
+    return cloneWeapon(bossOpts.sort((a: Weapon, b: Weapon) => weaponScore(b) - weaponScore(a))[0])
   }
   if (state.battle > 10) {
     const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')

@@ -40,7 +40,7 @@ export function hasBiomeEffect(effect: string) {
   return activeBiomeEffects().includes(effect)
 }
 export function biomeEffectLabel(effect: string) {
-  const labels = {
+  const labels: Record<string, string> = {
     avoidUp: `Avo +${BIOME_AVOID_DELTA}`,
     avoidDown: `Avo -${BIOME_AVOID_DELTA}`,
     defUp: `Def +${BIOME_STAT_DELTA}`,
@@ -63,9 +63,9 @@ export function focusLabel(focus: BiomeFocus) {
 export function focusMatchesBase(focus: BiomeFocus, base: any) {
   return base.cls === focus.cls && (!focus.weaponType || base.weaponType === focus.weaponType)
 }
-export function pickBaseFromPool(pool: any, focusList = null) {
+export function pickBaseFromPool(pool: any, focusList: BiomeFocus[] | null = null) {
   const candidates = focusList?.length
-    ? pool.map((b: any, idx: number) => ({ b, idx })).filter(({ b }) => focusList.some((focus: BiomeFocus) => focusMatchesBase(focus, b)))
+    ? pool.map((b: any, idx: number) => ({ b, idx })).filter(({ b }: any) => focusList.some((focus: BiomeFocus) => focusMatchesBase(focus, b)))
     : pool.map((b: any, idx: number) => ({ b, idx }))
   const picked: any = pick(candidates.length ? candidates : pool.map((b: any, idx: number) => ({ b, idx })))
   return pool.splice(picked.idx, 1)[0]

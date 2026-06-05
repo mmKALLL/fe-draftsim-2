@@ -41,7 +41,7 @@ export const CUSTOM_MAP_SPRITE_STEMS: Record<string, string> = {
 }
 
 // prettier-ignore
-export const CLASSES = {
+export const CLASSES: Record<string, ClassData> = {
   Lord: {
     promotesTo: 'Blade Lord',
     kind: 'lord',
@@ -488,7 +488,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'pass', name: 'Pass', desc: 'User ignores enemy held-item and aura damage reduction.', source: 'Awakening Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'combat', effect: 'ignoreGuardAuras' },
   { rarity: 'uncommon', id: 'poison_strike', name: 'Poison Strike', desc: 'After the user initiates combat, target loses 20% max HP.', source: 'Fates Ninja', classes: SKILL_CLASS_GROUPS.thief, family: 'debuff', trigger: 'afterCombat', effect: 'poisonStrike', amountPercent: 20 },
   { rarity: 'rare', id: 'lethality', name: 'Lethality', desc: 'Skl/4% chance to instantly defeat an enemy.', source: 'Awakening/Fates Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'proc', trigger: 'attack', effect: 'lethalChance', chanceStat: 'sklQuarter' },
-  // { rarity: 'uncommon', id: 'lucky_seven', name: 'Lucky Seven', desc: 'Hit +10 and Avoid +10 for the first seven turns of battle.', source: 'Awakening Trickster', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', hit: 10, avoid: 10, duration: 'firstSevenTurns' },
+  { rarity: 'uncommon', id: 'lucky_seven', name: 'Lucky Seven', desc: 'The user\'s attacks deal a minimum of 7 damage.', source: 'Awakening Trickster', classes: SKILL_CLASS_GROUPS.thief, family: 'stat', effect: 'minimumDamage', amount: 7 },
 
   // Knight and general skills
   { rarity: 'normal', id: 'defense_plus_2', name: 'Defense +2', desc: 'Def +2.', source: 'Awakening/Fates Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'stat', stats: { def: 2 } },

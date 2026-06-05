@@ -66,9 +66,9 @@ export function renderDraft() {
     const isLeaderSlot = slotIndex === 0
     const slotTitle = isLeaderSlot ? `Slot ${slotIndex + 1}: Leader (+${LEADER_BONUS_LEVELS} levels)` : `Slot ${slotIndex + 1}`
     slotEl.innerHTML = `<div class="row space"><h3>${slotTitle}</h3></div><div class="draftChoices"></div>`
-    const choices = slotEl.querySelector<HTMLElement>('.draftChoices')
+    const choices = slotEl.querySelector<HTMLElement>('.draftChoices')!
     slot
-      .map((n) => BASES.find((b) => b.name === n))
+      .map((n) => BASES.find((b) => b.name === n)!)
       .forEach((b) => {
         const c = CLASSES[b.cls]
         const el = document.createElement('button')
@@ -115,7 +115,7 @@ export function weaponStatHTML(w: Weapon) {
   return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
 }
 export function statHTML(u: Unit, showGrowths = false) {
-  return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
+  return (['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[])
     .map((k) => {
       const growth = u.growths[k] == null ? '--' : u.growths[k]
       return `<span><b>${statLabel(u, k)}</b> ${showGrowths ? growth : u.stats[k]}</span>`
@@ -124,7 +124,7 @@ export function statHTML(u: Unit, showGrowths = false) {
 }
 export function growthSummaryHTML(u: Unit) {
   const g = u.growths
-  return `<span class="muted">(${['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
+  return `<span class="muted">(${(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'] as StatKey[]).map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
 }
 export function heldItemFromRef(ref: any) {
   if (!ref) return null
@@ -164,13 +164,13 @@ export function unitCard(u: Unit) {
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
   const expanded = state.ui.activeDetailActorIds.includes(u.id)
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}${expanded ? ' expanded' : ''}" data-detail-card data-unit-id="${u.id}" role="button" tabindex="0" aria-expanded="${expanded ? 'true' : 'false'}"><div class="portraitStack">${portrait}<div class="detailModeLabel">Growths + details</div></div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } })} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u, expanded)}</div>${expanded ? unitDetailsHTML(u) : ''}</div></div>`
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}${expanded ? ' expanded' : ''}" data-detail-card data-unit-id="${u.id}" role="button" tabindex="0" aria-expanded="${expanded ? 'true' : 'false'}"><div class="portraitStack">${portrait}<div class="detailModeLabel">Growths + details</div></div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u, expanded)}</div>${expanded ? unitDetailsHTML(u) : ''}</div></div>`
 }
 
 export function renderConsumables() {
   const panel = $('consumablePanel')
   if (!panel) return
-  const actor = state.ui.activeConsumableActor?.hp > 0 ? state.ui.activeConsumableActor : null
+  const actor = (state.ui.activeConsumableActor?.hp ?? 0) > 0 ? state.ui.activeConsumableActor : null
   const filled = state.consumables.filter(Boolean).length
   const slots = Array.from({ length: CONSUMABLE_SLOTS }, (_, i) => state.consumables[i] || null)
   const slotHtml = slots
@@ -185,7 +185,7 @@ export function renderConsumables() {
   const defaultButton = state.combat.pendingDefaultAction ? `<button class="turnAction" data-default-action>${state.combat.pendingDefaultLabel}</button>` : ''
   const activeNote = actor ? `<div class="small">Active: ${actor.name}</div>` : ''
   panel.innerHTML = `<div class="row space"><h3>Consumables</h3><span class="badge">${filled}/${CONSUMABLE_SLOTS}</span></div>${activeNote}<div class="consumableSlots">${slotHtml}</div>${defaultButton}`
-  panel.querySelectorAll<HTMLElement>('[data-use-consumable]').forEach((btn) => (btn.onclick = () => state.combat.pendingConsumableAction?.(+btn.dataset.useConsumable)))
+  panel.querySelectorAll<HTMLElement>('[data-use-consumable]').forEach((btn) => (btn.onclick = () => state.combat.pendingConsumableAction?.(+btn.dataset.useConsumable!)))
   const defaultBtn = panel.querySelector<HTMLElement>('[data-default-action]')
   if (defaultBtn) defaultBtn.onclick = () => state.combat.pendingDefaultAction?.()
 }
@@ -203,7 +203,7 @@ export function updateCombatLogTitle() {
 export function bindDetailCards() {
   document.querySelectorAll<HTMLElement>('[data-detail-card]').forEach((card) => {
     const toggle = () => {
-      const unitId = card.dataset.unitId
+      const unitId = card.dataset.unitId!
       state.ui.activeDetailActorIds = state.ui.activeDetailActorIds.includes(unitId) ? state.ui.activeDetailActorIds.filter((id) => id !== unitId) : [...state.ui.activeDetailActorIds, unitId]
       renderSideCards()
     }
@@ -232,7 +232,7 @@ export function renderTeams() {
   updateAutoFightButton()
 }
 export function combatantSpriteSlot(u: Unit, isEnemy = false) {
-  const preview = isEnemy ? combatPreviewHTML(state.ui.activePreviewActor, u) : ''
+  const preview = isEnemy ? combatPreviewHTML(state.ui.activePreviewActor as Unit, u) : ''
   const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
   const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
   const st = statusLabel(u)
@@ -273,11 +273,11 @@ export function weaponSpeedImpact(unit: Unit, item: any) {
 export function weaponReplacementText(unit: Unit) {
   return unit.weapon ? `${unit.weapon.name} (${weaponSummary(unit.weapon)})` : 'nothing'
 }
-export function weaponOfferTitle(item: any, unit = null) {
+export function weaponOfferTitle(item: any, unit: Unit | null = null) {
   if (!unit) return item.name
   return `${item.name} to ${unit.name} (Con: ${unit.stats.con}, Speed ${weaponSpeedImpact(unit, item)})`
 }
-export function weaponOfferDescription(item: any, unit = null, opts: any = {}) {
+export function weaponOfferDescription(item: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Equip'
   const includeTier = opts.includeTier !== false
   const lead = unit ? `${action} ${unit.name} with ${item.name}` : `${action} ${item.name}`

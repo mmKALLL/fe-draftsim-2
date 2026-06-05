@@ -13,7 +13,7 @@ import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOff
 export function levelLabel(u: Unit) {
   return `L${u.lvl}`
 }
-export function chooseBoostTarget(r: any, backToRewards = null) {
+export function chooseBoostTarget(r: any, backToRewards: (() => void) | null = null) {
   const targets = boostTargetOptions(r)
   if (!targets.length) {
     if (backToRewards) {
@@ -36,7 +36,7 @@ export function chooseBoostTarget(r: any, backToRewards = null) {
   document.querySelectorAll<HTMLElement>('[data-t]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        const u = state.player[+btn.dataset.t]
+        const u = state.player[+btn.dataset.t!]
         if (!canApplyBoost(r, u)) {
           closeModal()
           if (backToRewards) backToRewards()

@@ -16,8 +16,8 @@ export function isWeaponEffective(w: Weapon, d: Unit) {
   const tags = unitTags(d)
   return w.effective.some((e: any) => (e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)))
 }
-export function triangle(a: Unit, b: any, aw = null, bw = null) {
-  const beats = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
+export function triangle(a: string, b: string, aw: Weapon | null = null, bw: Weapon | null = null) {
+  const beats: Record<string, string> = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
   if (!beats[a] || !beats[b]) return { atk: 0, hit: 0 }
   let sign = 0
   if (beats[a] === b) sign = 1
@@ -127,7 +127,7 @@ export function combatPreviewHTML(actor: Unit, target: Unit) {
   return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
 }
 export function classAbbrev(cls: string) {
-  const map = {
+  const map: Record<string, string> = {
     Lord: 'Lord',
     'Blade Lord': 'Blade Lord',
     Mercenary: 'Mercenary',
@@ -188,7 +188,7 @@ export function isStatusStaff(w: Weapon) {
   return fx === 'sleep' || fx === 'berserk'
 }
 export function statusName(fx: any) {
-  return { sleep: 'Sleep', berserk: 'Berserk' }[fx] || ''
+  return ({ sleep: 'Sleep', berserk: 'Berserk' } as Record<string, string>)[fx] || ''
 }
 export function statusLabel(u: Unit) {
   return [statusName(u.status), u.poisoned ? 'Poison' : ''].filter(Boolean).join(' ')
@@ -205,7 +205,7 @@ export function weaponEffectLabels(w: Weapon) {
   if (w.poison) labels.push('Poison')
   if (w.halveHp) labels.push('Halves HP')
   if (w.effective?.length) {
-    const names = w.effective.map((e: any) => ({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' })[e] || e)
+    const names = w.effective.map((e: any) => ({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' } as Record<string, string>)[e] || e)
     labels.push(`Eff: ${names.join(' / ')}`)
   }
   if (w.pierceRes) labels.push('Ignores Res')
@@ -215,10 +215,10 @@ export function weaponEffectLabels(w: Weapon) {
 export function temporaryBuffLabel(u: Unit) {
   const battleBuffs = (Object.entries(u.tempBuffs || {}) as [string, number][])
     .filter(([, amt]) => amt > 0)
-    .map(([stat, amt]) => `${statLabel(u, stat)}+${amt}`)
+    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)}+${amt}`)
   const turnBuffs = (Object.entries(u.turnBuffs || {}) as [string, number][])
     .filter(([, amt]) => amt > 0)
-    .map(([stat, amt]) => `${statLabel(u, stat)}+${amt} turn`)
+    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)}+${amt} turn`)
   const buffs = [...battleBuffs, ...turnBuffs]
   if (!buffs.length) return ''
   return buffs.join(', ')
@@ -286,7 +286,7 @@ export function applyPoison(u: Unit) {
   return true
 }
 export function clearUnitStatus(u: Unit) {
-  delete u.status
+  u.status = null
   delete u.poisoned
 }
 
@@ -394,9 +394,9 @@ export function selectTarget(actor: Unit, targets: Unit[], prompt: string, cance
   setStatus(prompt || `${actor.name}'s turn: choose a target.`)
   const ae = spriteEl(actor)
   if (ae) ae.classList.add('active')
-  return new Promise((resolve) => {
+  return new Promise<Unit | null>((resolve) => {
     let settled = false
-    const finish = (target: Unit) => {
+    const finish = (target: Unit | null) => {
       if (settled) return
       settled = true
       document.querySelectorAll<HTMLElement>('.combatant').forEach((ex) => {
@@ -533,7 +533,7 @@ export async function animateAoeConsumable(actor: Unit, targets: Unit[], item: a
   targets.forEach((t: any) => spriteEl(t)?.classList.add('target'))
   await sleep(300)
   let total = 0
-  const fallen = []
+  const fallen: string[] = []
   targets.forEach((t: any) => {
     const damage = Math.min(t.hp, item.amount)
     t.hp = Math.max(0, t.hp - item.amount)
@@ -569,7 +569,7 @@ export async function animateConsumable(actor: Unit, target: Unit, item: any) {
     logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} gains ${label} +${gained} ${duration}.`, 'heal')
   } else if (item.effect === 'restore') {
     const status = statusName(target.status)
-    delete target.status
+    target.status = null
     floatText(target, 'RESTORE', 'healing')
     logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${status || 'status'} cleared.`, 'heal')
   } else if (item.effect === 'revive') {
@@ -671,7 +671,7 @@ export async function applyEndOfTurnStatus(actor: Unit) {
   if (actor.hp <= 0) logLine(null, `${actor.name} falls to poison.`, 'death')
   await sleep(350)
 }
-export async function resolveStaffTurn(actor: Unit, allies: Unit[], foes: Unit[], forcedTarget = null) {
+export async function resolveStaffTurn(actor: Unit, allies: Unit[], foes: Unit[], forcedTarget: Unit | null = null) {
   const fx = staffEffect(actor.weapon)
   if (fx === 'fortify') {
     const targets = allies.filter((x: any) => x.hp > 0 && x.hp < x.maxHp)
@@ -706,7 +706,7 @@ export async function resolveStaffTurn(actor: Unit, allies: Unit[], foes: Unit[]
 export async function consumeTurnStatus(actor: Unit, allies: Unit[], foes: Unit[]) {
   if (!actor.status) return false
   const fx = actor.status
-  delete actor.status
+  actor.status = null
   renderTeams()
   if (fx === 'sleep') {
     await animateWait(actor, `${actor.name} is asleep and waits.`)
@@ -726,7 +726,7 @@ export async function consumeTurnStatus(actor: Unit, allies: Unit[], foes: Unit[
   }
   return false
 }
-export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[], forcedTarget = null, stavesExhausted = false) {
+export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[], forcedTarget: Unit | null = null, stavesExhausted = false) {
   if (!actor || actor.hp <= 0) return
   if (actor.weapon.staff) {
     if (stavesExhausted) {
