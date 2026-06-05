@@ -3,7 +3,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "deploy": "npm run build && bash deploy.sh"
   },
   "devDependencies": {
     "typescript": "^6.0.3",
