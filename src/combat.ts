@@ -76,10 +76,19 @@ export function effectiveMt(a: Unit, d: Unit) {
   const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
   return (a.weapon.mt || 0) * coeff
 }
+// Weapon-mastery "faire" skills add flat damage when wielding the matching type
+// ('tome' covers anima/light/dark).
+export function skillFaireBonus(a: Unit) {
+  const s = a.skill
+  if (!s || s.family !== 'faire') return 0
+  const wt = a.weapon?.type
+  const match = s.weaponType === wt || (s.weaponType === 'tome' && (wt === 'anima' || wt === 'light' || wt === 'dark'))
+  return match ? s.damageDealt || 0 : 0
+}
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
   const stat = combatStat(a, 'str')
-  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon)
+  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a)
 }
 export function defenseAgainst(d: Unit, weapon: Weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)
@@ -88,11 +97,12 @@ export function rawDamage(a: Unit, d: Unit) {
   if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
   let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
   if (a.weapon.halfDef) def = floor(def / 2)
-  return Math.max(1, attackPower(a, d) - def)
+  const minDamage = a.skill?.effect === 'minimumDamage' ? a.skill.amount || 1 : 1
+  return Math.max(minDamage, attackPower(a, d) - def)
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
-  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0))
+  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) - (a.skill?.enemyAvoid || 0))
 }
 export function avoid(d: Unit) {
   return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + (d.skill?.avoid || 0))
@@ -108,7 +118,7 @@ export function critRate(a: Unit, d: Unit) {
   if (a.weapon?.halveHp) return 0
   if (d.heldItem?.effect === 'critImmune') return 0
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0)), 0, 100)
+  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0) - (a.skill?.enemyCritAvoid || 0)), 0, 100)
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'

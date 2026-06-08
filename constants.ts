@@ -99,25 +99,31 @@ export const SHOP_BOOST_PRICES: Record<BoostPriceKey, number> = {
 // support is reserved until implemented.
 export const REWARD_TYPE_WEIGHTS: Record<RewardType, number>[] = [
   { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 1
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 2
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 3
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 4
+  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 2, support: 0 }, // Arena 2
+  { weapon: 5, consumable: 2, boost: 2, heldItem: 1.5, skill: 2, support: 0 }, // Arena 3
+  { weapon: 5, consumable: 2, boost: 1, heldItem: 2, skill: 1.5, support: 0 }, // Arena 4
 ]
 export const REWARD_OPTIONS_PER_SCREEN = 3
 // After a unit is given a reward of a type (weapon/heldItem/boost/skill), it
 // won't be offered that type again until this many battles have passed.
 export const REWARD_TYPE_UNIT_COOLDOWN = 4
 
+// Enemies are slightly "unlucky": a flat Luck penalty (floored at 1) and reduced
+// Luck growth. Raises player Hit (enemy Avoid uses Luck) and player Crit (Crit
+// subtracts target Luck), without changing the FE7 combat formulas.
+export const ENEMY_LUCK_PENALTY = 3
+export const ENEMY_LUCK_GROWTH_PENALTY = 20
+
 // Rarity spread (weights) per arena, split by boss type: 'standard' (normal
 // battle), 'regular' boss, 'biome'/arena boss. rewardRarityProfile() reads the
 // active arena + boss type. Tune any cell; <= 0 drops a rarity from that pool.
 export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'biome', Record<Rarity, number>>[] = [
   // Arena 1
-  { standard: { normal: 75, uncommon: 25, rare: 0 }, regular: { normal: 55, uncommon: 40, rare: 5 }, biome: { normal: 35, uncommon: 50, rare: 15 } },
+  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 50, uncommon: 45, rare: 5 }, biome: { normal: 20, uncommon: 60, rare: 20 } },
   // Arena 2
-  { standard: { normal: 55, uncommon: 40, rare: 5 }, regular: { normal: 35, uncommon: 45, rare: 20 }, biome: { normal: 15, uncommon: 50, rare: 35 } },
+  { standard: { normal: 55, uncommon: 40, rare: 5 }, regular: { normal: 30, uncommon: 45, rare: 15 }, biome: { normal: 0, uncommon: 60, rare: 40 } },
   // Arena 3
-  { standard: { normal: 35, uncommon: 45, rare: 20 }, regular: { normal: 20, uncommon: 45, rare: 35 }, biome: { normal: 5, uncommon: 40, rare: 55 } },
+  { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 20, uncommon: 45, rare: 35 }, biome: { normal: 0, uncommon: 30, rare: 70 } },
   // Arena 4
-  { standard: { normal: 20, uncommon: 45, rare: 35 }, regular: { normal: 10, uncommon: 40, rare: 50 }, biome: { normal: 0, uncommon: 30, rare: 70 } },
+  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 10, uncommon: 40, rare: 50 }, biome: { normal: 0, uncommon: 10, rare: 90 } },
 ]

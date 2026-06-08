@@ -1,4 +1,4 @@
-import { BOSS_TIER_BIOME, BOSS_TIER_REGULAR, PROMOTION_UNLOCK_AFTER_BATTLE } from '../constants'
+import { BOSS_TIER_BIOME, BOSS_TIER_REGULAR, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, PROMOTION_UNLOCK_AFTER_BATTLE } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { sleep, statLabel } from './combat'
 import { logLine } from './render'
@@ -95,11 +95,16 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
       skill: null,
     }
   u.weapon = startingWeapon(u.weaponType)
+  // Enemies are "unlucky": lower Luck growth (applied before leveling) makes them
+  // easier to hit and easier to crit, without touching the FE7 formulas.
+  if (enemy) u.growths.lck = Math.max(0, (u.growths.lck || 0) - ENEMY_LUCK_GROWTH_PENALTY)
   u.maxHp = u.stats.hp
   u.hp = u.maxHp
   const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset || 0)
   const internalLevel = clamp(requestedInternalLevel, 1, 40)
   while (currentInternalLevel(u) < internalLevel) advanceInternalLevel(u, promoted, false)
+  // Flat Luck penalty, floored at 1 so enemy Luck never reaches 0.
+  if (enemy) u.stats.lck = Math.max(1, u.stats.lck - ENEMY_LUCK_PENALTY)
   u.hp = u.maxHp
   return u
 }
