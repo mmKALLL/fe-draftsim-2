@@ -334,11 +334,11 @@ export const CONSUMABLES: ConsumableData[] = [
   { id: 'guard_tonic', name: 'Guard Tonic', tier: 'normal', effect: 'buff', stat: 'def', amount: 4, desc: 'Grants Def +4 for the current battle.' },
   { id: 'ward_tonic', name: 'Ward Tonic', tier: 'normal', effect: 'buff', stat: 'res', amount: 4, desc: 'Grants Res +4 for the current battle.' },
 
-  { id: 'power_potion', name: 'Filla\'s Might', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 10, desc: 'Grants Str/Mag +10 until end of target\'s next turn.' },
-  { id: 'skill_potion', name: 'Thor’s Ire', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 10, desc: 'Grants Skl +10 until end of target\'s next turn.' },
-  { id: 'speed_potion', name: 'Set’s Litany', tier: 'uncommon', effect: 'turnBuff', stat: 'spd', amount: 10, desc: 'Grants Spd +10 until end of target\'s next turn.' },
-  { id: 'guard_potion', name: 'Battle Robe', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 10, desc: 'Grants Def +10 until end of target\'s next turn.' },
-  { id: 'ward_potion', name: 'Ninis\'s Grace', tier: 'uncommon', effect: 'turnBuff', stat: 'res', amount: 10, desc: 'Grants Res +10 until end of target\'s next turn.' },
+  { id: 'power_potion', name: 'Filla\'s Might', tier: 'uncommon', effect: 'turnBuff', stat: 'str', amount: 20, desc: 'Grants Str/Mag +20 until end of target\'s next turn.' },
+  { id: 'skill_potion', name: 'Thor’s Ire', tier: 'uncommon', effect: 'turnBuff', stat: 'skl', amount: 20, desc: 'Grants Skl +20 until end of target\'s next turn.' },
+  { id: 'speed_potion', name: 'Set’s Litany', tier: 'uncommon', effect: 'turnBuff', stat: 'spd', amount: 20, desc: 'Grants Spd +20 until end of target\'s next turn.' },
+  { id: 'guard_potion', name: 'Battle Robe', tier: 'uncommon', effect: 'turnBuff', stat: 'def', amount: 20, desc: 'Grants Def +20 until end of target\'s next turn.' },
+  { id: 'ward_potion', name: 'Ninis\'s Grace', tier: 'uncommon', effect: 'turnBuff', stat: 'res', amount: 20, desc: 'Grants Res +20 until end of target\'s next turn.' },
 ]
 
 // Candidate held-item data. These are not wired into gameplay yet.
