@@ -15,6 +15,7 @@ import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOff
 
 export function startRun() {
   if (selectedRosterCount() !== ROSTER_SIZE) return
+  state.rewardCooldowns = {}
   state.player = state.draft.chosen.map((n, i) => {
     const u = freshFromBase(
       BASES.find((b) => b.name === n),

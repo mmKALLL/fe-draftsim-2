@@ -1,6 +1,6 @@
-import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_WEIGHTS } from '../constants'
+import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, WEAPONS, weaponTierLabel } from '../data'
-import { consumableSummary, statLabel } from './combat'
+import { consumableSummary, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
@@ -72,6 +72,22 @@ export function rollRewardRarity(profile: { spread: [Rarity, number][] }): Rarit
 export function rollShopRarity(): Rarity {
   return weightedTier(rewardRarityProfile(null, state.battle).spread) as Rarity
 }
+// Per-unit, per-reward-type cooldown: a unit that received a reward type can't
+// be offered that type again until REWARD_TYPE_UNIT_COOLDOWN battles have passed.
+export function unitOnRewardCooldown(unitId: string, type: string) {
+  const last = state.rewardCooldowns[`${unitId}|${type}`]
+  return last != null && state.battle - last < REWARD_TYPE_UNIT_COOLDOWN
+}
+export function recordRewardCooldown(unitId: string, type: string) {
+  state.rewardCooldowns[`${unitId}|${type}`] = state.battle
+}
+// Effective-immune held items (e.g. flyingEffectiveImmune) are only useful to
+// units that can actually be hit by that effective damage; gate them by class tag.
+export function heldItemRelevantToUnit(item: any, unit: Unit) {
+  const m = /^(.+)EffectiveImmune$/.exec(item?.effect || '')
+  if (m) return unitTags(unit).includes(m[1])
+  return true
+}
 export function rewardWeaponPool(u: Unit) {
   return WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
 }
@@ -79,8 +95,9 @@ export function pickRewardWeapon(opts: any[], rarity: Rarity) {
   return pickByRarity(opts, rarity) || pick(opts)
 }
 export function weaponReward(rarity: Rarity = 'normal') {
-  const candidates = state.player.filter((u) => u.hp > 0 && rewardWeaponPool(u).length)
-  const itemUnit = pick(candidates.length ? candidates : state.player)
+  const candidates = state.player.filter((u) => u.hp > 0 && rewardWeaponPool(u).length && !unitOnRewardCooldown(u.id, 'item'))
+  if (!candidates.length) return null
+  const itemUnit = pick(candidates)
   const pool = rewardWeaponPool(itemUnit)
   const chosen = pickRewardWeapon(pool.length ? pool : WEAPONS, rarity)
   if (!chosen) return null
@@ -105,8 +122,9 @@ export function consumableReward(rarity: Rarity = 'normal') {
 export function heldItemReward(rarity: Rarity = 'normal') {
   const chosen = pickByRarity(HELD_ITEMS, rarity)
   if (!chosen) return null
-  const candidates = state.player.filter((u) => u.hp > 0 && u.heldItem?.id !== chosen.id)
-  const unit = pick(candidates.length ? candidates : state.player)
+  const candidates = state.player.filter((u) => u.hp > 0 && u.heldItem?.id !== chosen.id && !unitOnRewardCooldown(u.id, 'heldItem') && heldItemRelevantToUnit(chosen, u))
+  if (!candidates.length) return null
+  const unit = pick(candidates)
   const item = { ...chosen }
   return { type: 'heldItem', title: heldItemOfferTitle(item, unit), desc: heldItemOfferDescription(item, unit), unit, item }
 }
@@ -154,8 +172,7 @@ export function makeRewards(bossTier: string | null = null, opening = false) {
       const type = weightedTier(eligible) as RewardType
       next = REWARD_GENERATORS[type]!(rarity)
     } while ((!next || rewards.some((r) => sameReward(r, next))) && guard++ < 30)
-    if (!next) next = boostReward(true)
-    rewards.push(next)
+    if (next) rewards.push(next)
   }
   return opening ? rewards : [...rewards, goldReward()]
 }
@@ -173,8 +190,8 @@ export function boostReward(targeted = true) {
   return targeted ? targetedBoostReward(reward) : reward
 }
 export function targetedBoostReward(r: any) {
-  const targets = boostTargetOptions(r)
-  if (!targets.length) return r
+  const targets = boostTargetOptions(r).filter(({ unit }) => !unitOnRewardCooldown(unit.id, 'boost'))
+  if (!targets.length) return null
   const { unit } = pick(targets)
   return {
     ...r,

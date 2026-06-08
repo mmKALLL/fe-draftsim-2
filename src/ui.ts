@@ -2,7 +2,7 @@ import { makeBiomePlan, renderBiomeMap } from './biomes'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
 import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount } from './render'
-import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost } from './rewards'
+import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { startShop } from './shop'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
@@ -43,6 +43,7 @@ export function chooseBoostTarget(r: any, backToRewards: (() => void) | null = n
           return
         }
         const msg = applyBoostToUnit(r, u)
+        recordRewardCooldown(u.id, 'boost')
         closeModal()
         afterReward(msg)
       })

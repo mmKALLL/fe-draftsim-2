@@ -4,7 +4,7 @@ import { setShopOpen } from './biomes'
 import { consumableSummary, statLabel } from './combat'
 import { beginNextBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
-import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, pickByRarity, pickRewardConsumable, pickRewardWeapon, rollShopRarity } from './rewards'
+import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity } from './rewards'
 import { addGold, formatGold, goldHTML, spendGold } from './state'
 import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon } from './units'
@@ -247,9 +247,9 @@ export function chooseShopForgeTarget(i: number) {
 }
 export function chooseShopHeldItemTarget(i: number) {
   const offer = state.shop.offers[i]
-  const eligible = state.player.filter((u) => u.hp > 0)
+  const eligible = state.player.filter((u) => u.hp > 0 && heldItemRelevantToUnit(offer.item, u))
   if (!eligible.length) {
-    renderShop(`No unit can hold ${offer.item.name}.`)
+    renderShop(`No eligible holder for ${offer.item.name}.`)
     return
   }
   let html = `<h2>${offer.item.name}: choose holder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${offer.item.desc}</div>`
@@ -402,11 +402,13 @@ export function chooseConsumableReplacement(r: any, backToRewards: (() => void) 
 export function applyReward(r: any, backToRewards: (() => void) | null = null) {
   if (r.type === 'item') {
     r.unit.weapon = r.item
+    recordRewardCooldown(r.unit.id, 'item')
     closeModal()
     afterReward(`${r.unit.name} equipped ${r.item.name}.`)
   }
   if (r.type === 'heldItem') {
     r.unit.heldItem = r.item
+    recordRewardCooldown(r.unit.id, 'heldItem')
     closeModal()
     afterReward(`${r.unit.name} received ${r.item.name}.`)
   }
@@ -431,6 +433,7 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
         return
       }
       const msg = applyBoostToUnit(r, r.unit)
+      recordRewardCooldown(r.unit.id, 'boost')
       closeModal()
       afterReward(msg)
       return

@@ -346,9 +346,9 @@ export const CONSUMABLES: ConsumableData[] = [
 // prettier-ignore
 export const HELD_ITEMS: CandidateItemData[] = [
   // Auto-consumable conversions and status protections
-  // { id: 'vulnerary_pouch', name: 'Vulnerary Pouch', tier: 'normal', family: 'autoConsumable', trigger: 'hpBelowHalf', effect: 'autoHeal', amount: 10, uses: 1, desc: 'Once per battle, heals 10 HP when holder falls below 50% HP.' },
+  // { id: 'vulnerary_pouch', name: 'Vulnerary Pouch', tier: 'uncommon', family: 'autoConsumable', trigger: 'hpBelowHalf', effect: 'autoHeal', amount: 10, uses: 1, desc: 'Once per battle, heals 10 HP when holder falls below 50% HP.' },
   // { id: 'concoction_pouch', name: 'Concoction Pouch', tier: 'uncommon', family: 'autoConsumable', trigger: 'hpBelowHalf', effect: 'autoHeal', amount: 20, uses: 1, desc: 'Once per battle, heals 20 HP when holder falls below 50% HP.' },
-  // { id: 'elixir_pouch', name: 'Elixir Pouch', tier: 'rare', family: 'autoConsumable', trigger: 'hpBelowQuarter', effect: 'autoFullHeal', uses: 1, desc: 'Once per battle, fully heals when holder falls below 25% HP.' },
+  // { id: 'elixir_pouch', name: 'Elixir Pouch', tier: 'rare', family: 'autoConsumable', trigger: 'hpBelowHalf', effect: 'autoFullHeal', uses: 1, desc: 'Once per battle, fully heals when holder falls below 50% HP.' },
   { id: 'awakening_charm', name: 'Awakening Charm', tier: 'uncommon', price: 800, family: 'protection', effect: 'sleepImmune', desc: 'Prevents sleep.' },
   { id: 'clarity_charm', name: 'Clarity Charm', tier: 'uncommon', price: 800, family: 'protection', effect: 'berserkImmune', desc: 'Prevents berserk.' },
   { id: 'antitoxin_charm', name: 'Antitoxin Charm', tier: 'normal', price: 500, family: 'protection', effect: 'poisonImmune', desc: 'Prevents poison.' },
@@ -366,6 +366,7 @@ export const HELD_ITEMS: CandidateItemData[] = [
   { id: 'delphi_shield', name: 'Delphi Shield', tier: 'uncommon', price: 900, family: 'guard', effect: 'flyingEffectiveImmune', desc: 'Negates bonus damage against flying units.' },
   { id: 'svalinn_shield', name: 'Svalinn Shield', tier: 'uncommon', price: 900, family: 'guard', effect: 'armoredEffectiveImmune', desc: 'Negates bonus damage against armored units.' },
   { id: 'dragon_mail', name: 'Dragon Mail', tier: 'uncommon', price: 900, family: 'guard', effect: 'dragonEffectiveImmune', desc: 'Negates bonus damage against dragon units.' },
+  // { id: 'troll_charm', name: 'Troll Charm', tier: 'uncommon', family: 'charm', trigger: 'turnStart', effect: 'regenPercent', amount: 10, desc: 'Restores 10% max HP at turn start.' },
   // { id: 'aegis_shield', name: 'Aegis Shield', tier: 'rare', family: 'shield', stats: { def: 3, res: 3 }, critAvoid: 20, desc: 'Def +3, Res +3, and critical avoid +20.' },
   // { id: 'ochain_shield', name: 'Ochain Shield', tier: 'rare', family: 'shield', stats: { def: 4, res: 2 }, trigger: 'turnStart', effect: 'regenPercent', amount: 10, desc: 'Def +4, Res +2, and restores 10% max HP at turn start.' },
   // { id: 'seiros_shield', name: 'Seiros Shield', tier: 'rare', family: 'shield', stats: { def: 5, res: 5 }, trigger: 'turnStart', effect: 'regenFlat', amount: 5, desc: 'Def +5, Res +5, and restores 5 HP at turn start.' },
@@ -377,8 +378,8 @@ export const HELD_ITEMS: CandidateItemData[] = [
   { id: 'power_ring', name: 'Power Ring', tier: 'normal', price: 1200, family: 'ring', stats: { str: 4 }, desc: 'Str/Mag +4 while held.' },
   { id: 'skill_ring', name: 'Skill Ring', tier: 'normal', price: 900, family: 'ring', stats: { skl: 4 }, desc: 'Skl +4 while held.' },
   { id: 'speed_ring', name: 'Speed Ring', tier: 'normal', price: 1350, family: 'ring', stats: { spd: 4 }, desc: 'Spd +4 while held.' },
-  { id: 'luck_ring', name: 'Luck Ring', tier: 'normal', price: 800, family: 'ring', stats: { lck: 4 }, desc: 'Lck +4 while held.' },
-  { id: 'clover', name: 'Four-leaf Clover', tier: 'uncommon', price: 1450, family: 'ring', stats: { lck: 8 }, desc: 'Lck +8 while held.' },
+  { id: 'clover', name: 'Four-leaf Clover', tier: 'normal', price: 400, family: 'ring', stats: { lck: 4 }, desc: 'Lck +4 while held.' },
+  { id: 'luck_ring', name: 'Luck Ring', tier: 'uncommon', price: 800, family: 'ring', stats: { lck: 8 }, desc: 'Lck +8 while held.' },
   { id: 'shield_ring', name: 'Shield Ring', tier: 'normal', price: 1200, family: 'ring', stats: { def: 4 }, desc: 'Def +4 while held.' },
   { id: 'barrier_ring', name: 'Barrier Ring', tier: 'normal', price: 1100, family: 'ring', stats: { res: 4 }, desc: 'Res +4 while held.' },
   { id: 'body_ring_held', name: 'Body Ring', tier: 'uncommon', price: 1350, family: 'ring', stats: { con: 4 }, desc: 'Con +4 while held.' },

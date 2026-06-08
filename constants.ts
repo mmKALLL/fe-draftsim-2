@@ -103,6 +103,9 @@ export const REWARD_TYPE_WEIGHTS: Record<RewardType, number>[] = [
   { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 0, support: 0 }, // Arena 4
 ]
 export const REWARD_OPTIONS_PER_SCREEN = 3
+// After a unit is given a reward of a type (weapon/heldItem/boost/skill), it
+// won't be offered that type again until this many battles have passed.
+export const REWARD_TYPE_UNIT_COOLDOWN = 4
 
 // Rarity spread (weights) per arena, split by boss type: 'standard' (normal
 // battle), 'regular' boss, 'biome'/arena boss. rewardRarityProfile() reads the

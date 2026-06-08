@@ -9,6 +9,8 @@ export const state = {
   gold: 0,
   battle: 0,
   biomePlan: [] as BiomeEntry[],
+  // `${unitId}|${rewardType}` -> battle number the unit last received that type
+  rewardCooldowns: {} as Record<string, number>,
 
   draft: {
     chosen: [] as string[],
