@@ -152,7 +152,8 @@ export function unitCard(u: Unit) {
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
   const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">Held: ${u.heldItem.name}</div>` : ''
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${held}</div></div>`
+  const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">Skill: ${u.skill.name}</div>` : ''
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${held}${skill}</div></div>`
 }
 
 export function renderConsumables() {
@@ -272,4 +273,14 @@ export function heldItemOfferDescription(item: any, unit: Unit | null = null, op
   if (includeTier) meta.push(weaponTierLabel(item.tier))
   if (unit) meta.push(heldItemReplacementText(unit))
   return `${lead}: ${item.desc}${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
+}
+export function skillOfferTitle(skill: any, unit: Unit | null = null) {
+  return unit ? `${skill.name} to ${unit.name}` : skill.name
+}
+export function skillOfferDescription(skill: any, unit: Unit | null = null, opts: any = {}) {
+  const action = opts.action || 'Teach'
+  const lead = unit ? `${action} ${skill.name} to ${unit.name}` : `${action} ${skill.name}`
+  const meta = [weaponTierLabel(skill.rarity)]
+  if (unit) meta.push(unit.skill ? `Replaces ${unit.skill.name}` : 'No current skill')
+  return `${lead}: ${skill.desc}<div class="small rewardMeta">${meta.join(' · ')}</div>`
 }

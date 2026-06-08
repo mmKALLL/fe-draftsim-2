@@ -138,6 +138,7 @@ export type Unit = {
   isLeader?: boolean
   bossTier?: string | null
   heldItem?: any
+  skill?: any
   [key: string]: any
 }
 

@@ -95,12 +95,13 @@ export const SHOP_BOOST_PRICES: Record<BoostPriceKey, number> = {
 // Per-arena tuning (index 0 = arena 1). A run has BIOME_CYCLES_PER_RUN arenas of
 // BIOME_CYCLE_LENGTH battles each; tune each arena's reward mix independently.
 // Relative ratio of reward types per arena. Tune freely; <= 0 disables a type.
-// skill/support are reserved until implemented.
+// Only the always-on self-passive skills are wired (see TEACHABLE_SKILLS);
+// support is reserved until implemented.
 export const REWARD_TYPE_WEIGHTS: Record<RewardType, number>[] = [
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 0, support: 0 }, // Arena 1
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 0, support: 0 }, // Arena 2
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 0, support: 0 }, // Arena 3
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 0, support: 0 }, // Arena 4
+  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 1
+  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 2
+  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 3
+  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 1.5, support: 0 }, // Arena 4
 ]
 export const REWARD_OPTIONS_PER_SCREEN = 3
 // After a unit is given a reward of a type (weapon/heldItem/boost/skill), it

@@ -49,7 +49,7 @@ export function biomeStatDelta(stat: StatKey) {
   return delta
 }
 export function combatStat(u: Unit, stat: StatKey) {
-  let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0)
+  let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0) + (u.skill?.stats?.[stat] || 0)
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
 }
@@ -92,10 +92,10 @@ export function rawDamage(a: Unit, d: Unit) {
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
-  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0))
+  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0))
 }
 export function avoid(d: Unit) {
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0))
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + (d.skill?.avoid || 0))
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d), 0, 100)
@@ -108,7 +108,7 @@ export function critRate(a: Unit, d: Unit) {
   if (a.weapon?.halveHp) return 0
   if (d.heldItem?.effect === 'critImmune') return 0
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0)), 0, 100)
+  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0)), 0, 100)
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'

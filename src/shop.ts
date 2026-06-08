@@ -412,6 +412,12 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
     closeModal()
     afterReward(`${r.unit.name} received ${r.item.name}.`)
   }
+  if (r.type === 'skill') {
+    r.unit.skill = r.item
+    recordRewardCooldown(r.unit.id, 'skill')
+    closeModal()
+    afterReward(`${r.unit.name} learned ${r.item.name}.`)
+  }
   if (r.type === 'consumable') {
     if (consumableInventoryFull()) {
       chooseConsumableReplacement(r, backToRewards)

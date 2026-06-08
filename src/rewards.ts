@@ -1,8 +1,8 @@
 import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
-import { CONSUMABLES, HELD_ITEMS, WEAPONS, weaponTierLabel } from '../data'
+import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
 import { consumableSummary, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
-import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle } from './render'
+import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
 import { formatGold, goldHTML } from './state'
 import { levelLabel, showModal } from './ui'
@@ -128,6 +128,22 @@ export function heldItemReward(rarity: Rarity = 'normal') {
   const item = { ...chosen }
   return { type: 'heldItem', title: heldItemOfferTitle(item, unit), desc: heldItemOfferDescription(item, unit), unit, item }
 }
+// A unit can learn a skill if it's universal ('Any') or lists the unit's base or
+// promoted class. Only wired skills remain uncommented in TEACHABLE_SKILLS.
+export function skillClassMatches(skill: any, u: Unit) {
+  return skill.classes.includes('Any') || skill.classes.includes(u.cls) || skill.classes.includes(u.displayCls)
+}
+export function skillTargets(skill: any) {
+  return state.player.filter((u) => u.hp > 0 && u.skill?.id !== skill.id && !unitOnRewardCooldown(u.id, 'skill') && skillClassMatches(skill, u))
+}
+export function skillReward(rarity: Rarity = 'normal') {
+  const offerable = TEACHABLE_SKILLS.filter((s) => skillTargets(s).length)
+  if (!offerable.length) return null
+  const tierPool = offerable.filter((s) => s.rarity === rarity)
+  const skill = pick(tierPool.length ? tierPool : offerable)
+  const unit = pick(skillTargets(skill))
+  return { type: 'skill', title: skillOfferTitle(skill, unit), desc: skillOfferDescription(skill, unit), unit, item: skill }
+}
 export function firstEmptyConsumableSlot() {
   return state.consumables.findIndex((item) => !item)
 }
@@ -147,6 +163,7 @@ export function sameReward(a: any, b: any) {
   if (a.type === 'item') return a.unit === b.unit && a.item.name === b.item.name
   if (a.type === 'consumable') return a.item.id === b.item.id
   if (a.type === 'heldItem') return a.unit === b.unit && a.item.id === b.item.id
+  if (a.type === 'skill') return a.unit === b.unit && a.item.id === b.item.id
   return false
 }
 // type -> generator (each takes a target rarity; boost ignores it)
@@ -154,6 +171,7 @@ const REWARD_GENERATORS: Partial<Record<RewardType, (rarity: Rarity) => any>> = 
   weapon: weaponReward,
   consumable: consumableReward,
   heldItem: heldItemReward,
+  skill: skillReward,
   boost: () => boostReward(true),
 }
 export function makeRewards(bossTier: string | null = null, opening = false) {
