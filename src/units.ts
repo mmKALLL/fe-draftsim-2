@@ -37,7 +37,8 @@ export function syncDisplayLevel(u: Unit) {
 export function applyGrowthLevel(u: Unit) {
   const before = { ...u.stats }
   for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'] as StatKey[]) {
-    if (rint(100) + 1 <= u.growths[k]) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
+    const growth = (u.growths[k] || 0) + (u.heldItem?.growths?.[k] || 0)
+    if (rint(100) + 1 <= growth) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
   }
   u.maxHp = u.stats.hp
   u.hp = Math.min(u.hp, u.maxHp)
@@ -89,6 +90,7 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
       isEnemy: enemy,
       startOffset: base.startOffset || 0,
       status: null,
+      heldItem: null,
     }
   u.weapon = startingWeapon(u.weaponType)
   u.maxHp = u.stats.hp

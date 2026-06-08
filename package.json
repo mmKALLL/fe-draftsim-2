@@ -4,7 +4,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "deploy": "npm run build && bash deploy.sh"
+    "deploy": "npm run build && bash deploy.sh",
+    "deploy:beta": "npm run build && bash deploy-beta.sh"
   },
   "devDependencies": {
     "typescript": "^6.0.3",

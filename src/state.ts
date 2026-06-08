@@ -34,7 +34,6 @@ export const state = {
     pendingShopAfterReward: false,
     filter: 'all',
     activePreviewActor: null as Unit | null,
-    activeDetailActorIds: [] as string[],
     activeConsumableActor: null as Unit | null,
   },
 }

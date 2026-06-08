@@ -3,6 +3,7 @@ export type GrowthStatKey = Exclude<StatKey, 'con'>
 export type WeaponRank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S'
 export type WeaponType = 'sword' | 'dagger' | 'lance' | 'axe' | 'bow' | 'anima' | 'light' | 'dark' | 'staff'
 export type Rarity = 'normal' | 'uncommon' | 'rare'
+export type RewardType = 'weapon' | 'consumable' | 'boost' | 'heldItem' | 'skill' | 'support'
 export type PaletteKey = 'blue' | 'red' | 'green' | 'purple' | 'gold'
 
 // Numeric string index: stat blocks are iterated dynamically by stat key
@@ -136,6 +137,7 @@ export type Unit = {
   hp: number
   isLeader?: boolean
   bossTier?: string | null
+  heldItem?: any
   [key: string]: any
 }
 

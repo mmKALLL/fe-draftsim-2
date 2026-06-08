@@ -1,15 +1,15 @@
-import { BOSS_TIER_BIOME, CONSUMABLE_REWARD_CHANCE, CONSUMABLE_TIER_WEIGHTS, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_SKIP_GOLD, WEAPON_TIER_WEIGHTS } from '../constants'
-import { CONSUMABLES, WEAPONS, weaponTierLabel } from '../data'
+import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_WEIGHTS } from '../constants'
+import { CONSUMABLES, HELD_ITEMS, WEAPONS, weaponTierLabel } from '../data'
 import { consumableSummary, statLabel } from './combat'
 import { bossTierForBattle } from './game'
-import { growthSummaryHTML, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle } from './render'
+import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
 import { formatGold, goldHTML } from './state'
 import { levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, levelUp } from './units'
 import { $, capStat, pick, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Rarity, RewardType, StatKey } from '../types'
 
 
 export function showRewards(opening = false) {
@@ -35,34 +35,6 @@ export function renderRewardSelection(title: string, rewards: any) {
   if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
 }
 
-export function isGoodRewardWeapon(w: Weapon) {
-  return w.tier !== 'normal'
-}
-export function rewardsExcludeRare() {
-  return state.battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
-}
-export function isNonRareRewardItem(item: any) {
-  return item.tier !== 'rare'
-}
-export function rewardWeaponPool(u: Unit, goodOnly = false) {
-  const opts = WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
-  if (rewardsExcludeRare()) return opts.filter(isNonRareRewardItem)
-  if (!goodOnly) return opts
-  const good = opts.filter(isGoodRewardWeapon)
-  return good.length ? good : opts
-}
-export function fallbackRewardWeaponPool(goodOnly = false) {
-  if (rewardsExcludeRare()) return WEAPONS.filter(isNonRareRewardItem)
-  if (!goodOnly) return WEAPONS
-  const good = WEAPONS.filter(isGoodRewardWeapon)
-  return good.length ? good : WEAPONS
-}
-export function rewardConsumablePool(goodOnly = false) {
-  if (rewardsExcludeRare()) return CONSUMABLES.filter(isNonRareRewardItem)
-  if (!goodOnly) return CONSUMABLES
-  const good = CONSUMABLES.filter((item) => item.tier !== 'normal')
-  return good.length ? good : CONSUMABLES
-}
 export function weightedTier(weights: any) {
   const total = weights.reduce((sum: any, [, weight]: [string, number]) => sum + weight, 0)
   let roll = rnd() * total
@@ -72,43 +44,47 @@ export function weightedTier(weights: any) {
   }
   return weights[weights.length - 1][0]
 }
-export function completedRewardFights() {
-  return Math.max(0, state.battle)
+// Pick an item of the requested rarity, falling back to any rarity if none exist.
+export function pickByRarity<T extends { tier?: Rarity }>(pool: T[], rarity: Rarity): T | null {
+  if (!pool.length) return null
+  const tierPool = pool.filter((x) => x.tier === rarity)
+  return pick(tierPool.length ? tierPool : pool)
 }
-export function rewardTierWeights(weightSet: any, goodOnly = false) {
-  if (goodOnly) return rewardsExcludeRare() ? weightSet.good.filter(([tier]: [string, number]) => tier !== 'rare') : weightSet.good
-  const fights = completedRewardFights()
-  const weights = weightSet.normal.map(([tier, weight]: [string, number]) => {
-    if (tier === 'uncommon') return [tier, weight + fights * 2]
-    if (tier === 'rare') return [tier, weight + fights]
-    return [tier, weight]
-  })
-  return rewardsExcludeRare() ? weights.filter(([tier]: [string, number]) => tier !== 'rare') : weights
+// Arena index (1..BIOME_CYCLES_PER_RUN) for a given battle number.
+export function rewardArena(battle: number): number {
+  return Math.min(BIOME_CYCLES_PER_RUN, Math.floor((Math.max(1, battle) - 1) / BIOME_CYCLE_LENGTH) + 1)
 }
-export function pickRewardWeapon(opts: any, goodOnly = false) {
-  const weights = rewardTierWeights(WEAPON_TIER_WEIGHTS, goodOnly)
-  for (let i = 0; i < 8; i++) {
-    const tier = weightedTier(weights)
-    const tierOpts = opts.filter((w: Weapon) => w.tier === tier)
-    if (tierOpts.length) return pick(tierOpts)
-  }
-  return pick(opts)
+// Single source of truth for reward rarity: a weighted spread read from the
+// active arena's table for the given boss type. The rare lock keeps the very
+// first battles rare-free.
+export function rewardRarityProfile(bossTier: string | null, battle: number): { spread: [Rarity, number][] } {
+  const arenaTable = REWARD_RARITY_WEIGHTS[rewardArena(battle) - 1] || REWARD_RARITY_WEIGHTS[REWARD_RARITY_WEIGHTS.length - 1]
+  const bossKind = bossTier === BOSS_TIER_BIOME ? 'biome' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
+  const base = arenaTable[bossKind]
+  const rareLocked = battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
+  const weights: Record<Rarity, number> = { normal: base.normal, uncommon: base.uncommon, rare: rareLocked ? 0 : base.rare }
+  const spread = (Object.entries(weights) as [Rarity, number][]).filter(([, w]) => w > 0)
+  return { spread }
 }
-export function pickRewardConsumable(goodOnly = false) {
-  const pool = rewardConsumablePool(goodOnly)
-  const weights = rewardTierWeights(CONSUMABLE_TIER_WEIGHTS, goodOnly)
-  for (let i = 0; i < 8; i++) {
-    const tier = weightedTier(weights)
-    const tierOpts = pool.filter((item) => item.tier === tier)
-    if (tierOpts.length) return cloneConsumable(pick(tierOpts))
-  }
-  return cloneConsumable(pick(pool.length ? pool : CONSUMABLES))
+export function rollRewardRarity(profile: { spread: [Rarity, number][] }): Rarity {
+  return weightedTier(profile.spread) as Rarity
 }
-export function weaponReward(goodOnly = false) {
-  const candidates = state.player.filter((u) => u.hp > 0 && rewardWeaponPool(u, goodOnly).length)
+export function rollShopRarity(): Rarity {
+  return weightedTier(rewardRarityProfile(null, state.battle).spread) as Rarity
+}
+export function rewardWeaponPool(u: Unit) {
+  return WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
+}
+export function pickRewardWeapon(opts: any[], rarity: Rarity) {
+  return pickByRarity(opts, rarity) || pick(opts)
+}
+export function weaponReward(rarity: Rarity = 'normal') {
+  const candidates = state.player.filter((u) => u.hp > 0 && rewardWeaponPool(u).length)
   const itemUnit = pick(candidates.length ? candidates : state.player)
-  const opts = rewardWeaponPool(itemUnit, goodOnly)
-  const item = cloneWeapon(pickRewardWeapon(opts.length ? opts : fallbackRewardWeaponPool(goodOnly), goodOnly) as Weapon)
+  const pool = rewardWeaponPool(itemUnit)
+  const chosen = pickRewardWeapon(pool.length ? pool : WEAPONS, rarity)
+  if (!chosen) return null
+  const item = cloneWeapon(chosen as Weapon)
   return {
     type: 'item',
     title: weaponOfferTitle(item, itemUnit),
@@ -117,17 +93,28 @@ export function weaponReward(goodOnly = false) {
     item,
   }
 }
+export function pickRewardConsumable(rarity: Rarity) {
+  return cloneConsumable(pickByRarity(CONSUMABLES, rarity) || pick(CONSUMABLES))
+}
+export function consumableReward(rarity: Rarity = 'normal') {
+  const item = pickRewardConsumable(rarity)
+  const slotText = consumableInventoryFull() ? 'Inventory full: choose a slot to replace.' : 'Stored in the first empty consumable slot.'
+  const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · ${slotText}</div>`
+  return { type: 'consumable', title: `${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
+}
+export function heldItemReward(rarity: Rarity = 'normal') {
+  const chosen = pickByRarity(HELD_ITEMS, rarity)
+  if (!chosen) return null
+  const candidates = state.player.filter((u) => u.hp > 0 && u.heldItem?.id !== chosen.id)
+  const unit = pick(candidates.length ? candidates : state.player)
+  const item = { ...chosen }
+  return { type: 'heldItem', title: heldItemOfferTitle(item, unit), desc: heldItemOfferDescription(item, unit), unit, item }
+}
 export function firstEmptyConsumableSlot() {
   return state.consumables.findIndex((item) => !item)
 }
 export function consumableInventoryFull() {
   return firstEmptyConsumableSlot() === -1
-}
-export function consumableReward(goodOnly = false) {
-  const item = pickRewardConsumable(goodOnly)
-  const slotText = consumableInventoryFull() ? 'Inventory full: choose a slot to replace.' : 'Stored in the first empty consumable slot.'
-  const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · ${slotText}</div>`
-  return { type: 'consumable', title: `${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
 }
 export function goldReward(amount = REWARD_SKIP_GOLD) {
   return {
@@ -141,22 +128,36 @@ export function sameReward(a: any, b: any) {
   if (a.type !== b.type) return false
   if (a.type === 'item') return a.unit === b.unit && a.item.name === b.item.name
   if (a.type === 'consumable') return a.item.id === b.item.id
+  if (a.type === 'heldItem') return a.unit === b.unit && a.item.id === b.item.id
   return false
 }
+// type -> generator (each takes a target rarity; boost ignores it)
+const REWARD_GENERATORS: Partial<Record<RewardType, (rarity: Rarity) => any>> = {
+  weapon: weaponReward,
+  consumable: consumableReward,
+  heldItem: heldItemReward,
+  boost: () => boostReward(true),
+}
 export function makeRewards(bossTier: string | null = null, opening = false) {
-  const weaponCount = 2
-  const goodOnly = bossTier === BOSS_TIER_BIOME
+  const profile = rewardRarityProfile(bossTier, state.battle)
+  const typeWeights = REWARD_TYPE_WEIGHTS[rewardArena(state.battle) - 1] || REWARD_TYPE_WEIGHTS[REWARD_TYPE_WEIGHTS.length - 1]
   const allowConsumables = opening || !bossTier
-  const weaponRewards: any[] = []
-  for (let i = 0; i < weaponCount; i++) {
-    let next = allowConsumables && rnd() < CONSUMABLE_REWARD_CHANCE ? consumableReward(goodOnly) : weaponReward(goodOnly),
+  const eligible = (Object.entries(typeWeights) as [RewardType, number][]).filter(
+    ([type, w]) => w > 0 && REWARD_GENERATORS[type] && (allowConsumables || type !== 'consumable')
+  )
+  const rewards: any[] = []
+  for (let i = 0; i < REWARD_OPTIONS_PER_SCREEN; i++) {
+    const rarity = rollRewardRarity(profile)
+    let next: any = null,
       guard = 0
-    while (weaponRewards.some((r) => sameReward(r, next)) && guard++ < 20)
-      next = allowConsumables && rnd() < CONSUMABLE_REWARD_CHANCE ? consumableReward(goodOnly) : weaponReward(goodOnly)
-    weaponRewards.push(next)
+    do {
+      const type = weightedTier(eligible) as RewardType
+      next = REWARD_GENERATORS[type]!(rarity)
+    } while ((!next || rewards.some((r) => sameReward(r, next))) && guard++ < 30)
+    if (!next) next = boostReward(true)
+    rewards.push(next)
   }
-  const boost = boostReward()
-  return opening ? [...weaponRewards, boost] : [...weaponRewards, boost, goldReward()]
+  return opening ? rewards : [...rewards, goldReward()]
 }
 export function boostReward(targeted = true) {
   const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[]

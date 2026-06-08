@@ -143,18 +143,6 @@ export function detailEntryHTML(title: string, value: any, desc = '', rarity = '
   const descHTML = desc ? `<div class="small">${desc}</div>` : ''
   return `<div class="unitDetailEntry${rarityClass(rarity)}"><div class="row space"><b>${title}</b><span>${value}</span></div>${descHTML}</div>`
 }
-export function unitDetailsHTML(u: Unit) {
-  const held = heldItemFromRef(u.heldItem || u.heldItemId || u.item)
-  const skillRefs = Array.isArray(u.skills) ? u.skills : Array.isArray(u.skillIds) ? u.skillIds : []
-  const skills = skillRefs.map(skillFromRef).filter(Boolean)
-  const heldHTML = held
-    ? detailEntryHTML('Held item', held.name, held.desc, held.tier)
-    : detailEntryHTML('Held item', 'None')
-  const skillsHTML = skills.length
-    ? skills.map((skill: any) => detailEntryHTML('Skill', skill.name, skill.desc, skill.rarity)).join('')
-    : detailEntryHTML('Skills', 'None')
-  return `<div class="unitDetails">${heldHTML}${skillsHTML}</div>`
-}
 export function unitCard(u: Unit) {
   const wt = u.weapon ? ` · ${u.weapon.name}` : ''
   const st = statusLabel(u)
@@ -163,8 +151,8 @@ export function unitCard(u: Unit) {
   const buffs = temporaryBuffLabel(u)
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
-  const expanded = state.ui.activeDetailActorIds.includes(u.id)
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}${expanded ? ' expanded' : ''}" data-detail-card data-unit-id="${u.id}" role="button" tabindex="0" aria-expanded="${expanded ? 'true' : 'false'}"><div class="portraitStack">${portrait}<div class="detailModeLabel">Growths + details</div></div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2)}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u, expanded)}</div>${expanded ? unitDetailsHTML(u) : ''}</div></div>`
+  const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">Held: ${u.heldItem.name}</div>` : ''
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${held}</div></div>`
 }
 
 export function renderConsumables() {
@@ -193,27 +181,11 @@ export function renderSideCards() {
   renderConsumables()
   $('playerTeam').innerHTML = state.player.map(unitCard).join('')
   $('enemyTeam').innerHTML = state.enemy.map(unitCard).join('')
-  bindDetailCards()
 }
 export function updateCombatLogTitle() {
   const title = $('combatLogTitle')
   if (!title) return
   title.textContent = state.combat.turn > 0 ? `Combat log - Turn ${state.combat.turn}` : 'Combat log'
-}
-export function bindDetailCards() {
-  document.querySelectorAll<HTMLElement>('[data-detail-card]').forEach((card) => {
-    const toggle = () => {
-      const unitId = card.dataset.unitId!
-      state.ui.activeDetailActorIds = state.ui.activeDetailActorIds.includes(unitId) ? state.ui.activeDetailActorIds.filter((id) => id !== unitId) : [...state.ui.activeDetailActorIds, unitId]
-      renderSideCards()
-    }
-    card.onclick = toggle
-    card.onkeydown = (e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') return
-      e.preventDefault()
-      toggle()
-    }
-  })
 }
 export function updateNextEnemyMarker(startIndex = 0) {
   const idx = nextLivingIndex(state.enemy, startIndex)
@@ -285,4 +257,19 @@ export function weaponOfferDescription(item: any, unit: Unit | null = null, opts
   if (includeTier) meta.push(weaponTierLabel(item.tier))
   if (unit) meta.push(`Replaces ${weaponReplacementText(unit)}`)
   return `${lead} (${weaponSummary(item)}).${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
+}
+export function heldItemReplacementText(unit: Unit) {
+  return unit.heldItem ? `Replaces ${unit.heldItem.name}` : 'Currently no item'
+}
+export function heldItemOfferTitle(item: any, unit: Unit | null = null) {
+  return unit ? `${item.name} to ${unit.name}` : item.name
+}
+export function heldItemOfferDescription(item: any, unit: Unit | null = null, opts: any = {}) {
+  const action = opts.action || 'Give'
+  const includeTier = opts.includeTier !== false
+  const lead = unit ? `${action} ${item.name} to ${unit.name}` : `${action} ${item.name}`
+  const meta = []
+  if (includeTier) meta.push(weaponTierLabel(item.tier))
+  if (unit) meta.push(heldItemReplacementText(unit))
+  return `${lead}: ${item.desc}${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
 }

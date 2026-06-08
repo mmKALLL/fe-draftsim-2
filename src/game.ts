@@ -1,7 +1,7 @@
 import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeBiomeEntry, biomeEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './biomes'
-import { applyEndOfTurnStatus, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
+import { applyBattleStartHeldItems, applyEndOfTurnStatus, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
@@ -15,7 +15,6 @@ import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOff
 
 export function startRun() {
   if (selectedRosterCount() !== ROSTER_SIZE) return
-  state.ui.activeDetailActorIds = []
   state.player = state.draft.chosen.map((n, i) => {
     const u = freshFromBase(
       BASES.find((b) => b.name === n),
@@ -125,6 +124,7 @@ export async function runBattle() {
     staffExhaustionLogged = false
   updateNextEnemyMarker(eIdx)
   renderTeams()
+  applyBattleStartHeldItems()
   while (state.player.some((x) => x.hp > 0) && state.enemy.some((x) => x.hp > 0) && actions < 300) {
     state.combat.turn = actions + 1
     const stavesExhausted = actions >= STAFF_EXHAUST_ROUND_LIMIT

@@ -14,7 +14,10 @@ export function unitTags(u: Unit) {
 export function isWeaponEffective(w: Weapon, d: Unit) {
   if (!w?.effective) return false
   const tags = unitTags(d)
-  return w.effective.some((e: any) => (e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)))
+  return w.effective.some((e: any) => {
+    if (d.heldItem?.effect === `${e}EffectiveImmune`) return false
+    return e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)
+  })
 }
 export function triangle(a: string, b: string, aw: Weapon | null = null, bw: Weapon | null = null) {
   const beats: Record<string, string> = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
@@ -46,7 +49,7 @@ export function biomeStatDelta(stat: StatKey) {
   return delta
 }
 export function combatStat(u: Unit, stat: StatKey) {
-  let value = u.stats[stat] || 0
+  let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0)
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
 }
@@ -60,7 +63,7 @@ export function biomeAvoidDelta() {
   return delta
 }
 export function attackSpeed(u: Unit) {
-  const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con)
+  const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con) + (u.heldItem?.speedPenalty || 0)
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
 export function combatDefense(u: Unit) {
@@ -89,10 +92,10 @@ export function rawDamage(a: Unit, d: Unit) {
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
-  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t)
+  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0))
 }
 export function avoid(d: Unit) {
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta())
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0))
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d), 0, 100)
@@ -103,8 +106,9 @@ export function trueHitRoll(displayed: any) {
 }
 export function critRate(a: Unit, d: Unit) {
   if (a.weapon?.halveHp) return 0
+  if (d.heldItem?.effect === 'critImmune') return 0
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck')), 0, 100)
+  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0)), 0, 100)
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'
@@ -278,12 +282,36 @@ export function applyStatBuff(u: Unit, stat: StatKey, amount: number, bucketName
   return gained
 }
 export function applyStatus(u: Unit, fx: any) {
+  if (u.heldItem?.effect === `${fx}Immune`) return
   u.status = fx
 }
 export function applyPoison(u: Unit) {
   if (u.poisoned) return false
+  if (u.heldItem?.effect === 'poisonImmune') return false
   u.poisoned = true
   return true
+}
+// Held items with a battle-start trigger (e.g. Geosphere Shard) fire once at the
+// start of each battle; holders damage the opposing team.
+export function applyBattleStartHeldItems() {
+  const sides: [Unit[], Unit[]][] = [
+    [state.player, state.enemy],
+    [state.enemy, state.player],
+  ]
+  for (const [team, foes] of sides) {
+    for (const holder of team) {
+      if (holder.hp <= 0) continue
+      const item = holder.heldItem
+      if (item?.trigger === 'battleStart' && item?.effect === 'enemyAoeDamage') {
+        const amount = item.amount || 0
+        foes.forEach((f) => {
+          if (f.hp > 0) f.hp = Math.max(0, f.hp - amount)
+        })
+        logLine(null, `${holder.name}'s ${item.name} hits all foes for ${amount}.`, 'hit')
+      }
+    }
+  }
+  renderTeams()
 }
 export function clearUnitStatus(u: Unit) {
   u.status = null
