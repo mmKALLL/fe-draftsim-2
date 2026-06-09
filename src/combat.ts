@@ -461,7 +461,7 @@ export function floatText(u: Unit, text: any, cls: string) {
   n.className = 'floatText ' + cls
   n.textContent = text
   el.appendChild(n)
-  setTimeout(() => n.remove(), cls.includes('statusText') ? 1250 : cls.includes('damage') ? 950 : 650)
+  setTimeout(() => n.remove(), cls.includes('statusText') ? 1250 : cls.includes('procText') ? 1150 : cls.includes('damage') ? 950 : 650)
 }
 // Per-skill flash color (themed), used by the proc activation animation.
 const SKILL_FLASH_COLORS: Record<string, string> = {
@@ -488,7 +488,7 @@ export async function animateSkillProc(u: Unit, skill: any) {
     el.classList.add('procFlash')
   }
   floatText(u, skill.name, 'procText')
-  await sleep(420)
+  await sleep(590)
   if (el) el.classList.remove('procFlash')
 }
 export function selectTarget(actor: Unit, targets: Unit[], prompt: string, cancelLabel = '') {

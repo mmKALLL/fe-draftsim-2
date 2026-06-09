@@ -511,7 +511,7 @@ button:disabled {
   transform: translateY(-10px) scale(1.08);
 }
 .combatant.procFlash {
-  animation: procFlash 0.42s ease;
+  animation: procFlash 0.59s ease;
   z-index: 3;
 }
 @keyframes procFlash {
@@ -652,7 +652,7 @@ button:disabled {
   text-shadow:
     0 2px 0 #000,
     0 0 10px var(--procColor, #fde68a);
-  animation-duration: 0.9s;
+  animation-duration: 1.3s;
 }
 @keyframes floatDamage {
   0% {
