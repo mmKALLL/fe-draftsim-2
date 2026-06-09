@@ -76,6 +76,7 @@ export function showGameOver() {
 }
 // Reset to a fresh run in-place (no page reload, so the game stays playable offline).
 export function resetRun() {
+  state.runToken++
   if (state.combat.pendingTargetCancel) state.combat.pendingTargetCancel()
   state.player = []
   state.enemy = []

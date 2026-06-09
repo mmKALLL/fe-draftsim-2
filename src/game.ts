@@ -119,6 +119,7 @@ export async function runBattle() {
   if (state.combat.running || !state.enemy.length) return
   state.combat.running = true
   state.combat.turn = 1
+  const token = state.runToken
   let actions = 0,
     side = 'player',
     pIdx = 0,
@@ -127,7 +128,7 @@ export async function runBattle() {
   updateNextEnemyMarker(eIdx)
   renderTeams()
   applyBattleStartHeldItems()
-  while (state.player.some((x) => x.hp > 0) && state.enemy.some((x) => x.hp > 0) && actions < 300) {
+  while (state.runToken === token && state.player.some((x) => x.hp > 0) && state.enemy.some((x) => x.hp > 0) && actions < 300) {
     state.combat.turn = actions + 1
     const stavesExhausted = actions >= STAFF_EXHAUST_ROUND_LIMIT
     if (stavesExhausted && !staffExhaustionLogged) {
@@ -234,6 +235,8 @@ export async function runBattle() {
   state.combat.running = false
   state.combat.turn = 0
   setAutoFight(false, true)
+  // Aborted mid-battle by a reset/new run — skip victory/defeat handling.
+  if (state.runToken !== token) return
   renderTeams()
   if (state.player.some((x) => x.hp > 0)) {
     logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal')

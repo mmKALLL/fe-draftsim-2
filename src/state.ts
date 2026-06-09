@@ -9,6 +9,8 @@ export const state = {
   gold: 0,
   battle: 0,
   biomePlan: [] as BiomeEntry[],
+  // bumped on reset; an in-flight runBattle aborts when its captured token is stale
+  runToken: 0,
   // `${unitId}|${rewardType}` -> battle number the unit last received that type
   rewardCooldowns: {} as Record<string, number>,
 
