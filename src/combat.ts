@@ -88,7 +88,10 @@ export function skillFaireBonus(a: Unit) {
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
   const stat = combatStat(a, 'str')
-  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a)
+  // "When initiating" damage skills (e.g. Quick Draw) always apply here, since
+  // the actor is always the attacker (this engine has no counterattacks).
+  const initiateDamage = a.skill?.family === 'playerPhase' ? a.skill.damageDealt || 0 : 0
+  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + initiateDamage
 }
 export function defenseAgainst(d: Unit, weapon: Weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)
@@ -105,7 +108,9 @@ export function hitRate(a: Unit, d: Unit) {
   return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) - (a.skill?.enemyAvoid || 0))
 }
 export function avoid(d: Unit) {
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + (d.skill?.avoid || 0))
+  // playerPhase avoid ("when initiating") is inert on defense — exclude it here.
+  const skillAvoid = d.skill && d.skill.family !== 'playerPhase' ? d.skill.avoid || 0 : 0
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid)
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d), 0, 100)
@@ -328,16 +333,47 @@ export function clearUnitStatus(u: Unit) {
   delete u.poisoned
 }
 
+// Skl-based activation chance for an attack proc skill (Aether, Sol, Luna, ...).
+export function attackProcChance(a: Unit) {
+  const s = a.skill
+  if (!s || s.family !== 'proc' || s.trigger !== 'attack') return 0
+  const skl = combatStat(a, 'skl')
+  const byStat: Record<string, number> = { skl, sklHalf: floor(skl / 2), sklQuarter: floor(skl / 4), sklTimesTwo: skl * 2 }
+  return clamp(byStat[s.chanceStat] ?? 0, 0, 100)
+}
+export function rollAttackProc(a: Unit) {
+  const chance = attackProcChance(a)
+  return chance > 0 && rint(100) + 1 <= chance ? a.skill : null
+}
 export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const dh = displayedHit(a, d),
-    cr = critRate(a, d),
-    dmg = rawDamage(a, d)
-  if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix }
+    cr = critRate(a, d)
+  if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix, proc: null as any, procHeal: 0, lethal: false }
+  const proc = rollAttackProc(a)
+  // Lethality: instant defeat, bypassing damage.
+  if (proc?.effect === 'lethalChance') {
+    const before = d.hp
+    d.hp = 0
+    return { hit: true, crit: false, damage: before, dh, cr, suffix, proc, procHeal: 0, lethal: true }
+  }
+  let dmg = rawDamage(a, d)
+  if (proc) {
+    if (proc.effect === 'damageMultiplierChance') dmg = floor(dmg * (proc.multiplier || 1)) // Dragon Fang
+    else if (proc.effect === 'halveDefenseChance' || proc.effect === 'aetherChance') {
+      // Luna / Aether: ignore half of the target's defense.
+      const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
+      dmg = Math.max(1, attackPower(a, d) - floor(def / 2))
+    } else if (proc.effect === 'addDefenseToDamageChance') dmg += floor(combatDefense(a) / 2) // Ignis
+    else if (proc.effect === 'addMissingHpChance') dmg += floor(((a.maxHp - a.hp) * (proc.amountPercent || 50)) / 100) // Vengeance
+  }
   const crit = rint(100) + 1 <= cr,
     finalDmg = crit ? dmg * 3 : dmg
   const before = d.hp
   d.hp = Math.max(0, d.hp - finalDmg)
-  return { hit: true, crit, damage: before - d.hp, dh, cr, suffix }
+  const damage = before - d.hp
+  // Sol heals half of damage dealt; Aether heals all of it.
+  const procHeal = proc?.effect === 'drainChance' ? floor((damage * (proc.healPercent || 50)) / 100) : proc?.effect === 'aetherChance' ? damage : 0
+  return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false }
 }
 export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {
   const r = strikeResult(a, d, suffix)
@@ -790,6 +826,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
           `${actor.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${target.name} for ${r.damage}. ${target.name} HP ${target.hp}/${target.maxHp}.`,
           r.crit ? 'crit' : 'hit'
         )
+        if (r.proc) logLine(null, `${actor.name}'s ${r.proc.name} activates${r.lethal ? ' — instant defeat' : ''}!`, 'crit')
         if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
       }
       await animateStrike(actor, target, r)
@@ -802,6 +839,16 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
       if (actor.weapon?.drain && r.hit && r.damage > 0) {
         const before = actor.hp
         actor.hp = Math.min(actor.maxHp, actor.hp + r.damage)
+        const healed = actor.hp - before
+        if (healed > 0) {
+          floatText(actor, `+${healed}`, 'healing')
+          updateUnitVisual(actor)
+          renderSideCards()
+        }
+      }
+      if (r.procHeal > 0) {
+        const before = actor.hp
+        actor.hp = Math.min(actor.maxHp, actor.hp + r.procHeal)
         const healed = actor.hp - before
         if (healed > 0) {
           floatText(actor, `+${healed}`, 'healing')
