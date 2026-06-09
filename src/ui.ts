@@ -9,7 +9,6 @@ import { $, MUSIC_URL, capStat, pick } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
-
 export function levelLabel(u: Unit) {
   return `L${u.lvl}`
 }
@@ -123,6 +122,7 @@ export function showHelpRules() {
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
     <p>Score is calculated as wins × 1000 + remaining gold.</p>
+    <p>(You are playing version 1.2.1-preload)</p>
     <button data-close class="primary">Back</button>`
   )
 }
