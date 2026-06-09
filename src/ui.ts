@@ -67,7 +67,7 @@ export function scoreHTML(finalScore = false) {
 }
 export function showWin() {
   showModal(
-    `<h2>Victory!!!</h2><p>Congratulations, you have overcome the toughest arena in Elibe and survived 20 battles!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
+    `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share your thoughts with the developer.</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
