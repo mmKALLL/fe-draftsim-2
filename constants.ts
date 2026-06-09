@@ -132,3 +132,6 @@ export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'biome', Rec
 // this many levels lower (final enemy level is still floored at 1).
 export const EARLY_ENEMY_NERF_BATTLES = 3
 export const EARLY_ENEMY_LEVEL_PENALTY = 2
+
+// Debug: skills appear ~10x more often as rewards and attack procs always fire.
+export const DEBUG_SKILLS = false

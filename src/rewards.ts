@@ -1,4 +1,4 @@
-import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
+import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
 import { consumableSummary, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
@@ -178,9 +178,9 @@ export function makeRewards(bossTier: string | null = null, opening = false) {
   const profile = rewardRarityProfile(bossTier, state.battle)
   const typeWeights = REWARD_TYPE_WEIGHTS[rewardArena(state.battle) - 1] || REWARD_TYPE_WEIGHTS[REWARD_TYPE_WEIGHTS.length - 1]
   const allowConsumables = opening || !bossTier
-  const eligible = (Object.entries(typeWeights) as [RewardType, number][]).filter(
-    ([type, w]) => w > 0 && REWARD_GENERATORS[type] && (allowConsumables || type !== 'consumable')
-  )
+  const eligible = (Object.entries(typeWeights) as [RewardType, number][])
+    .filter(([type, w]) => w > 0 && REWARD_GENERATORS[type] && (allowConsumables || type !== 'consumable'))
+    .map(([type, w]) => [type, DEBUG_SKILLS && type === 'skill' ? w * 10 : w] as [RewardType, number])
   const rewards: any[] = []
   for (let i = 0; i < REWARD_OPTIONS_PER_SCREEN; i++) {
     const rarity = rollRewardRarity(profile)

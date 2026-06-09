@@ -1,6 +1,6 @@
 import { $, pick } from './utils'
 import { state } from './state'
-import { startRandomGame, startDraftGame, showHelpRules, openMusic, showMenu } from './ui'
+import { startRandomGame, startDraftGame, showHelpRules, openMusic, showMenu, resetRun } from './ui'
 import { renderDraft, randomDraftOptions, emptyRosterChoices } from './render'
 import { setAutoFight } from './biomes'
 import { startRun, debugWinBattle, debugAddGeosphere } from './game'
@@ -20,7 +20,7 @@ $('rerollBtn').onclick = () => {
 }
 $('autoFightBtn').onclick = () => setAutoFight(!state.combat.autoFight)
 $('startBtn').onclick = startRun
-$('resetBtn').onclick = () => location.reload()
+$('resetBtn').onclick = resetRun
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && state.combat.pendingTargetCancel) {
     e.preventDefault()

@@ -1,4 +1,4 @@
-import { BIOME_AVOID_DELTA, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { BIOME_AVOID_DELTA, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
 import { activeBiomeEffects, hasBiomeEffect } from './biomes'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
@@ -342,8 +342,10 @@ export function attackProcChance(a: Unit) {
   return clamp(byStat[s.chanceStat] ?? 0, 0, 100)
 }
 export function rollAttackProc(a: Unit) {
-  const chance = attackProcChance(a)
-  return chance > 0 && rint(100) + 1 <= chance ? a.skill : null
+  const isProc = a.skill?.family === 'proc' && a.skill?.trigger === 'attack'
+  if (!isProc) return null
+  const chance = DEBUG_SKILLS ? 100 : attackProcChance(a)
+  return rint(100) + 1 <= chance ? a.skill : null
 }
 export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const dh = displayedHit(a, d),

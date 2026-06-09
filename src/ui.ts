@@ -68,11 +68,39 @@ export function scoreHTML(finalScore = false) {
 }
 export function showWin() {
   showModal(
-    `<h2>Victory!!!</h2><p>Congratulations, you have overcome the toughest arena in Elibe and survived 20 battles!</p>${scoreHTML(true)}<button onclick="location.reload()" class="good">New run</button>`
+    `<h2>Victory!!!</h2><p>Congratulations, you have overcome the toughest arena in Elibe and survived 20 battles!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
-  showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button onclick="location.reload()" class="good">Try again</button>`)
+  showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button data-reset class="good">Try again</button>`)
+}
+// Reset to a fresh run in-place (no page reload, so the game stays playable offline).
+export function resetRun() {
+  if (state.combat.pendingTargetCancel) state.combat.pendingTargetCancel()
+  state.player = []
+  state.enemy = []
+  state.consumables = []
+  state.gold = 0
+  state.battle = 0
+  state.biomePlan = makeBiomePlan()
+  state.rewardCooldowns = {}
+  state.draft.options = randomDraftOptions()
+  state.draft.chosen = emptyRosterChoices()
+  Object.assign(state.combat, {
+    running: false,
+    turn: 0,
+    autoFight: false,
+    nextEnemyMarkerId: null,
+    pendingTargetCancel: null,
+    pendingConsumableAction: null,
+    pendingAutoFightAction: null,
+    pendingDefaultAction: null,
+    pendingDefaultLabel: '',
+  })
+  Object.assign(state.shop, { open: false, offers: [] })
+  Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null, openCards: [] })
+  closeModal()
+  showMenu()
 }
 export function showModal(html: any) {
   $('modalBody').innerHTML = html
@@ -100,7 +128,8 @@ export function showHelpRules() {
 // Delegated handler so modal close buttons need no global (replaces inline onclick="closeModal()")
 document.addEventListener('click', (e) => {
   const t = e.target as HTMLElement | null
-  if (t && t.closest('[data-close]')) closeModal()
+  if (t && t.closest('[data-reset]')) resetRun()
+  else if (t && t.closest('[data-close]')) closeModal()
 })
 export function showMenu() {
   $('menuScreen').classList.remove('hidden')
