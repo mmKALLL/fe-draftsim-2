@@ -1,4 +1,4 @@
-import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeBiomeEntry, biomeEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './biomes'
 import { applyBattleStartHeldItems, applyEndOfTurnStatus, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
@@ -42,7 +42,8 @@ export function bossTierForBattle(n: any) {
 }
 export function generateEnemy() {
   state.battle++
-  const baseInternal = clamp(1 + state.battle * 2, 1, 40)
+  const earlyNerf = state.battle <= EARLY_ENEMY_NERF_BATTLES ? EARLY_ENEMY_LEVEL_PENALTY : 0
+  const baseInternal = clamp(1 + state.battle * 2 - earlyNerf, 1, 40)
   const bossTier = bossTierForBattle(state.battle)
   state.enemy = []
   const pool = [...BASES]

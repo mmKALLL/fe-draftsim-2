@@ -282,9 +282,14 @@ button:disabled {
 .unitCard.selected {
   outline: 2px solid #fbbf24;
 }
-.unitCard.expanded {
+.unitCard.expanded,
+.unitCard.open {
   border-color: #64748b;
   background: rgba(30, 41, 59, 0.94);
+}
+.effectNote {
+  color: #94a3b8;
+  font-style: italic;
 }
 .unitCard:focus-visible {
   outline: 2px solid #fbbf24;
@@ -505,6 +510,27 @@ button:disabled {
 .combatant.striking {
   transform: translateY(-10px) scale(1.08);
 }
+.combatant.procFlash {
+  animation: procFlash 0.42s ease;
+  z-index: 3;
+}
+@keyframes procFlash {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+    background: transparent;
+    transform: scale(1);
+  }
+  35% {
+    box-shadow: 0 0 20px 7px var(--procColor, #fde68a);
+    background: color-mix(in srgb, var(--procColor, #fde68a) 35%, transparent);
+    transform: scale(1.14);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background: transparent;
+    transform: scale(1);
+  }
+}
 .combatant .hpText {
   font-size: 12px;
   color: #cbd5e1;
@@ -617,6 +643,16 @@ button:disabled {
     0 2px 0 #000,
     0 0 8px rgba(168, 85, 247, 0.7);
   animation-duration: 1.15s;
+}
+.floatText.procText {
+  top: 2px;
+  color: var(--procColor, #fde68a);
+  font-size: 1.5em;
+  letter-spacing: 0.03em;
+  text-shadow:
+    0 2px 0 #000,
+    0 0 10px var(--procColor, #fde68a);
+  animation-duration: 0.9s;
 }
 @keyframes floatDamage {
   0% {

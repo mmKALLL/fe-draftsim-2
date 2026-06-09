@@ -151,9 +151,21 @@ export function unitCard(u: Unit) {
   const buffs = temporaryBuffLabel(u)
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
-  const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">Held: ${u.heldItem.name}</div>` : ''
-  const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">Skill: ${u.skill.name}</div>` : ''
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${held}${skill}</div></div>`
+  const open = state.ui.openCards.includes(u.id)
+  const effectBracket = (desc: string) => (open && desc ? ` <span class="effectNote">[${desc}]</span>` : '')
+  const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">Held: ${u.heldItem.name}${effectBracket(u.heldItem.desc || '')}</div>` : ''
+  const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">Skill: ${u.skill.name}${effectBracket(u.skill.desc || '')}</div>` : ''
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}${open ? ' open' : ''}" data-card="${u.id}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${held}${skill}</div></div>`
+}
+// Click/tap a card to toggle its held-item/skill effect text.
+export function bindCardToggles() {
+  document.querySelectorAll<HTMLElement>('[data-card]').forEach((card) => {
+    card.onclick = () => {
+      const id = card.dataset.card!
+      state.ui.openCards = state.ui.openCards.includes(id) ? state.ui.openCards.filter((x) => x !== id) : [...state.ui.openCards, id]
+      renderSideCards()
+    }
+  })
 }
 
 export function renderConsumables() {
@@ -182,6 +194,7 @@ export function renderSideCards() {
   renderConsumables()
   $('playerTeam').innerHTML = state.player.map(unitCard).join('')
   $('enemyTeam').innerHTML = state.enemy.map(unitCard).join('')
+  bindCardToggles()
 }
 export function updateCombatLogTitle() {
   const title = $('combatLogTitle')

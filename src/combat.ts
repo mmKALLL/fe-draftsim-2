@@ -461,6 +461,34 @@ export function floatText(u: Unit, text: any, cls: string) {
   el.appendChild(n)
   setTimeout(() => n.remove(), cls.includes('statusText') ? 1250 : cls.includes('damage') ? 950 : 650)
 }
+// Per-skill flash color (themed), used by the proc activation animation.
+const SKILL_FLASH_COLORS: Record<string, string> = {
+  aether: '#a5f3fc',
+  sol: '#fde047',
+  luna: '#c4b5fd',
+  dragon_fang: '#fb923c',
+  ignis: '#f87171',
+  vengeance: '#ef4444',
+  lethality: '#e879f9',
+  astra: '#fca5a5',
+  pavise: '#93c5fd',
+  aegis: '#93c5fd',
+}
+export function skillFlashColor(skill: any) {
+  return SKILL_FLASH_COLORS[skill?.id] || '#fde68a'
+}
+// A single clear ~420ms beat: flash the combatant in the skill's color and float
+// its name, just before the strike resolves.
+export async function animateSkillProc(u: Unit, skill: any) {
+  const el = spriteEl(u)
+  if (el) {
+    el.style.setProperty('--procColor', skillFlashColor(skill))
+    el.classList.add('procFlash')
+  }
+  floatText(u, skill.name, 'procText')
+  await sleep(420)
+  if (el) el.classList.remove('procFlash')
+}
 export function selectTarget(actor: Unit, targets: Unit[], prompt: string, cancelLabel = '') {
   state.ui.activePreviewActor = actor
   if (cancelLabel) state.ui.activeConsumableActor = actor
@@ -829,6 +857,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
         if (r.proc) logLine(null, `${actor.name}'s ${r.proc.name} activates${r.lethal ? ' — instant defeat' : ''}!`, 'crit')
         if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
       }
+      if (r.proc) await animateSkillProc(actor, r.proc)
       await animateStrike(actor, target, r)
       if (actor.weapon?.poison && r.hit && target.hp > 0 && applyPoison(target)) {
         logLine(null, `${target.name} is poisoned.`, 'crit')
