@@ -1,5 +1,5 @@
 import { defineConfig, Plugin } from 'vite'
-import { readdirSync, statSync, existsSync, mkdirSync, rmSync, cpSync } from 'fs'
+import { readdirSync, readFileSync, statSync, existsSync, mkdirSync, rmSync, cpSync } from 'fs'
 import { resolve, extname } from 'path'
 
 // Inline the entry JS and CSS into index.html so the built file works when
@@ -31,40 +31,34 @@ function inlineSingleFile(): Plugin {
   }
 }
 
-function autoPrefetchImages(): Plugin {
-  // Helper to recursively find all image paths relative to the project root
-  const getAllImageUrls = (dir: string, baseDir: string, urlList: string[] = []): string[] => {
-    if (!existsSync(dir)) return urlList
+// Inline every game image as a base64 data URI under window.__IMG, so the built
+// page works fully offline (and from file://) with zero network image requests.
+// assets/femp-backup is not walked, so it stays excluded.
+function inlineImageManifest(): Plugin {
+  const MIME: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }
+  const walk = (dir: string, baseDir: string, out: Record<string, string>): Record<string, string> => {
+    if (!existsSync(dir)) return out
     readdirSync(dir).forEach((file) => {
       const filePath = resolve(dir, file)
       if (statSync(filePath).isDirectory()) {
-        getAllImageUrls(filePath, baseDir, urlList)
+        walk(filePath, baseDir, out)
       } else {
-        const ext = extname(file).toLowerCase()
-        if (['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(ext)) {
-          // Create the relative URL path (e.g., "assets/femp/subdir/image.png")
-          const relativePath = filePath.replace(baseDir + '/', '')
-          urlList.push(relativePath)
+        const mime = MIME[extname(file).toLowerCase()]
+        if (mime) {
+          const key = filePath.replace(baseDir + '/', '') // e.g. assets/femp/portraits/lyn.png
+          out[key] = `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
         }
       }
     })
-    return urlList
+    return out
   }
-
   return {
-    name: 'auto-prefetch-images',
+    name: 'inline-image-manifest',
     transformIndexHtml(html) {
       const projectRoot = resolve(__dirname)
-      const assetFolder = resolve(projectRoot, 'assets')
-
-      // Get all image URLs
-      const imageUrls = getAllImageUrls(assetFolder, projectRoot)
-
-      // Generate <link rel="prefetch" href="assets/..."/> tags for every image
-      const prefetchTags = imageUrls.map((url) => `<link rel="prefetch" href="./${url}">`).join('\n    ')
-
-      // Inject the tags into the <head> of index.html
-      return html.replace('</head>', `  ${prefetchTags}\n  </head>`)
+      const manifest = walk(resolve(projectRoot, 'assets/femp'), projectRoot, {})
+      const tag = `<script>window.__IMG=${JSON.stringify(manifest)}</script>`
+      return html.replace('</head>', `  ${tag}\n  </head>`)
     },
   }
 }
@@ -88,6 +82,5 @@ function copyGameAssets(): Plugin {
 
 export default defineConfig({
   base: './',
-  // Putting back your asset copy mechanism + adding the auto-prefetcher
-  plugins: [inlineSingleFile(), autoPrefetchImages(), copyGameAssets()],
+  plugins: [inlineSingleFile(), inlineImageManifest(), copyGameAssets()],
 })

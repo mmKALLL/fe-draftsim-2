@@ -1,6 +1,6 @@
 import { BIOME_AVOID_DELTA, BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BIOME_FOCUS_CHANCE, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA } from '../constants'
 import { BIOMES } from '../data'
-import { htmlAttr, mapSpriteForFocus } from './assets'
+import { assetImg, htmlAttr, mapSpriteForFocus } from './assets'
 import { setStatus } from './combat'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
@@ -104,7 +104,7 @@ export function renderBiomeMap() {
         classes = i < activeIndex ? 'biomeNode done' : i === activeIndex ? 'biomeNode active' : 'biomeNode',
         effects = biomeEffectLabels(biome),
         title = `${biome.name}: ${effects.join(', ')}. Bosses: ${entry.bossFocus.map(focusLabel).join(' / ')}`
-      return `<div class="${classes}" title="${htmlAttr(title)}"><img class="biomeTile" src="assets/femp/biomes/${htmlAttr(biome.id)}.jpg" alt="" aria-hidden="true"><div class="biomeUnits">${entry.bossFocus.map((focus: BiomeFocus, bossIndex: any) => biomeUnitIconHTML(focus, bossIndex, i >= 2)).join('')}</div><div class="biomeInfo"><div class="biomeName">${biome.name}</div><div class="biomeEffects">${effects.map((effect: string) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div></div>`
+      return `<div class="${classes}" title="${htmlAttr(title)}">${assetImg('biomeTile', `assets/femp/biomes/${biome.id}.jpg`, [], { type: 'biome' }, '')}<div class="biomeUnits">${entry.bossFocus.map((focus: BiomeFocus, bossIndex: any) => biomeUnitIconHTML(focus, bossIndex, i >= 2)).join('')}</div><div class="biomeInfo"><div class="biomeName">${biome.name}</div><div class="biomeEffects">${effects.map((effect: string) => `<span class="biomeEffect">${effect}</span>`).join('')}</div></div></div>`
     })
     .join('')
 }
