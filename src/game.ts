@@ -1,9 +1,9 @@
-import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeBiomeEntry, biomeEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './biomes'
 import { applyBattleStartHeldItems, applyEndOfTurnStatus, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
-import { firstEmptyConsumableSlot, showRewards } from './rewards'
+import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
 import { addGold, formatGold } from './state'
 import { levelLabel, showGameOver, showWin } from './ui'
@@ -47,6 +47,16 @@ export function generateEnemy() {
   const bossTier = bossTierForBattle(state.battle)
   state.enemy = []
   const pool = [...BASES]
+  // Decide up front which minion slots carry a 'good' weapon: a bounded count per fight
+  // (by arena + battle type), placed in random slots. The boss (slot 0) is always good.
+  const battleType = bossTier === BOSS_TIER_BIOME ? 'biome' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
+  const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
+  const minionSlots = [0, 1, 2, 3, 4].filter((i) => !(i === 0 && bossTier))
+  const [gMin, gMax] = ENEMY_GOOD_MINION_COUNT[arena - 1][battleType]
+  let goodCount = clamp(gMin + rint(gMax - gMin + 1), 0, minionSlots.length)
+  const goodMinionSlots = new Set<number>()
+  const availSlots = [...minionSlots]
+  while (goodCount-- > 0 && availSlots.length) goodMinionSlots.add(availSlots.splice(rint(availSlots.length), 1)[0])
   for (let i = 0; i < 5; i++) {
     const isBossSlot = i === 0 && bossTier
     const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
@@ -60,8 +70,9 @@ export function generateEnemy() {
     e.bossTier = isBossSlot ? bossTier : null
     e.palette = 'red'
     e.team = 'red'
-    e.weapon = enemyWeaponFor(e, e.bossTier)
+    e.weapon = enemyWeaponFor(e, e.bossTier, !!isBossSlot || goodMinionSlots.has(i))
     e.name = enemyDisplayName(e)
+    assignEnemyBonuses(e, isBossSlot ? 'boss' : 'minion')
     e.hp = e.maxHp
     state.enemy.push(e)
   }

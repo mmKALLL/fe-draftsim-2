@@ -135,3 +135,83 @@ export const EARLY_ENEMY_LEVEL_PENALTY = 1
 
 // Debug: skills appear ~10x more often as rewards and attack procs always fire.
 export const DEBUG_SKILLS = false
+
+// --- Enemy weapon selection, tunable per arena (1-4) & role -----------------
+// Weapons have no rarity field, so we map letter rank -> rarity group for selection.
+// E/D = normal, C/B = uncommon, A/S = rare.
+export const WEAPON_RANK_RARITY: Record<WeaponRank, Rarity> = {
+  E: 'normal',
+  D: 'normal',
+  C: 'uncommon',
+  B: 'uncommon',
+  A: 'rare',
+  S: 'rare',
+}
+// crit >= this marks a weapon as a 'good' (killer-tier) exception; innate light-tome
+// crit (5-8) stays in the 'default' pool.
+export const DEFAULT_WEAPON_MAX_CRIT = 13
+
+// Per arena x role: rarity weights {normal, uncommon, rare} for each weapon pool. A
+// rolled rarity with no matching weapon for the unit's class steps DOWN one group (see
+// resolveRarity in units.ts). Which pool an enemy uses is decided per fight: bosses are
+// always 'good'; ENEMY_GOOD_MINION_COUNT sets how many minions are. 'default' = plain
+// weapons only; 'good' = anything but each type's basic weapon. Minions skew low-rarity, bosses high; both rise by arena.
+type EnemyWeaponRarityWeights = Record<Rarity, number>
+type EnemyWeaponRole = { default: EnemyWeaponRarityWeights; good: EnemyWeaponRarityWeights }
+type EnemyWeaponArena = { boss: EnemyWeaponRole; minion: EnemyWeaponRole }
+export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
+  // Arena 1
+  {
+    minion: { default: { normal: 10, uncommon: 0, rare: 0 }, good: { normal: 7, uncommon: 3, rare: 0 } },
+    boss: { default: { normal: 0, uncommon: 10, rare: 0 }, good: { normal: 0, uncommon: 10, rare: 0 } },
+  },
+  // Arena 2
+  {
+    minion: { default: { normal: 6, uncommon: 3, rare: 0 }, good: { normal: 4, uncommon: 5, rare: 1 } },
+    boss: { default: { normal: 0, uncommon: 6, rare: 3 }, good: { normal: 0, uncommon: 6, rare: 3 } },
+  },
+  // Arena 3
+  {
+    minion: { default: { normal: 3, uncommon: 3, rare: 1 }, good: { normal: 2, uncommon: 6, rare: 2 } },
+    boss: { default: { normal: 0, uncommon: 3, rare: 6 }, good: { normal: 0, uncommon: 3, rare: 6 } },
+  },
+  // Arena 4
+  {
+    minion: { default: { normal: 1, uncommon: 4, rare: 4 }, good: { normal: 0, uncommon: 4, rare: 2 } },
+    boss: { default: { normal: 0, uncommon: 2, rare: 8 }, good: { normal: 0, uncommon: 2, rare: 8 } },
+  },
+]
+
+// Number of NORMAL enemies (minions) drawing from the 'good' weapon pool, rolled per
+// fight as [min, max] by arena and battle type. Bosses are always 'good' (and pinned to
+// slot 1); chosen good minions take random slots. Clamped to minions present (5 in a
+// standard fight, 4 alongside a boss).
+export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'biome', [number, number]>[] = [
+  { standard: [0, 1], regular: [0, 1], biome: [1, 2] }, // Arena 1
+  { standard: [0, 2], regular: [1, 1], biome: [1, 2] }, // Arena 2
+  { standard: [1, 3], regular: [1, 2], biome: [2, 3] }, // Arena 3
+  { standard: [1, 3], regular: [1, 3], biome: [3, 4] }, // Arena 4
+]
+
+// Expected number of bonus skills / held items an enemy carries, by arena and role,
+// read as a FRACTIONAL count: the integer part is guaranteed, the fractional part is the
+// chance of one extra (0.3 = 30% of one; 1 = always one; 2.5 = two guaranteed + 50% of a
+// third). NOTE: enemies currently have a single skill + single held slot, so any count >= 1
+// is stored as one until multi-slot enemies are supported. ACTIVE set below is all-zero.
+// Swap in ENEMY_BONUS_COUNTS_HARD for an optional "hard mode" (card o1xra5n4).
+type EnemyBonusRole = { skill: number; held: number }
+type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
+export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
+  { boss: { skill: 0, held: 1 }, minion: { skill: 0, held: 0 } }, // Arena 3
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.1, held: 0.1 } }, // Arena 4
+]
+// "Hard mode": bosses always carry a skill from arena 2+ and a held item from arena 3+;
+// later arenas sprinkle a chance of them onto minions. Uncomment + assign to ENEMY_BONUS_COUNTS.
+// export const ENEMY_BONUS_COUNTS_HARD: EnemyBonusArena[] = [
+//   { boss: { skill: 0, held: 0 }, minion: { skill: 0.1, held: 0 } }, // Arena 1
+//   { boss: { skill: 1, held: 0 }, minion: { skill: 0.2, held: 0.1 } }, // Arena 2
+//   { boss: { skill: 1, held: 1 }, minion: { skill: 0.4, held: 0.2 } }, // Arena 3
+//   { boss: { skill: 2, held: 1 }, minion: { skill: 0.5, held: 0.4 } }, // Arena 4
+// ]

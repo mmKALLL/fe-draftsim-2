@@ -1,11 +1,11 @@
-import { BOSS_TIER_BIOME, BOSS_TIER_REGULAR, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, PROMOTION_UNLOCK_AFTER_BATTLE } from '../constants'
+import { BOSS_TIER_BIOME, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { sleep, statLabel } from './combat'
 import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer, Rarity } from '../types'
 
 
 export function promote(u: Unit, showLog = true) {
@@ -147,59 +147,77 @@ export function isCurrentWeapon(u: Unit, w: Weapon) {
 export function canEquipAsNewWeapon(u: Unit, w: Weapon) {
   return u?.hp > 0 && !!w && allowedWeapons(u).includes(w.type) && !isCurrentWeapon(u, w)
 }
-export function weaponScore(w: Weapon) {
-  const staffFx = ({ sleep: 18, berserk: 24, fortify: 70 } as Record<string, number>)[w.effect || ''] || 0
-  return (
-    (w.mt || 0) * 3 +
-    (w.hit || 0) / 10 +
-    (w.crit || 0) / 2 -
-    (w.wt || 0) / 3 +
-    (w.pierceRes ? 12 : 0) +
-    (w.halfDef ? 10 : 0) +
-    (w.halveHp ? 18 : 0) +
-    (w.brave ? 18 : 0) +
-    (w.reaver ? 5 : 0) +
-    (w.effective ? 8 : 0) +
-    (w.drain ? 10 : 0) +
-    (w.staff ? 4 : 0) +
-    (w.speedBonus || 0) * 4 +
-    (w.defBonus || 0) * 4 +
-    (w.resBonus || 0) * 4 +
-    (w.poison ? 10 : 0) +
-    staffFx
-  )
+// "default" pool = predictable, plain weapons; "good" pool = everything else (the
+// exceptions). Allowlist by design: a weapon is default only if it carries nothing
+// beyond a known-plain set, so any new keyword (e.g. pierceDef) auto-falls into 'good'.
+const PLAIN_WEAPON_KEYS = new Set(['name', 'type', 'rank', 'tier', 'mt', 'hit', 'wt', 'crit', 'magic'])
+const MAGIC_WEAPON_TYPES = new Set(['anima', 'light', 'dark'])
+const STATUS_STAFF_EFFECTS = new Set(['sleep', 'berserk', 'silence'])
+const onlyFlying = (eff?: string[]) => Array.isArray(eff) && eff.length === 1 && eff[0] === 'flying'
+export function isDefaultWeapon(w: Weapon): boolean {
+  if (w.type === 'staff') return !w.effect || !STATUS_STAFF_EFFECTS.has(w.effect) // heal staves = default
+  if (w.magic !== MAGIC_WEAPON_TYPES.has(w.type)) return false // off-type magic => good
+  if ((w.crit || 0) >= DEFAULT_WEAPON_MAX_CRIT) return false // killer-tier crit => good
+  for (const k of Object.keys(w)) {
+    if (PLAIN_WEAPON_KEYS.has(k)) continue
+    if (w.type === 'bow' && k === 'effective' && onlyFlying(w.effective)) continue // innate flier-eff
+    if (w.type === 'dagger' && k === 'halfDef') continue // innate halve-def
+    return false // any other (or future) property => good
+  }
+  return true
 }
-export function bossWeaponRanks(tier: any) {
-  const lateBoss = state.battle > 10
-  if (tier === BOSS_TIER_BIOME) return lateBoss ? ['A', 'S'] : ['B', 'A']
-  if (tier === BOSS_TIER_REGULAR) return lateBoss ? ['B', 'A'] : ['C', 'B']
-  return []
+// Weighted pick over the three rarity groups; zero/absent weights are skipped.
+function pickWeightedRarity(weights: Record<Rarity, number>): Rarity {
+  const entries = (Object.entries(weights) as [Rarity, number][]).filter(([, weight]) => weight > 0)
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0)
+  if (!total) return 'normal'
+  let roll = rnd() * total
+  for (const [rarity, weight] of entries) {
+    roll -= weight
+    if (roll <= 0) return rarity
+  }
+  return entries[entries.length - 1][0]
 }
-export function bossWeaponPool(opts: any, tier: any) {
-  const ranks = bossWeaponRanks(tier)
-  if (!ranks.length) return opts
-  const ranked = opts.filter((w: Weapon) => ranks.includes(w.rank))
-  return ranked.length ? ranked : opts
+// Resolve a rolled rarity GROUP against what the class actually has: prefer the rolled
+// group, else step DOWN a whole group at a time, else step up as a last resort.
+const RARITY_GROUPS: Rarity[] = ['normal', 'uncommon', 'rare']
+function resolveRarity(pool: Weapon[], target: Rarity): Weapon[] {
+  const byGroup: Record<Rarity, Weapon[]> = { normal: [], uncommon: [], rare: [] }
+  for (const w of pool) byGroup[WEAPON_RANK_RARITY[w.rank]].push(w)
+  const ti = RARITY_GROUPS.indexOf(target)
+  const order = [ti]
+  for (let i = ti - 1; i >= 0; i--) order.push(i)
+  for (let i = ti + 1; i < RARITY_GROUPS.length; i++) order.push(i)
+  for (const i of order) {
+    const group = byGroup[RARITY_GROUPS[i]]
+    if (group.length) return group
+  }
+  return pool
 }
-export function enemyWeaponFor(u: Unit, tier: any) {
-  const opts = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
-  if (!opts.length) return u.weapon
-  if (tier === BOSS_TIER_BIOME) {
-    const chosen = cloneWeapon(pick(bossWeaponPool(opts, tier)))
-    forgeWeapon(chosen)
-    return chosen
+// The most basic weapon of each type (first listed for that type in WEAPONS) — e.g.
+// Iron Sword / Fire / Heal Staff. Excluded from the 'good' pool so 'good' means
+// "anything better than a type's starter weapon".
+const BASIC_WEAPONS = new Set<Weapon>()
+const seenWeaponTypes = new Set<string>()
+for (const w of WEAPONS) {
+  if (!seenWeaponTypes.has(w.type)) {
+    seenWeaponTypes.add(w.type)
+    BASIC_WEAPONS.add(w)
   }
-  if (tier === BOSS_TIER_REGULAR) {
-    const bossOpts = bossWeaponPool(opts, tier)
-    return cloneWeapon(bossOpts.sort((a: Weapon, b: Weapon) => weaponScore(b) - weaponScore(a))[0])
-  }
-  if (state.battle > 10) {
-    const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
-    if (good.length && rnd() < 0.85) return cloneWeapon(pick(good))
-  }
-  if (state.battle > 4) {
-    const good = opts.filter((w) => !w.name.startsWith('Iron') && w.name !== 'Heal Staff')
-    if (good.length && rnd() < 0.55) return cloneWeapon(pick(good))
-  }
-  return cloneWeapon(u.weapon)
+}
+const isBasicWeapon = (w: Weapon) => BASIC_WEAPONS.has(w)
+// forceGood decided per fight by the caller (bosses always good; a bounded number of
+// minions good). 'good' = anything but each type's basic weapon; 'default' = plain weapons only.
+export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
+  const classWeapons = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
+  if (!classWeapons.length) return u.weapon
+  const arena = clamp(Math.floor((state.battle - 1) / 5) + 1, 1, 4)
+  const role = tier ? 'boss' : 'minion'
+  const profile = ENEMY_WEAPON_PROFILE[arena - 1][role]
+  let pool = classWeapons.filter((w) => (forceGood ? !isBasicWeapon(w) : isDefaultWeapon(w)))
+  if (!pool.length) pool = classWeapons
+  const target = pickWeightedRarity(forceGood ? profile.good : profile.default)
+  const chosen = cloneWeapon(pick(resolveRarity(pool, target)))
+  if (tier === BOSS_TIER_BIOME) forgeWeapon(chosen)
+  return chosen
 }

@@ -1,4 +1,4 @@
-import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
+import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
 import { consumableSummary, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
@@ -143,6 +143,26 @@ export function skillReward(rarity: Rarity = 'normal') {
   const skill = pick(tierPool.length ? tierPool : offerable)
   const unit = pick(skillTargets(skill))
   return { type: 'skill', title: skillOfferTitle(skill, unit), desc: skillOfferDescription(skill, unit), unit, item: skill }
+}
+// Roll a fractional count: integer part guaranteed + fractional part = chance of one more.
+function rollFractionalCount(v: number) {
+  const base = Math.floor(v)
+  return base + (rnd() < v - base ? 1 : 0)
+}
+// Give an enemy class-appropriate bonus skill / held item per ENEMY_BONUS_COUNTS
+// (keyed by current arena + role). All-zero by default, so this is a no-op unless a
+// "hard mode" table is swapped in. Units have one slot each, so a rolled count >= 1 fills it.
+export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
+  const cfg = ENEMY_BONUS_COUNTS[rewardArena(state.battle) - 1]?.[role]
+  if (!cfg) return
+  if (rollFractionalCount(cfg.skill) >= 1) {
+    const pool = TEACHABLE_SKILLS.filter((s) => skillClassMatches(s, unit))
+    if (pool.length) unit.skill = pick(pool)
+  }
+  if (rollFractionalCount(cfg.held) >= 1) {
+    const pool = HELD_ITEMS.filter((i: any) => heldItemRelevantToUnit(i, unit))
+    if (pool.length) unit.heldItem = pick(pool)
+  }
 }
 export function firstEmptyConsumableSlot() {
   return state.consumables.findIndex((item) => !item)
