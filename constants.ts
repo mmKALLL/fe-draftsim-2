@@ -151,6 +151,12 @@ export const WEAPON_RANK_RARITY: Record<WeaponRank, Rarity> = {
 // crit (5-8) stays in the 'default' pool.
 export const DEFAULT_WEAPON_MAX_CRIT = 13
 
+// When true, a DEFAULT-pool enemy that rolls a COMMON (normal-rarity) weapon always gets
+// the first/basic weapon of its type (Iron Sword, Fire, Heal Staff, ...) rather than a
+// random common, so enemies are predictable and the game reads cleanly. Set false to allow
+// variety among commons (e.g. once stat-boost weapons like slim/javelin join the default pool).
+export const DEFAULT_COMMON_FORCES_FIRST_WEAPON = true
+
 // Per arena x role: rarity weights {normal, uncommon, rare} for each weapon pool. A
 // rolled rarity with no matching weapon for the unit's class steps DOWN one group (see
 // resolveRarity in units.ts). Which pool an enemy uses is decided per fight: bosses are
@@ -162,7 +168,7 @@ type EnemyWeaponArena = { boss: EnemyWeaponRole; minion: EnemyWeaponRole }
 export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
   // Arena 1
   {
-    minion: { default: { normal: 10, uncommon: 0, rare: 0 }, good: { normal: 7, uncommon: 3, rare: 0 } },
+    minion: { default: { normal: 10, uncommon: 0, rare: 0 }, good: { normal: 8, uncommon: 2, rare: 0 } },
     boss: { default: { normal: 0, uncommon: 10, rare: 0 }, good: { normal: 0, uncommon: 10, rare: 0 } },
   },
   // Arena 2
@@ -172,7 +178,7 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
   },
   // Arena 3
   {
-    minion: { default: { normal: 3, uncommon: 3, rare: 1 }, good: { normal: 2, uncommon: 6, rare: 2 } },
+    minion: { default: { normal: 3, uncommon: 6, rare: 0 }, good: { normal: 2, uncommon: 6, rare: 2 } },
     boss: { default: { normal: 0, uncommon: 3, rare: 6 }, good: { normal: 0, uncommon: 3, rare: 6 } },
   },
   // Arena 4

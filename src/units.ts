@@ -1,4 +1,4 @@
-import { BOSS_TIER_BIOME, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
+import { BOSS_TIER_BIOME, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { sleep, statLabel } from './combat'
 import { logLine } from './render'
@@ -217,7 +217,12 @@ export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
   let pool = classWeapons.filter((w) => (forceGood ? !isBasicWeapon(w) : isDefaultWeapon(w)))
   if (!pool.length) pool = classWeapons
   const target = pickWeightedRarity(forceGood ? profile.good : profile.default)
-  const chosen = cloneWeapon(pick(resolveRarity(pool, target)))
+  let picked = pick(resolveRarity(pool, target))
+  // Streamlining: default-pool commons collapse to the type's basic weapon (Iron, Fire, ...).
+  if (!forceGood && DEFAULT_COMMON_FORCES_FIRST_WEAPON && WEAPON_RANK_RARITY[picked.rank] === 'normal') {
+    picked = classWeapons.find((w) => isBasicWeapon(w) && w.type === picked.type) || picked
+  }
+  const chosen = cloneWeapon(picked)
   if (tier === BOSS_TIER_BIOME) forgeWeapon(chosen)
   return chosen
 }
