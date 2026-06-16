@@ -3,7 +3,7 @@ import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
 import { activeBiomeEffects, hasBiomeEffect } from './biomes'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
 import { closeModal, showModal } from './ui'
-import { $, capStat, clamp, floor, pick, rint, rnd } from './utils'
+import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
@@ -275,7 +275,9 @@ export function consumableTargets(item: any, team = state.player, foes = state.e
   if (item.effect === 'revive') return team.filter((u) => u.hp <= 0)
   if (item.effect === 'aoeDamage') return foes.filter((u) => u.hp > 0)
   if (item.effect === 'buff' || item.effect === 'turnBuff') {
-    return living.filter((u) => u.stats[item.stat] < capStat(u, item.stat))
+    // Tonics/buffs can push stats beyond the normal cap, so every living unit is
+    // a valid target (no longer gated on having room below the cap).
+    return living
   }
   return []
 }
@@ -285,8 +287,9 @@ export function hasUsableConsumable(actor: Unit) {
 export function applyStatBuff(u: Unit, stat: StatKey, amount: number, bucketName = 'tempBuffs') {
   u[bucketName] = u[bucketName] || {}
   const current = u[bucketName][stat] || 0
-  const room = Math.max(0, capStat(u, stat) - u.stats[stat])
-  const gained = Math.min(amount, room)
+  // Consumables/tonics are allowed to push stats beyond their normal cap, so we
+  // apply the full amount here instead of clamping to the remaining cap room.
+  const gained = Math.max(0, amount)
   if (gained <= 0) return 0
   u.stats[stat] += gained
   u[bucketName][stat] = current + gained

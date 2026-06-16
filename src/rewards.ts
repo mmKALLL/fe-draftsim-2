@@ -24,7 +24,8 @@ export function renderRewardSelection(title: string, rewards: any) {
   const choiceRewards = rewards.filter((r: any) => r.type !== 'gold')
   let html = `<h2>${title}</h2><div class="rewardGrid">`
   choiceRewards.forEach((r: any, i: number) => {
-    const rewardClass = r.item?.tier ? ` reward-${r.item.tier || 'normal'}` : ''
+    const rarity = r.item?.tier ?? r.item?.rarity
+    const rewardClass = rarity ? ` reward-${rarity}` : ''
     html += selectionChoiceHTML(r.title, r.desc, `data-i="${i}"`, 'Choose', rewardClass)
   })
   html += '</div>'
