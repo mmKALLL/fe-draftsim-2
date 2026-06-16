@@ -205,7 +205,7 @@ for (const w of WEAPONS) {
     BASIC_WEAPONS.add(w)
   }
 }
-const isBasicWeapon = (w: Weapon) => BASIC_WEAPONS.has(w)
+export const isBasicWeapon = (w: Weapon) => BASIC_WEAPONS.has(w)
 // forceGood decided per fight by the caller (bosses always good; a bounded number of
 // minions good). 'good' = anything but each type's basic weapon; 'default' = plain weapons only.
 export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {

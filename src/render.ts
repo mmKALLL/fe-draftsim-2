@@ -40,6 +40,11 @@ export function randomDraftOptions() {
 export function padCell(v: any, w = 2) {
   return String(v).padStart(w, ' ')
 }
+// Card weapon labels live in narrow slots; names of 12+ chars are clipped to their
+// first 9 and marked with two dots (e.g. "Silver Sword" -> "Silver Sw..").
+export function truncWeaponName(name = '', max = 9, truncateAt = 12) {
+  return name.length >= truncateAt ? `${name.slice(0, max)}..` : name
+}
 export function growthCompareHTML(b: any) {
   const s = b.stats,
     g = b.growths
@@ -228,7 +233,8 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
       ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'
       : ''
   const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
-  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div></div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  const weaponLine = u.weapon ? `<div class="small weaponLine" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
+  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')

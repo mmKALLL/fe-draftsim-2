@@ -7,7 +7,7 @@ import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLin
 import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity } from './rewards'
 import { addGold, formatGold, goldHTML, spendGold } from './state'
 import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } from './ui'
-import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon } from './units'
+import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon, isBasicWeapon } from './units'
 import { $, capStat } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
@@ -38,7 +38,7 @@ export function uniqueShopOffers(count: number, makeOffer: any, keyFn: any) {
   return offers
 }
 export function shopWeaponPool() {
-  return WEAPONS.filter((w) => state.player.some((u) => canEquipAsNewWeapon(u, w)))
+  return WEAPONS.filter((w) => !isBasicWeapon(w) && state.player.some((u) => canEquipAsNewWeapon(u, w)))
 }
 export function eligibleWeaponUsers(w: Weapon) {
   return state.player.filter((u) => canEquipAsNewWeapon(u, w))

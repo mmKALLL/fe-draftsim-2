@@ -6,7 +6,7 @@ import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, select
 import { applyReward } from './shop'
 import { formatGold, goldHTML } from './state'
 import { levelLabel, showModal } from './ui'
-import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, levelUp } from './units'
+import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, isBasicWeapon, levelUp } from './units'
 import { $, capStat, pick, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Rarity, RewardType, StatKey } from '../types'
@@ -89,7 +89,7 @@ export function heldItemRelevantToUnit(item: any, unit: Unit) {
   return true
 }
 export function rewardWeaponPool(u: Unit) {
-  return WEAPONS.filter((w) => canEquipAsNewWeapon(u, w))
+  return WEAPONS.filter((w) => canEquipAsNewWeapon(u, w) && !isBasicWeapon(w))
 }
 export function pickRewardWeapon(opts: any[], rarity: Rarity) {
   return pickByRarity(opts, rarity) || pick(opts)

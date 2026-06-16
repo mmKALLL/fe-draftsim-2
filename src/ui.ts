@@ -59,11 +59,16 @@ export function afterReward(msg: string, cls = 'heal') {
   }
   beginNextBattle()
 }
+export function winCount() {
+  // state.battle is the current/last-started battle (0 before any battle, 1 while fighting battle 1, ...),
+  // so wins == battle - 1, floored at 0 so a brand-new game shows 0 wins instead of -1.
+  return Math.max(0, state.battle - 1)
+}
 export function currentScore() {
-  return (state.battle - 1) * 1000 + state.gold
+  return winCount() * 1000 + state.gold
 }
 export function scoreHTML(finalScore = false) {
-  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore()}</b> (${state.battle - 1} wins × 1000 + ${goldHTML(state.gold)})</p>`
+  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore()}</b> (${winCount()} wins × 1000 + ${goldHTML(state.gold)})</p>`
 }
 export function showWin() {
   showModal(
