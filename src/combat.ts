@@ -19,6 +19,16 @@ export function isWeaponEffective(w: Weapon, d: Unit) {
     return e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)
   })
 }
+// Flags an enemy whose equipped weapon poses an outsized threat to the player team,
+// used to tint the enemy's weapon name on its sprite card. Dangerous when the weapon
+// has high base crit (25%+), is S-rank, or is effective against any living player unit.
+export function enemyWeaponDangerous(u: Unit) {
+  const w = u.weapon
+  if (!w) return false
+  if ((w.crit || 0) >= 25) return true
+  if (w.rank === 'S') return true
+  return state.player.some((p) => p.hp > 0 && isWeaponEffective(w, p))
+}
 export function triangle(a: string, b: string, aw: Weapon | null = null, bw: Weapon | null = null) {
   const beats: Record<string, string> = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
   if (!beats[a] || !beats[b]) return { atk: 0, hit: 0 }
@@ -92,6 +102,16 @@ export function attackPower(a: Unit, d: Unit) {
   // the actor is always the attacker (this engine has no counterattacks).
   const initiateDamage = a.skill?.family === 'playerPhase' ? a.skill.damageDealt || 0 : 0
   return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + initiateDamage
+}
+// Target-independent attack power for card displays: weapon Might + the unit's
+// attack stat (str doubles as Mag here) plus its non-target-dependent bonuses.
+// Drops the weapon triangle and effective-weapon doubling, which depend on a foe.
+// Staff users have no weapon damage, so they report 0 (callers omit the DMG label).
+export function displayAttackPower(a: Unit) {
+  if (a.weapon?.staff) return 0
+  const stat = combatStat(a, 'str')
+  const initiateDamage = a.skill?.family === 'playerPhase' ? a.skill.damageDealt || 0 : 0
+  return stat + (a.weapon?.mt || 0) + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + initiateDamage
 }
 export function defenseAgainst(d: Unit, weapon: Weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)

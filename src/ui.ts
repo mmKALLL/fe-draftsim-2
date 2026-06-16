@@ -103,7 +103,7 @@ export function resetRun() {
     pendingDefaultLabel: '',
   })
   Object.assign(state.shop, { open: false, offers: [] })
-  Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null, openCards: [] })
+  Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null })
   closeModal()
   showMenu()
 }

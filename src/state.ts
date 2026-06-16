@@ -39,7 +39,6 @@ export const state = {
     filter: 'all',
     activePreviewActor: null as Unit | null,
     activeConsumableActor: null as Unit | null,
-    openCards: [] as string[],
   },
 }
 

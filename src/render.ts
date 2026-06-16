@@ -2,7 +2,7 @@ import { BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER
 import { BASES, CLASSES, HELD_ITEMS, TEACHABLE_SKILLS, weaponTierLabel } from '../data'
 import { battleImgForUnit, htmlAttr, portraitImgForBase, portraitImgForUnit } from './assets'
 import { renderBiomeMap, updateAutoFightButton, updateMainModeTitle } from './biomes'
-import { attackSpeed, avoid, combatPreviewHTML, consumableSummary, consumableTargets, hitRate, nextLivingIndex, sleep, staffEffect, statLabel, statusLabel, statusName, temporaryBuffLabel, weaponEffectLabels } from './combat'
+import { attackSpeed, avoid, combatPreviewHTML, consumableSummary, consumableTargets, displayAttackPower, enemyWeaponDangerous, hitRate, nextLivingIndex, sleep, staffEffect, statLabel, statusLabel, statusName, temporaryBuffLabel, weaponEffectLabels } from './combat'
 import { updateGoldUI } from './state'
 import { levelLabel } from './ui'
 import { startingWeapon } from './units'
@@ -156,23 +156,14 @@ export function unitCard(u: Unit) {
   const buffs = temporaryBuffLabel(u)
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
-  const open = state.ui.openCards.includes(u.id)
-  const effectBracket = (desc: string) => (open && desc ? ` <span class="effectNote">[${desc}]</span>` : '')
-  const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">Held: ${u.heldItem.name}${effectBracket(u.heldItem.desc || '')}</div>` : ''
-  const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">Skill: ${u.skill.name}${effectBracket(u.skill.desc || '')}</div>` : ''
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}${open ? ' open' : ''}" data-card="${u.id}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">AS ${attackSpeed(u)}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${held}${skill}</div></div>`
+  const effectBracket = (desc: string) => (desc ? ` <span class="effectNote">[${desc}]</span>` : '')
+  const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">${u.heldItem.name}${effectBracket(u.heldItem.desc || '')}</div>` : ''
+  const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">${u.skill.name}${effectBracket(u.skill.desc || '')}</div>` : ''
+  const itemSkillList = held || skill ? `<div class="cardItemList">${held}${skill}</div>` : ''
+  const dmg = displayAttackPower(u)
+  const pill = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${dmg} dmg / ${attackSpeed(u)} AS`
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">${pill}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
 }
-// Click/tap a card to toggle its held-item/skill effect text.
-export function bindCardToggles() {
-  document.querySelectorAll<HTMLElement>('[data-card]').forEach((card) => {
-    card.onclick = () => {
-      const id = card.dataset.card!
-      state.ui.openCards = state.ui.openCards.includes(id) ? state.ui.openCards.filter((x) => x !== id) : [...state.ui.openCards, id]
-      renderSideCards()
-    }
-  })
-}
-
 export function renderConsumables() {
   const panel = $('consumablePanel')
   if (!panel) return
@@ -199,7 +190,6 @@ export function renderSideCards() {
   renderConsumables()
   $('playerTeam').innerHTML = state.player.map(unitCard).join('')
   $('enemyTeam').innerHTML = state.enemy.map(unitCard).join('')
-  bindCardToggles()
 }
 export function updateCombatLogTitle() {
   const title = $('combatLogTitle')
@@ -233,7 +223,8 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
       ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'
       : ''
   const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
-  const weaponLine = u.weapon ? `<div class="small weaponLine" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
+  const weaponDanger = isEnemy && u.weapon && enemyWeaponDangerous(u) ? ' weaponDanger' : ''
+  const weaponLine = u.weapon ? `<div class="small weaponLine${weaponDanger}" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
   return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
@@ -296,10 +287,24 @@ export function heldItemOfferDescription(item: any, unit: Unit | null = null, op
 export function skillOfferTitle(skill: any, unit: Unit | null = null) {
   return unit ? `${skill.name} to ${unit.name}` : skill.name
 }
+// Class-eligible player units that can equip a skill, or 'All units' for a
+// general ('Any'-class) skill. Mirrors skillClassMatches in rewards.ts (inlined
+// here to avoid a render <-> rewards import cycle).
+export function skillEligibleUnitsLabel(skill: any) {
+  if (skill.classes?.includes('Any')) return 'All units'
+  return state.player
+    .filter((u) => skill.classes?.includes(u.cls) || skill.classes?.includes(u.displayCls))
+    .map((u) => u.name)
+    .join(', ')
+}
 export function skillOfferDescription(skill: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Teach'
   const lead = unit ? `${action} ${skill.name} to ${unit.name}` : `${action} ${skill.name}`
-  const meta = [weaponTierLabel(skill.rarity)]
+  const rarity = weaponTierLabel(skill.rarity)
+  // On the shop browse card (no chosen student yet) list who can equip the skill,
+  // separated from the rarity by a center-dot like the unit card's stat list.
+  const eligible = unit ? '' : skillEligibleUnitsLabel(skill)
+  const meta = [eligible ? `${rarity} · ${eligible}` : rarity]
   if (unit) meta.push(unit.skill ? `Replaces ${unit.skill.name}` : 'No current skill')
   return `${lead}: ${skill.desc}<div class="small rewardMeta">${meta.join(' · ')}</div>`
 }

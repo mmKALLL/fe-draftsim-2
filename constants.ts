@@ -67,7 +67,7 @@ export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   S: 2200,
 }
 export const SHOP_CONSUMABLE_PRICES: Record<Rarity, number> = {
-  normal: 100,
+  normal: 150,
   uncommon: 300,
   rare: 600,
 }
