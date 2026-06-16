@@ -123,7 +123,7 @@ export function consumableReward(rarity: Rarity = 'normal') {
 export function heldItemReward(rarity: Rarity = 'normal') {
   const chosen = pickByRarity(HELD_ITEMS, rarity)
   if (!chosen) return null
-  const candidates = state.player.filter((u) => u.hp > 0 && u.heldItem?.id !== chosen.id && !unitOnRewardCooldown(u.id, 'heldItem') && heldItemRelevantToUnit(chosen, u))
+  const candidates = state.player.filter((u) => u.heldItem?.id !== chosen.id && !unitOnRewardCooldown(u.id, 'heldItem') && heldItemRelevantToUnit(chosen, u))
   if (!candidates.length) return null
   const unit = pick(candidates)
   const item = { ...chosen }

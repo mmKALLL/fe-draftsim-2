@@ -71,10 +71,10 @@ export const SHOP_CONSUMABLE_PRICES: Record<Rarity, number> = {
   uncommon: 300,
   rare: 600,
 }
-export const SHOP_SKILL_PRICES: Record<Rarity, number> = {
-  normal: 700,
-  uncommon: 1200,
-  rare: 2000,
+export const SHOP_SKILL_PRICES: Record<Rarity, [number, number]> = {
+  normal: [600, 800],
+  uncommon: [1100, 1300],
+  rare: [1600, 1800],
 }
 export const SHOP_FORGE_PRICE = 1200
 export const SHOP_BOOST_PRICES: Record<BoostPriceKey, number> = {
@@ -109,20 +109,20 @@ export const REWARD_TYPE_UNIT_COOLDOWN = 4
 // Luck growth. Raises player Hit (enemy Avoid uses Luck) and player Crit (Crit
 // subtracts target Luck), without changing the FE7 combat formulas.
 export const ENEMY_LUCK_PENALTY = 3
-export const ENEMY_LUCK_GROWTH_PENALTY = 20
+export const ENEMY_LUCK_GROWTH_PENALTY = 10
 
 // Rarity spread (weights) per arena, split by boss type: 'standard' (normal
 // battle), 'regular' boss, 'biome'/arena boss. rewardRarityProfile() reads the
 // active arena + boss type. Tune any cell; <= 0 drops a rarity from that pool.
 export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'biome', Record<Rarity, number>>[] = [
   // Arena 1
-  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 50, uncommon: 45, rare: 5 }, biome: { normal: 20, uncommon: 60, rare: 20 } },
+  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 40, uncommon: 55, rare: 5 }, biome: { normal: 20, uncommon: 60, rare: 20 } },
   // Arena 2
-  { standard: { normal: 55, uncommon: 40, rare: 5 }, regular: { normal: 30, uncommon: 45, rare: 15 }, biome: { normal: 0, uncommon: 60, rare: 40 } },
+  { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 30, uncommon: 40, rare: 20 }, biome: { normal: 0, uncommon: 60, rare: 40 } },
   // Arena 3
-  { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 20, uncommon: 45, rare: 35 }, biome: { normal: 0, uncommon: 30, rare: 70 } },
+  { standard: { normal: 25, uncommon: 55, rare: 20 }, regular: { normal: 10, uncommon: 45, rare: 45 }, biome: { normal: 0, uncommon: 20, rare: 80 } },
   // Arena 4
-  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 10, uncommon: 40, rare: 50 }, biome: { normal: 0, uncommon: 10, rare: 90 } },
+  { standard: { normal: 10, uncommon: 60, rare: 30 }, regular: { normal: 0, uncommon: 30, rare: 70 }, biome: { normal: 0, uncommon: 10, rare: 90 } },
 ]
 
 // Gentle early ramp: enemies in the first EARLY_ENEMY_NERF_BATTLES fights are

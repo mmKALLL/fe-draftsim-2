@@ -499,11 +499,11 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'rally_defense', name: 'Rally Defense', desc: 'At battle start, allies gain Def +4 for one turn.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
 
   // Cavalier and paladin skills
-  // { rarity: 'normal', id: 'discipline', name: 'Discipline', desc: 'Weapons of rank C or lower cost 100 G less in shops while the user is alive.', source: 'Awakening Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'weapon', effect: 'shopRankDiscount', amount: 100 },
+  // { rarity: 'normal', id: 'discipline', name: 'Discipline', desc: 'Weapons of rank C or lower cost 100 G less in shops.', source: 'Awakening Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'weapon', effect: 'shopRankDiscount', upToRank: 'C', amount: 100 },
   // { rarity: 'normal', id: 'outdoor_fighter', name: 'Outdoor Fighter', desc: 'Hit +10 and Avoid +10 in Road, Plains, Forest, Swamp, Mountain, River Delta, and Desert biomes.', source: 'Awakening Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'biome', hit: 10, avoid: 10 },
   // { rarity: 'normal', id: 'elbow_room', name: 'Elbow Room', desc: 'Deals +3 damage in Road, Plains, River Delta, Desert, and Mountain biomes.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'biome', damageDealt: 3 },
   // { rarity: 'uncommon', id: 'shelter', name: 'Shelter', desc: 'Once per battle, redirects one attack from an ally below 50% HP to the user.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'support', trigger: 'allyBelowHalf', effect: 'coverAlly', uses: 1 },
-  { rarity: 'uncommon', id: 'defender', name: 'Defender', desc: 'Str/Mag, Skl, Spd, Def, and Res +1.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'stat', stats: { str: 1, skl: 1, spd: 1, def: 1, res: 1 } },
+  { rarity: 'uncommon', id: 'defender', name: 'Defender', desc: 'Grants passive Def and Res +2.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'stat', stats: { def: 2, res: 2 } },
   // { rarity: 'rare', id: 'aegis', name: 'Aegis', desc: 'Skl% chance to halve incoming magical damage.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'proc', trigger: 'magicHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
   { rarity: 'rare', id: 'luna', name: 'Luna', desc: 'Skl% chance to ignore half of target Def or Res.', source: 'Awakening/Fates Great Knight', classes: SKILL_CLASS_GROUPS.cavalier, family: 'proc', trigger: 'attack', effect: 'halveDefenseChance', chanceStat: 'skl' },
 
@@ -517,7 +517,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'warding_blow', name: 'Warding Blow', desc: 'Res +8 when initiating combat.', source: 'Fates Falcon Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'playerPhase', stats: { res: 8 } },
 
   // Wyvern rider skills
-  { rarity: 'normal', id: 'strength_plus_2', name: 'Strength +2', desc: 'Str/Mag +2.', source: 'Awakening/Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'stat', stats: { str: 2 } },
+  { rarity: 'normal', id: 'strength_plus_2', name: 'Strength +2', desc: 'Str +2.', source: 'Awakening/Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'stat', stats: { str: 2 } },
   // { rarity: 'normal', id: 'tantivy', name: 'Tantivy', desc: 'Hit +10 and Avoid +10 while at least one ally is fallen.', source: 'Awakening Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'solo', hit: 10, avoid: 10 },
   // { rarity: 'normal', id: 'lunge', name: 'Lunge', desc: 'After the user initiates combat, target Def -2 for one turn.', source: 'Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'debuff', trigger: 'afterCombat', stats: { def: -2 } },
   // { rarity: 'rare', id: 'trample', name: 'Trample', desc: 'Deals +4 damage to non-mounted enemies.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.wyvern, family: 'effective', targetTagNot: 'mounted', damageDealt: 4 },
@@ -544,7 +544,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'bowbreaker', name: 'Bowbreaker', desc: 'Hit +25 and Avoid +25 against bow users.', source: 'Awakening Bow Knight/Fates Sorcerer', classes: SKILL_CLASS_GROUPS.archer, family: 'breaker', breaker: 'bow', hit: 25, avoid: 25 },
 
   // Mage and sage skills
-  { rarity: 'normal', id: 'magic_plus_2', name: 'Magic +2', desc: 'Str/Mag +2.', source: 'Awakening/Fates Mage/Diviner', classes: SKILL_CLASS_GROUPS.mage, family: 'stat', stats: { str: 2 } },
+  { rarity: 'normal', id: 'magic_plus_2', name: 'Magic +2', desc: 'Mag +2.', source: 'Awakening/Fates Mage/Diviner', classes: SKILL_CLASS_GROUPS.mage, family: 'stat', stats: { str: 2 } },
   // { rarity: 'normal', id: 'focus', name: 'Focus', desc: 'Crit +10 while at least one ally is fallen.', source: 'Awakening Mage', classes: SKILL_CLASS_GROUPS.mage, family: 'solo', crit: 10 },
   // { rarity: 'normal', id: 'future_sight', name: 'Future Sight', desc: "15% chance each turn to make the user's next hit roll use the better of two rolls.", source: 'Fates Diviner', classes: SKILL_CLASS_GROUPS.mage, family: 'rng', trigger: 'turnStart', effect: 'rerollLowHit', chance: 15 },
   // { rarity: 'uncommon', id: 'rally_magic', name: 'Rally Magic', desc: 'At battle start, allies gain Mag +4 for one turn.', source: 'Awakening Sage/Fates Onmyoji', classes: SKILL_CLASS_GROUPS.mage, family: 'rally', trigger: 'battleStart', stats: { str: 4 } }, // Note: make this affect magic units only
