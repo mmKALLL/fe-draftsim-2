@@ -231,11 +231,15 @@ export function enemyDisplayName(u: Unit) {
 export function canDouble(a: Unit, d: Unit) {
   return attackSpeed(a) - attackSpeed(d) >= 4
 }
+// Healtouch (family 'staff', healBonus N): the user's healing staves restore +N HP.
+export function staffHealBonus(a: Unit) {
+  return a.skill?.family === 'staff' ? a.skill.healBonus || 0 : 0
+}
 export function healAmount(a: Unit) {
-  return Math.max(1, (a.weapon.mt || 0) + combatStat(a, 'str'))
+  return Math.max(1, (a.weapon.mt || 0) + combatStat(a, 'str') + staffHealBonus(a))
 }
 export function fortifyAmount(a: Unit) {
-  return Math.max(1, combatStat(a, 'str'))
+  return Math.max(1, combatStat(a, 'str') + staffHealBonus(a))
 }
 export function staffEffect(w: Weapon) {
   return w?.staff ? w.effect || 'heal' : null
@@ -404,6 +408,65 @@ export function applyBattleStartRallies() {
   if (applied) renderTeams()
 }
 
+// Heal a unit up to maxHp, returning the amount actually restored (0 if dead or
+// already full). Centralizes the hp-clamp so skill/staff regen reuse one path.
+export function healUnit(u: Unit, amount: number) {
+  if (!u || u.hp <= 0 || amount <= 0) return 0
+  const before = u.hp
+  u.hp = Math.min(u.maxHp, u.hp + amount)
+  return u.hp - before
+}
+
+// Turn-start regen skills (family 'survival'/'aura' with trigger 'turnStart'-like).
+// Fired at the START of a living actor's turn from runBattle. `allies` is the
+// actor's own team, used for the "ally" conditions and Amaterasu's team heal.
+// Conditions follow each skill's description (the source of truth):
+//   - regenPercent / regenFlat: unconditional self-heal.
+//   - luckHealChance (Good Fortune): Lck% chance to heal a flat amount.
+//   - regenIfNoAllyFallen (Relief): self-heal only if no ally on the team is fallen.
+//   - regenFlatIfAlliesAlive (Camaraderie): self-heal only if >= 2 allies alive.
+//   - allyRegenFlat (Amaterasu): flat heal to every living ally.
+export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
+  const s = actor?.skill
+  if (!s || actor.hp <= 0 || s.trigger !== 'turnStart') return
+  const living = allies.filter((u) => u.hp > 0)
+  const fallen = allies.some((u) => u.hp <= 0)
+  if (s.effect === 'allyRegenFlat') {
+    let total = 0
+    for (const ally of living) {
+      const healed = healUnit(ally, s.amount || 0)
+      if (healed > 0) {
+        total += healed
+        floatText(ally, `+${healed}`, 'healing')
+        updateUnitVisual(ally)
+      }
+    }
+    if (total > 0) {
+      renderSideCards()
+      logLine(null, `${actor.name}'s ${s.name} restores ${total} HP across allies.`, 'heal')
+    }
+    return
+  }
+  // Self-targeted regen variants: decide the heal amount and any gating condition.
+  let amount = 0
+  if (s.effect === 'regenPercent') amount = floor((actor.maxHp * (s.amount || 0)) / 100)
+  else if (s.effect === 'regenFlat') amount = s.amount || 0
+  else if (s.effect === 'luckHealChance') {
+    const chance = DEBUG_SKILLS ? 100 : clamp(combatStat(actor, 'lck'), 0, 100)
+    amount = rint(100) + 1 <= chance ? s.amount || 0 : 0
+  } else if (s.effect === 'regenIfNoAllyFallen') {
+    amount = fallen ? 0 : floor((actor.maxHp * (s.amount || 0)) / 100)
+  } else if (s.effect === 'regenFlatIfAlliesAlive') {
+    amount = living.length >= 2 ? s.amount || 0 : 0
+  } else return
+  const healed = healUnit(actor, amount)
+  if (healed <= 0) return
+  floatText(actor, `+${healed}`, 'healing')
+  updateUnitVisual(actor)
+  renderSideCards()
+  logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
+}
+
 // Skl-based activation chance for an attack proc skill (Aether, Sol, Luna, ...).
 export function attackProcChance(a: Unit) {
   const s = a.skill
@@ -418,16 +481,44 @@ export function rollAttackProc(a: Unit) {
   const chance = DEBUG_SKILLS ? 100 : attackProcChance(a)
   return rint(100) + 1 <= chance ? a.skill : null
 }
+// Miracle (effect 'miracleChance', trigger 'lethalDamage'): when a hit would be
+// lethal, the defender's Luck is the chance to survive at 1 HP. Returns true only
+// when it actually saves the unit, so callers can flag/log the proc.
+export function rollMiracle(d: Unit) {
+  const s = d?.skill
+  if (!s || s.effect !== 'miracleChance' || d.hp <= 0) return false
+  const chance = DEBUG_SKILLS ? 100 : clamp(combatStat(d, 'lck'), 0, 100)
+  return rint(100) + 1 <= chance
+}
+// Lifetaker (effect 'healPercent', trigger 'playerPhaseKill'): after a living
+// PLAYER unit defeats an enemy during its own (player-phase) action, it heals a
+// percentage of its max HP. Gated to non-enemy actors so enemy kills don't trigger.
+export async function applyLifetaker(actor: Unit) {
+  const s = actor?.skill
+  if (!s || s.effect !== 'healPercent' || s.trigger !== 'playerPhaseKill' || actor.isEnemy || actor.hp <= 0) return
+  const healed = healUnit(actor, floor((actor.maxHp * (s.amount || 0)) / 100))
+  if (healed <= 0) return
+  floatText(actor, `+${healed}`, 'healing')
+  updateUnitVisual(actor)
+  renderSideCards()
+  logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
+  await sleep(350)
+}
 export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const dh = displayedHit(a, d),
     cr = critRate(a, d)
-  if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix, proc: null as any, procHeal: 0, lethal: false }
+  if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix, proc: null as any, procHeal: 0, lethal: false, miracle: false }
   const proc = rollAttackProc(a)
-  // Lethality: instant defeat, bypassing damage.
+  // Lethality: instant defeat, bypassing damage — unless Miracle saves the target.
   if (proc?.effect === 'lethalChance') {
+    if (d.hp > 1 && rollMiracle(d)) {
+      const before = d.hp
+      d.hp = 1
+      return { hit: true, crit: false, damage: before - 1, dh, cr, suffix, proc, procHeal: 0, lethal: false, miracle: true }
+    }
     const before = d.hp
     d.hp = 0
-    return { hit: true, crit: false, damage: before, dh, cr, suffix, proc, procHeal: 0, lethal: true }
+    return { hit: true, crit: false, damage: before, dh, cr, suffix, proc, procHeal: 0, lethal: true, miracle: false }
   }
   let dmg = rawDamage(a, d)
   if (proc) {
@@ -442,11 +533,15 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const crit = rint(100) + 1 <= cr,
     finalDmg = crit ? dmg * 3 : dmg
   const before = d.hp
-  d.hp = Math.max(0, d.hp - finalDmg)
+  // Miracle: a hit that would be lethal (from above 1 HP) instead leaves the
+  // defender at 1 HP on a successful Luck roll.
+  const wouldBeLethal = before > 1 && before - finalDmg <= 0
+  const miracle = wouldBeLethal && rollMiracle(d)
+  d.hp = miracle ? 1 : Math.max(0, d.hp - finalDmg)
   const damage = before - d.hp
   // Sol heals half of damage dealt; Aether heals all of it.
   const procHeal = proc?.effect === 'drainChance' ? floor((damage * (proc.healPercent || 50)) / 100) : proc?.effect === 'aetherChance' ? damage : 0
-  return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false }
+  return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false, miracle }
 }
 export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {
   const r = strikeResult(a, d, suffix)
@@ -455,6 +550,7 @@ export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {
     return r
   }
   logLine(log, `${a.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${d.name} for ${r.damage}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit ? 'crit' : 'hit')
+  if (r.miracle) logLine(log, `${d.name}'s Miracle activates — survives at 1 HP!`, 'crit')
   if (d.hp <= 0) logLine(log, `${d.name} falls.`, 'death')
   return r
 }
@@ -669,6 +765,19 @@ export async function animateStrike(actor: Unit, target: Unit, result: any) {
   if (ae) ae.classList.remove('striking')
   if (target.hp <= 0) updateUnitVisual(target)
 }
+// Live to Serve (family 'staff', effect 'selfHeal', amountPercent N): when the user
+// heals an ally, the user also recovers N% of the HP actually restored. Skips
+// self-heal when the user healed itself (the heal already counted).
+export async function applyLiveToServe(actor: Unit, target: Unit, healed: number) {
+  const s = actor?.skill
+  if (!s || s.family !== 'staff' || s.effect !== 'selfHeal' || actor === target || healed <= 0 || actor.hp <= 0) return
+  const selfHeal = healUnit(actor, floor((healed * (s.amountPercent || 0)) / 100))
+  if (selfHeal <= 0) return
+  floatText(actor, `+${selfHeal}`, 'healing')
+  updateUnitVisual(actor)
+  renderSideCards()
+  logLine(null, `${actor.name}'s ${s.name} restores ${selfHeal} HP to itself.`, 'heal')
+}
 export async function animateHeal(actor: Unit, target: Unit, amt: number) {
   clearHighlights()
   const ae = spriteEl(actor),
@@ -676,11 +785,14 @@ export async function animateHeal(actor: Unit, target: Unit, amt: number) {
   if (ae) ae.classList.add('active')
   if (te) te.classList.add('target')
   await sleep(300)
+  const before = target.hp
   target.hp = Math.min(target.maxHp, target.hp + amt)
-  floatText(target, `+${amt}`, 'healing')
+  const healed = target.hp - before
+  floatText(target, `+${healed}`, 'healing')
   updateUnitVisual(target)
   renderSideCards()
-  logLine(null, `${actor.name} heals ${target.name} for ${amt}.`, 'heal')
+  logLine(null, `${actor.name} heals ${target.name} for ${healed}.`, 'heal')
+  await applyLiveToServe(actor, target, healed)
   await sleep(300)
 }
 export async function animateFortify(actor: Unit, targets: Unit[], amt: number) {
@@ -688,17 +800,29 @@ export async function animateFortify(actor: Unit, targets: Unit[], amt: number) 
   const ae = spriteEl(actor)
   if (ae) ae.classList.add('active')
   await sleep(300)
-  let total = 0
+  let total = 0,
+    healedOthers = 0
   targets.forEach((t: any) => {
     const healed = Math.min(t.maxHp - t.hp, amt)
     if (healed <= 0) return
     t.hp += healed
     total += healed
+    if (t !== actor) healedOthers += healed
     floatText(t, `+${healed}`, 'healing')
     updateUnitVisual(t)
   })
   renderSideCards()
   logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal')
+  // Live to Serve: recover a share of the HP restored to other allies (not self).
+  if (actor.skill?.family === 'staff' && actor.skill?.effect === 'selfHeal' && healedOthers > 0) {
+    const selfHeal = healUnit(actor, floor((healedOthers * (actor.skill.amountPercent || 0)) / 100))
+    if (selfHeal > 0) {
+      floatText(actor, `+${selfHeal}`, 'healing')
+      updateUnitVisual(actor)
+      renderSideCards()
+      logLine(null, `${actor.name}'s ${actor.skill.name} restores ${selfHeal} HP to itself.`, 'heal')
+    }
+  }
   await sleep(450)
 }
 export async function animateAoeConsumable(actor: Unit, targets: Unit[], item: any) {
@@ -928,10 +1052,13 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
           r.crit ? 'crit' : 'hit'
         )
         if (r.proc) logLine(null, `${actor.name}'s ${r.proc.name} activates${r.lethal ? ' — instant defeat' : ''}!`, 'crit')
+        if (r.miracle) logLine(null, `${target.name}'s Miracle activates — survives at 1 HP!`, 'crit')
         if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
       }
       if (r.proc) await animateSkillProc(actor, r.proc)
       await animateStrike(actor, target, r)
+      // Lifetaker: a player unit that defeats an enemy on player phase heals 50% max HP.
+      if (target.hp <= 0 && r.hit) await applyLifetaker(actor)
       if (actor.weapon?.poison && r.hit && target.hp > 0 && applyPoison(target)) {
         logLine(null, `${target.name} is poisoned.`, 'crit')
         floatText(target, 'POISON', 'statusText')

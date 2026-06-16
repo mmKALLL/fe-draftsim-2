@@ -1,7 +1,7 @@
 import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeBiomeEntry, biomeEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './biomes'
-import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
+import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
@@ -153,6 +153,7 @@ export async function runBattle() {
       renderTeams()
       if (pIdx !== -1) {
         const actor = state.player[pIdx]
+        applyTurnStartRegen(actor, state.player)
         clearHighlights()
         const ae = spriteEl(actor)
         if (ae) ae.classList.add('active')
@@ -218,6 +219,7 @@ export async function runBattle() {
         const actor = state.enemy[eIdx]
         state.combat.nextEnemyMarkerId = actor.id
         renderTeams()
+        applyTurnStartRegen(actor, state.enemy)
         if (await consumeTurnStatus(actor, state.enemy, state.player)) {
           await applyEndOfTurnStatus(actor)
           clearTurnBuffs(actor)
