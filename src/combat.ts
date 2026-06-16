@@ -86,14 +86,28 @@ export function effectiveMt(a: Unit, d: Unit) {
   const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
   return (a.weapon.mt || 0) * coeff
 }
+// Shared weapon-type matcher for skills keyed on a weapon type. The 'tome' group
+// spans the three magic tome types (anima/light/dark), reused by both the "faire"
+// damage skills and the conditional "breaker" Hit/Avoid skills.
+export function weaponTypeMatches(skillType: string | undefined, wt: string | undefined) {
+  return skillType === wt || (skillType === 'tome' && (wt === 'anima' || wt === 'light' || wt === 'dark'))
+}
 // Weapon-mastery "faire" skills add flat damage when wielding the matching type
 // ('tome' covers anima/light/dark).
 export function skillFaireBonus(a: Unit) {
   const s = a.skill
   if (!s || s.family !== 'faire') return 0
-  const wt = a.weapon?.type
-  const match = s.weaponType === wt || (s.weaponType === 'tome' && (wt === 'anima' || wt === 'light' || wt === 'dark'))
-  return match ? s.damageDealt || 0 : 0
+  return weaponTypeMatches(s.weaponType, a.weapon?.type) ? s.damageDealt || 0 : 0
+}
+// "Breaker" skills (Swordbreaker, Axebreaker, ...) grant the holder Hit +25 and
+// Avoid +25 against opponents wielding the skill's targeted weapon type. The bonus
+// is conditional on the OPPONENT's weapon, so it lives in the per-matchup calc and
+// applies whether the holder initiates or defends/counters. 'tome' matches the same
+// anima/light/dark group as Tomefaire.
+export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | 'avoid') {
+  const s = u.skill
+  if (!s || s.family !== 'breaker' || !opponent) return 0
+  return weaponTypeMatches(s.breaker, opponent.weapon?.type) ? s[key] || 0 : 0
 }
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
@@ -125,15 +139,19 @@ export function rawDamage(a: Unit, d: Unit) {
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
-  return floor(a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) - (a.skill?.enemyAvoid || 0))
+  return floor(
+    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) + skillBreakerBonus(a, d, 'hit') - (a.skill?.enemyAvoid || 0)
+  )
 }
-export function avoid(d: Unit) {
+export function avoid(d: Unit, opponent: Unit | null = null) {
   // playerPhase avoid ("when initiating") is inert on defense — exclude it here.
   const skillAvoid = d.skill && d.skill.family !== 'playerPhase' ? d.skill.avoid || 0 : 0
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid)
+  // Breaker avoid is conditional on the opponent's weapon type, so it only applies
+  // when an opponent is supplied (i.e. during an actual matchup, not card displays).
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid'))
 }
 export function displayedHit(a: Unit, d: Unit) {
-  return clamp(hitRate(a, d) - avoid(d), 0, 100)
+  return clamp(hitRate(a, d) - avoid(d, a), 0, 100)
 }
 export function trueHitRoll(displayed: any) {
   const rn = (rint(100) + 1 + rint(100) + 1) / 2
@@ -370,7 +388,13 @@ export function applyBattleStartRallies() {
     if (!s || s.family !== 'rally' || s.trigger !== 'battleStart' || !s.stats) continue
     const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
     if (!entries.length) continue
-    for (const ally of living) {
+    // Rally Strength/Magic are scoped by attack type so they don't double as a
+    // universal +4 attack (str is the single attack stat): 'physical' targets
+    // non-magic allies, 'magic' targets mages; otherwise all allies.
+    const targets = living.filter((ally) =>
+      s.rallyTarget === 'physical' ? !ally.weapon?.magic : s.rallyTarget === 'magic' ? !!ally.weapon?.magic : true
+    )
+    for (const ally of targets) {
       for (const [stat, amt] of entries) applyStatBuff(ally, stat, amt, 'turnBuffs')
     }
     const label = entries.map(([stat]) => statLabel(caster, stat)).join(', ')
