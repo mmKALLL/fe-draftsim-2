@@ -356,6 +356,30 @@ export function clearUnitStatus(u: Unit) {
   delete u.poisoned
 }
 
+// Rally skills (family 'rally', trigger 'battleStart') fire once at the start of a
+// battle: each living player unit with a rally skill grants every living ally — the
+// caster included — a one-turn buff for each stat in skill.stats. The buff lives in
+// the 'turnBuffs' bucket, so it reuses the tonic/turnBuff lifecycle and is cleared
+// after each unit finishes its first action (see clearTurnBuffs in game.ts). Multiple
+// rally casters stack, since each call adds to the bucket.
+export function applyBattleStartRallies() {
+  const living = state.player.filter((u) => u.hp > 0)
+  let applied = false
+  for (const caster of living) {
+    const s = caster.skill
+    if (!s || s.family !== 'rally' || s.trigger !== 'battleStart' || !s.stats) continue
+    const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
+    if (!entries.length) continue
+    for (const ally of living) {
+      for (const [stat, amt] of entries) applyStatBuff(ally, stat, amt, 'turnBuffs')
+    }
+    const label = entries.map(([stat]) => statLabel(caster, stat)).join(', ')
+    logLine(null, `${caster.name} uses ${s.name}; allies gain ${label} on their first turn.`, 'heal')
+    applied = true
+  }
+  if (applied) renderTeams()
+}
+
 // Skl-based activation chance for an attack proc skill (Aether, Sol, Luna, ...).
 export function attackProcChance(a: Unit) {
   const s = a.skill
