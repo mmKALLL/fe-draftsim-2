@@ -455,11 +455,11 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +10 and Crit +10 for both the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 10, crit: 10, incomingHit: 10, incomingCrit: 10 },
 
   // Lord and royal-flavored skills
-  // { rarity: 'normal', id: 'charm', name: 'Charm', desc: 'All allies gain Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', hit: 5, avoid: 5 },
-  // { rarity: 'normal', id: 'solidarity', name: 'Solidarity', desc: 'Team Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Tactician', classes: SKILL_CLASS_GROUPS.any, family: 'aura', adjacentHit: 5, adjacentAvoid: 5 },
+  // { rarity: 'normal', id: 'charm', name: 'Charm', desc: 'Allies gain Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', hit: 5, avoid: 5 },
+  // { rarity: 'normal', id: 'solidarity', name: 'Solidarity', desc: 'Allies gain Crit +5 and Crit Avoid +5 while the user is alive.', source: 'Awakening Tactician', classes: SKILL_CLASS_GROUPS.any, family: 'aura', adjacentHit: 5, adjacentAvoid: 5 },
   { rarity: 'normal', id: 'nobility', name: 'Nobility', desc: 'All growth rates +5.', source: 'Fates Nohr Prince/Princess', classes: SKILL_CLASS_GROUPS.lord, family: 'growth', growths: { hp: 5, str: 5, skl: 5, spd: 5, lck: 5, def: 5, res: 5 } },
   // { rarity: 'uncommon', id: 'dual_strike_plus', name: 'Dual Strike+', desc: '15% chance to add 3 assist damage when an ally attacks.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'team', trigger: 'allyAttack', effect: 'assistDamageChance', chance: 15, amount: 3 },
-  // { rarity: 'uncommon', id: 'inspiration', name: 'Inspiration', desc: 'Allies deal +1 damage and take -1 damage while the user is alive.', source: 'Fates Strategist', classes: SKILL_CLASS_GROUPS.any, family: 'aura', damageDealt: 1, damageTakenFlat: -1 },
+  // { rarity: 'uncommon', id: 'inspiration', name: 'Inspiration', desc: 'Adjacent allies deal +2 damage and take -2 damage while the user is alive.', source: 'Fates Strategist', classes: SKILL_CLASS_GROUPS.any, family: 'aura', damageDealt: 1, damageTakenFlat: -1 },
   { rarity: 'uncommon', id: 'dragon_fang', name: 'Dragon Fang', desc: 'Skl% chance to deal 1.5x damage.', source: 'Fates Nohr Prince/Princess', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', trigger: 'attack', effect: 'damageMultiplierChance', chanceStat: 'skl', multiplier: 1.5 },
   { rarity: 'rare', id: 'aether', name: 'Aether', desc: 'Skl% chance to pierce half defenses and heal for damage dealt.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', trigger: 'attack', effect: 'aetherChance', chanceStat: 'skl' },
   // { rarity: 'rare', id: 'rightful_king', name: 'Rightful King', desc: 'User skill activation chances +10%.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', procBonus: 10 },
@@ -472,7 +472,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'normal', id: 'strong_riposte', name: 'Strong Riposte', desc: 'Deals +3 damage while counterattacking.', source: 'Fates Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'enemyPhase', damageDealt: 3 },
   { rarity: 'normal', id: 'good_fortune', name: 'Good Fortune', desc: 'Lck% chance to heal 5 HP at the start of the turn.', source: 'Fates Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'survival', trigger: 'turnStart', effect: 'luckHealChance', chanceStat: 'lck', amount: 5 },
   { rarity: 'uncommon', id: 'sol', name: 'Sol', desc: 'Skl% chance to heal for half damage dealt.', source: 'Awakening/Fates Hero', classes: SKILL_CLASS_GROUPS.mercenary, family: 'proc', trigger: 'attack', effect: 'drainChance', chanceStat: 'skl', healPercent: 50 },
-  { rarity: 'uncommon', id: 'axebreaker', name: 'Axebreaker', desc: 'Hit +25 and Avoid +25 against axe users.', source: 'Awakening/Fates Hero', classes: SKILL_CLASS_GROUPS.mercenary, family: 'breaker', breaker: 'axe', hit: 25, avoid: 25 },
+  { rarity: 'rare', id: 'axebreaker', name: 'Axebreaker', desc: 'Hit +25 and Avoid +25 against axe users.', source: 'Awakening/Fates Hero', classes: SKILL_CLASS_GROUPS.mercenary, family: 'breaker', breaker: 'axe', hit: 25, avoid: 25 },
 
   // Myrmidon and swordmaster skills
   { rarity: 'normal', id: 'avoid_plus_10', name: 'Avoid +10', desc: 'Grants passive Avoid +10.', source: 'Awakening Myrmidon', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'stat', avoid: 10 },
@@ -481,10 +481,10 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'vantage', name: 'Vantage', desc: 'When below 50% HP, counters before the attacker.', source: 'Awakening/Fates Myrmidon', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'enemyPhase', trigger: 'hpBelowHalf', effect: 'counterFirst' },
   // { rarity: 'rare', id: 'astra', name: 'Astra', desc: 'Skl%/2 chance to strike 5 times at half damage.', source: 'Awakening/Fates Swordmaster', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'proc', trigger: 'attack', effect: 'multiStrikeChance', chanceStat: 'sklHalf', strikes: 5, damageMultiplier: 0.5 },
   { rarity: 'rare', id: 'swordfaire', name: 'Swordfaire', desc: 'Deals +4 damage with swords.', source: 'Awakening/Fates Swordmaster', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'faire', weaponType: 'sword', damageDealt: 4 },
-  { rarity: 'rare', id: 'life_and_death', name: 'Life and Death', desc: '+6 damage dealt and +6 damage taken.', source: 'Fates Master of Arms', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'combat', damageDealt: 6, damageTakenFlat: 6 },
+  { rarity: 'uncommon', id: 'life_and_death', name: 'Life and Death', desc: '+6 damage dealt and +6 damage taken.', source: 'Fates Master of Arms', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'combat', damageDealt: 6, damageTakenFlat: 6 },
 
   // Thief, ninja, and assassin skills
-  // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +50 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 50 },
+  // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +100 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 100 },
   // { rarity: 'uncommon', id: 'movement_plus_1', name: 'Movement', desc: "Spd +3 during user's first turn each battle.", source: 'Awakening Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', effect: 'firstActionSpeedBonus', amount: 3 },
   // { rarity: 'uncommon', id: 'pass', name: 'Pass', desc: 'User ignores enemy held-item and aura damage reduction.', source: 'Awakening Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'combat', effect: 'ignoreGuardAuras' },
   // { rarity: 'uncommon', id: 'poison_strike', name: 'Poison Strike', desc: 'After the user initiates combat, target loses 20% max HP.', source: 'Fates Ninja', classes: SKILL_CLASS_GROUPS.thief, family: 'debuff', trigger: 'afterCombat', effect: 'poisonStrike', amountPercent: 20 },
@@ -503,7 +503,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // Cavalier and paladin skills
   // { rarity: 'normal', id: 'discipline', name: 'Discipline', desc: 'Weapons of rank C or lower cost 100 G less in shops.', source: 'Awakening Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'weapon', effect: 'shopRankDiscount', upToRank: 'C', amount: 100 },
   // { rarity: 'normal', id: 'outdoor_fighter', name: 'Outdoor Fighter', desc: 'Hit +10 and Avoid +10 in Road, Plains, Forest, Swamp, Mountain, River Delta, and Desert biomes.', source: 'Awakening Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'biome', hit: 10, avoid: 10 },
-  // { rarity: 'normal', id: 'elbow_room', name: 'Elbow Room', desc: 'Deals +3 damage in Road, Plains, River Delta, Desert, and Mountain biomes.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'biome', damageDealt: 3 },
+  // { rarity: 'normal', id: 'elbow_room', name: 'Elbow Room', desc: 'Deals +3 damage in Road, Plains, River Delta, and Desert biomes.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'biome', damageDealt: 3 },
   // { rarity: 'uncommon', id: 'shelter', name: 'Shelter', desc: 'Once per battle, redirects one attack from an ally below 50% HP to the user.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'support', trigger: 'allyBelowHalf', effect: 'coverAlly', uses: 1 },
   { rarity: 'uncommon', id: 'defender', name: 'Defender', desc: 'Grants passive Def/Res +2.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'stat', stats: { def: 2, res: 2 } },
   // { rarity: 'rare', id: 'aegis', name: 'Aegis', desc: 'Skl% chance to halve incoming magical damage.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'proc', trigger: 'magicHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
@@ -518,15 +518,15 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'rare', id: 'galeforce', name: 'Galeforce', desc: 'Once per battle, the user gets another action after their first kill.', source: 'Awakening Dark Flier', classes: SKILL_CLASS_GROUPS.pegasus, family: 'tempo', trigger: 'firstKill', effect: 'extraAction', uses: 1 },
   // Left disabled: a "when attacking" Res bonus is inert here (no counterattacks, so the attacker never takes damage during its own combat).
   // { rarity: 'uncommon', id: 'warding_blow', name: 'Warding Blow', desc: 'Res +8 when initiating combat.', source: 'Fates Falcon Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'playerPhase', stats: { res: 8 } },
-  { rarity: 'uncommon', id: 'lancebreaker', name: 'Lancebreaker', desc: 'Hit +25 and Avoid +25 against lance users.', source: 'Awakening Griffon Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'breaker', breaker: 'lance', hit: 25, avoid: 25 },
+  { rarity: 'rare', id: 'lancebreaker', name: 'Lancebreaker', desc: 'Hit +25 and Avoid +25 against lance users.', source: 'Awakening Griffon Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'breaker', breaker: 'lance', hit: 25, avoid: 25 },
 
   // Wyvern rider skills
   { rarity: 'normal', id: 'strength_plus_2', name: 'Strength +2', desc: 'Grants passive Str +2.', source: 'Awakening/Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'stat', stats: { str: 2 } },
-  // { rarity: 'normal', id: 'tantivy', name: 'Tantivy', desc: 'Hit +10 and Avoid +10 while at least one ally is fallen.', source: 'Awakening Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'solo', hit: 10, avoid: 10 },
+  // { rarity: 'normal', id: 'tantivy', name: 'Tantivy', desc: 'Hit +10 and Avoid +10 while allies in adjacent slots have fallen.', source: 'Awakening Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'solo', hit: 10, avoid: 10 },
   // { rarity: 'normal', id: 'lunge', name: 'Lunge', desc: 'After the user initiates combat, target Def -2 for one turn.', source: 'Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'debuff', trigger: 'afterCombat', stats: { def: -2 } },
   // { rarity: 'rare', id: 'trample', name: 'Trample', desc: 'Deals +4 damage to non-mounted enemies.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.wyvern, family: 'effective', targetTagNot: 'mounted', damageDealt: 4 },
   // { rarity: 'uncommon', id: 'savage_blow', name: 'Savage Blow', desc: 'After the user initiates combat, other enemies lose 10% max HP.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.wyvern, family: 'aoe', trigger: 'afterInitiatingCombat', effect: 'enemyTeamDamage', amountPercent: 10 },
-  { rarity: 'uncommon', id: 'swordbreaker', name: 'Swordbreaker', desc: 'Hit +25 and Avoid +25 against sword users.', source: 'Awakening Wyvern Lord/Fates Wyvern Lord', classes: SKILL_CLASS_GROUPS.wyvern, family: 'breaker', breaker: 'sword', hit: 25, avoid: 25 },
+  { rarity: 'rare', id: 'swordbreaker', name: 'Swordbreaker', desc: 'Hit +25 and Avoid +25 against sword users.', source: 'Awakening Wyvern Lord/Fates Wyvern Lord', classes: SKILL_CLASS_GROUPS.wyvern, family: 'breaker', breaker: 'sword', hit: 25, avoid: 25 },
   { rarity: 'uncommon', id: 'rally_defense_wyvern', name: 'Rally Defense', desc: 'Allies gain Def +4 on their first turn.', source: 'Fates Wyvern Lord', classes: SKILL_CLASS_GROUPS.wyvern, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
 
   // Fighter, warrior, and axe skills
@@ -542,11 +542,11 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'normal', id: 'skill_plus_2', name: 'Skill +2', desc: 'Grants passive Skl +2.', source: 'Awakening/Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'stat', stats: { skl: 2 } },
   // Partial: the Hit +15 applies (read in hitRate), but the Avoid +15 is currently inert — 'playerPhase' avoid is only relevant when attacking, and this engine has no counterattacks, so a unit never evades during its own combat (see avoid() in combat.ts).
   { rarity: 'normal', id: 'prescience', name: 'Prescience', desc: 'Hit +15 and Avoid +15 when attacking.', source: 'Awakening Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', hit: 15, avoid: 15 },
-  { rarity: 'normal', id: 'quick_draw', name: 'Quick Draw', desc: '+4 damage when attacking.', source: 'Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', damageDealt: 4 },
+  { rarity: 'uncommon', id: 'quick_draw', name: 'Quick Draw', desc: '+4 damage when attacking.', source: 'Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', damageDealt: 4 },
   { rarity: 'uncommon', id: 'certain_blow', name: 'Certain Blow', desc: 'Hit +40 when attacking.', source: 'Fates Sniper', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', hit: 40 },
   { rarity: 'uncommon', id: 'hit_rate_plus_20', name: 'Hit Rate +20', desc: 'Grants passive Hit +20.', source: 'Awakening Sniper', classes: SKILL_CLASS_GROUPS.archer, family: 'stat', hit: 20 },
   { rarity: 'rare', id: 'bowfaire', name: 'Bowfaire', desc: 'Deals +4 damage with bows.', source: 'Awakening/Fates Sniper', classes: SKILL_CLASS_GROUPS.archer, family: 'faire', weaponType: 'bow', damageDealt: 4 },
-  { rarity: 'uncommon', id: 'bowbreaker', name: 'Bowbreaker', desc: 'Hit +25 and Avoid +25 against bow users.', source: 'Awakening Bow Knight/Fates Sorcerer', classes: SKILL_CLASS_GROUPS.archer, family: 'breaker', breaker: 'bow', hit: 25, avoid: 25 },
+  { rarity: 'rare', id: 'bowbreaker', name: 'Bowbreaker', desc: 'Hit +25 and Avoid +25 against bow users.', source: 'Awakening Bow Knight/Fates Sorcerer', classes: SKILL_CLASS_GROUPS.archer, family: 'breaker', breaker: 'bow', hit: 25, avoid: 25 },
 
   // Mage and sage skills
   { rarity: 'normal', id: 'magic_plus_2', name: 'Magic +2', desc: 'Grants passive Mag +2.', source: 'Awakening/Fates Mage/Diviner', classes: SKILL_CLASS_GROUPS.mage, family: 'stat', stats: { str: 2 } },
@@ -569,10 +569,10 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // Shaman, dark mage, and druid skills
   { rarity: 'normal', id: 'hex', name: 'Hex', desc: 'Enemies have Avoid -10 against the user.', source: 'Awakening Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', enemyAvoid: -10 },
   { rarity: 'normal', id: 'anathema', name: 'Anathema', desc: 'Enemies have Avoid -10 and critical avoid -10 against the user.', source: 'Awakening Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', enemyAvoid: -10, enemyCritAvoid: -10 },
-  { rarity: 'normal', id: 'heartseeker', name: 'Heartseeker', desc: 'Enemies have Avoid -20 against the user.', source: 'Fates Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', enemyAvoid: -20 },
+  { rarity: 'uncommon', id: 'heartseeker', name: 'Heartseeker', desc: 'Enemies have Avoid -20 against the user.', source: 'Fates Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', enemyAvoid: -20 },
   // { rarity: 'uncommon', id: 'malefic_aura', name: 'Malefic Aura', desc: 'Allies deal +2 magical damage while the user is alive.', source: 'Fates Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', magicDamageDealt: 2 },
   { rarity: 'rare', id: 'vengeance', name: 'Vengeance', desc: "Skl%×2 chance to add half of user's missing HP to damage.", source: 'Awakening/Fates Sorcerer', classes: SKILL_CLASS_GROUPS.shaman, family: 'proc', trigger: 'attack', effect: 'addMissingHpChance', chanceStat: 'sklTimesTwo', amountPercent: 50 },
-  { rarity: 'uncommon', id: 'tomebreaker', name: 'Tomebreaker', desc: 'Hit +25 and Avoid +25 against tome users.', source: 'Awakening Sorcerer', classes: SKILL_CLASS_GROUPS.shaman, family: 'breaker', breaker: 'tome', hit: 25, avoid: 25 },
+  { rarity: 'rare', id: 'tomebreaker', name: 'Tomebreaker', desc: 'Hit +25 and Avoid +25 against tome users.', source: 'Awakening Sorcerer', classes: SKILL_CLASS_GROUPS.shaman, family: 'breaker', breaker: 'tome', hit: 25, avoid: 25 },
   // { rarity: 'uncommon', id: 'grisly_wound', name: 'Grisly Wound', desc: 'After user combat, target loses 10% max HP.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.shaman, family: 'debuff', trigger: 'afterCombat', effect: 'chipDamagePercent', amountPercent: 10 },
 ]
 
