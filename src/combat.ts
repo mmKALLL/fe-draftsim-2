@@ -135,6 +135,27 @@ export function skillBiomeBonus(u: Unit, key: string) {
   if (!biomeId || !s.biomes.includes(biomeId)) return 0
   return s.stats?.[key] ?? s[key] ?? 0
 }
+// Team-aura skills (Solidarity, Charm, Inspiration, Malefic Aura) buff the holder's
+// WHOLE team — every living ally including the holder — for as long as the holder is
+// alive. The buff values live in a `teamAura` object on the skill (hit, avoid,
+// damageDealt, damageTakenFlat, magicDamageDealt); identifying team auras by that
+// object keeps them distinct from the enemyAvoid debuff auras (Hex/Anathema/
+// Heartseeker), which are SELF-applied and handled in hitRate/critRate.
+//
+// teamAuraBonus sums, over all LIVING members of u's team, each member's teamAura
+// contribution for `key`. u's team is chosen by its own isEnemy flag, so player auras
+// only ever buff player units and enemy auras only buff enemy units. Multiple holders
+// stack (their contributions add).
+export function teamAuraBonus(u: Unit, key: 'hit' | 'avoid' | 'damageDealt' | 'damageTakenFlat' | 'magicDamageDealt') {
+  const team = u.isEnemy ? state.enemy : state.player
+  let total = 0
+  for (const member of team) {
+    if (member.hp <= 0) continue
+    const aura = member.skill?.teamAura
+    if (aura) total += aura[key] || 0
+  }
+  return total
+}
 // Flat bonus damage from a skill the attacker applies on its own strike. Covers
 // 'playerPhase' ("when attacking", e.g. Quick Draw) and 'combat' (always-on, e.g.
 // Life and Death) families; both resolve to the same thing here since the actor is
@@ -146,7 +167,10 @@ export function skillAttackDamage(a: Unit) {
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
   const stat = combatStat(a, 'str')
-  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a) + skillBiomeBonus(a, 'damageDealt')
+  // Team auras: Inspiration's +damageDealt always; Malefic Aura's +magicDamageDealt
+  // only when the attacker wields a magic weapon. Summed over living team holders.
+  const teamDamage = teamAuraBonus(a, 'damageDealt') + (a.weapon?.magic ? teamAuraBonus(a, 'magicDamageDealt') : 0)
+  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a) + skillBiomeBonus(a, 'damageDealt') + teamDamage
 }
 // Target-independent attack power for card displays: weapon Might + the unit's
 // attack stat (str doubles as Mag here) plus its non-target-dependent bonuses.
@@ -160,11 +184,14 @@ export function displayAttackPower(a: Unit) {
 export function defenseAgainst(d: Unit, weapon: Weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)
 }
-// Flat extra damage the DEFENDER suffers from its own skill (Life and Death's
-// "+6 damage taken"). Added to each hit's base damage (before any crit multiplier),
-// and clamped together with the attacker's min-damage floor in rawDamage.
+// Flat extra damage the DEFENDER suffers, added to each hit's base damage (before any
+// crit multiplier) and clamped together with the attacker's min-damage floor in
+// rawDamage. Sums the defender's own skill (Life and Death's "+6 damage taken") with
+// its team-aura contribution (Inspiration's -1 damageTakenFlat, summed over the
+// defender's living team holders — negative, so it reduces incoming damage). The
+// min-damage floor in rawDamage / the proc branch keeps total damage >= 1.
 export function damageTakenFlat(d: Unit) {
-  return d.skill?.damageTakenFlat || 0
+  return (d.skill?.damageTakenFlat || 0) + teamAuraBonus(d, 'damageTakenFlat')
 }
 export function rawDamage(a: Unit, d: Unit) {
   if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
@@ -182,7 +209,7 @@ export function hitRate(a: Unit, d: Unit) {
   // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
   // downside that mirrors the holder's own +hit when it attacks.
   return floor(
-    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + attackerHit + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') + skillBiomeBonus(a, 'hit') - (a.skill?.enemyAvoid || 0)
+    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + attackerHit + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') + skillBiomeBonus(a, 'hit') - (a.skill?.enemyAvoid || 0) + teamAuraBonus(a, 'hit')
   )
 }
 export function avoid(d: Unit, opponent: Unit | null = null) {
@@ -191,7 +218,7 @@ export function avoid(d: Unit, opponent: Unit | null = null) {
   const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'biome' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
   // Breaker avoid is conditional on the opponent's weapon type, so it only applies
   // when an opponent is supplied (i.e. during an actual matchup, not card displays).
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid') + skillBiomeBonus(d, 'avoid'))
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid') + skillBiomeBonus(d, 'avoid') + teamAuraBonus(d, 'avoid'))
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d, a), 0, 100)
