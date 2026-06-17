@@ -452,14 +452,14 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'salvage_blow', name: 'Salvage Blow', desc: '10% chance after the user defeats an enemy to add a weapon reward option.', source: 'Fates Blacksmith', classes: SKILL_CLASS_GROUPS.any, family: 'reward', trigger: 'kill', effect: 'weaponRewardChance', chance: 10 },
   // { rarity: 'normal', id: 'potent_potion', name: 'Potent Potion', desc: 'Healing consumables used by the user restore +5 HP.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'consumableHealBonus', amount: 5 },
   // { rarity: 'uncommon', id: 'quick_salve', name: 'Quick Salve', desc: 'User can use self-targeted consumables without ending their action.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'freeConsumableSelf' },
-  { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +10 and Crit +10 for both the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 10, crit: 10, incomingHit: 10, incomingCrit: 10 },
+  { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +30 and Crit +15 for both the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 30, crit: 15, incomingHit: 30, incomingCrit: 15 },
 
   // Lord and royal-flavored skills
   { rarity: 'normal', id: 'charm', name: 'Charm', desc: 'Allies have Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', teamAura: { hit: 5, avoid: 5 } },
-  { rarity: 'normal', id: 'solidarity', name: 'Solidarity', desc: 'Allies have Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Tactician', classes: SKILL_CLASS_GROUPS.any, family: 'aura', teamAura: { hit: 5, avoid: 5 } },
+  { rarity: 'normal', id: 'solidarity', name: 'Solidarity', desc: 'Allies have Crit +5 and Crit Avoid +5 while the user is alive.', source: 'Awakening Tactician', classes: SKILL_CLASS_GROUPS.any, family: 'aura', teamAura: { crit: 5, critAvoid: 5 } },
   { rarity: 'normal', id: 'nobility', name: 'Nobility', desc: 'All growth rates +5.', source: 'Fates Nohr Prince/Princess', classes: SKILL_CLASS_GROUPS.lord, family: 'growth', growths: { hp: 5, str: 5, skl: 5, spd: 5, lck: 5, def: 5, res: 5 } },
   // { rarity: 'uncommon', id: 'dual_strike_plus', name: 'Dual Strike+', desc: '15% chance to add 3 assist damage when an ally attacks.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'team', trigger: 'allyAttack', effect: 'assistDamageChance', chance: 15, amount: 3 },
-  { rarity: 'uncommon', id: 'inspiration', name: 'Inspiration', desc: 'Allies deal +1 damage and take -1 damage while the user is alive.', source: 'Fates Strategist', classes: SKILL_CLASS_GROUPS.any, family: 'aura', teamAura: { damageDealt: 1, damageTakenFlat: -1 } },
+  { rarity: 'uncommon', id: 'inspiration', name: 'Inspiration', desc: 'Allies deal +2 damage and take -2 damage while the user is alive.', source: 'Fates Strategist', classes: SKILL_CLASS_GROUPS.any, family: 'aura', teamAura: { damageDealt: 2, damageTakenFlat: -2 } },
   { rarity: 'uncommon', id: 'dragon_fang', name: 'Dragon Fang', desc: 'Skl% chance to deal 1.5x damage.', source: 'Fates Nohr Prince/Princess', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', trigger: 'attack', effect: 'damageMultiplierChance', chanceStat: 'skl', multiplier: 1.5 },
   { rarity: 'rare', id: 'aether', name: 'Aether', desc: 'Skl% chance to pierce half defenses and heal for damage dealt.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', trigger: 'attack', effect: 'aetherChance', chanceStat: 'skl' },
   // { rarity: 'rare', id: 'rightful_king', name: 'Rightful King', desc: 'User skill activation chances +10%.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', procBonus: 10 },
@@ -485,7 +485,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
 
   // Thief, ninja, and assassin skills
   // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +100 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 100 },
-  // { rarity: 'uncommon', id: 'movement_plus_1', name: 'Movement', desc: "Spd +4 during user's first turn each battle.", source: 'Awakening Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', effect: 'firstActionSpeedBonus', amount: 3 },
+  // { rarity: 'uncommon', id: 'movement_plus_1', name: 'Movement', desc: "Spd +8 during user's first turn each battle.", source: 'Awakening Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', effect: 'firstActionSpeedBonus', amount: 8 },
   // { rarity: 'uncommon', id: 'pass', name: 'Pass', desc: 'User ignores enemy held-item and aura damage reduction.', source: 'Awakening Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'combat', effect: 'ignoreGuardAuras' },
   // { rarity: 'uncommon', id: 'poison_strike', name: 'Poison Strike', desc: 'After the user initiates combat, target loses 20% max HP.', source: 'Fates Ninja', classes: SKILL_CLASS_GROUPS.thief, family: 'debuff', trigger: 'afterCombat', effect: 'poisonStrike', amountPercent: 20 },
   { rarity: 'rare', id: 'lethality', name: 'Lethality', desc: 'Skl%/4 chance to instantly defeat an enemy.', source: 'Awakening/Fates Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'proc', trigger: 'attack', effect: 'lethalChance', chanceStat: 'sklQuarter' },
@@ -523,20 +523,20 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // Wyvern rider skills
   { rarity: 'normal', id: 'strength_plus_2', name: 'Strength +2', desc: 'Grants passive Str +2.', source: 'Awakening/Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'stat', stats: { str: 2 } },
   // { rarity: 'normal', id: 'tantivy', name: 'Tantivy', desc: 'Hit +10 and Avoid +10 while allies in adjacent slots have fallen.', source: 'Awakening Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'solo', hit: 10, avoid: 10 },
-  // { rarity: 'normal', id: 'lunge', name: 'Lunge', desc: 'After the user initiates combat, target Def -2 for one turn.', source: 'Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'debuff', trigger: 'afterCombat', stats: { def: -2 } },
+  // { rarity: 'normal', id: 'lunge', name: 'Lunge', desc: 'After the user initiates combat, target Def -2 until it's next turn.', source: 'Fates Wyvern Rider', classes: SKILL_CLASS_GROUPS.wyvern, family: 'debuff', trigger: 'afterCombat', stats: { def: -2 } },
   // { rarity: 'rare', id: 'trample', name: 'Trample', desc: 'Deals +4 damage to non-mounted enemies.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.wyvern, family: 'effective', targetTagNot: 'mounted', damageDealt: 4 },
   // { rarity: 'uncommon', id: 'savage_blow', name: 'Savage Blow', desc: 'After the user initiates combat, other enemies lose 10% max HP.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.wyvern, family: 'aoe', trigger: 'afterInitiatingCombat', effect: 'enemyTeamDamage', amountPercent: 10 },
   { rarity: 'rare', id: 'swordbreaker', name: 'Swordbreaker', desc: 'Hit +25 and Avoid +25 against sword users.', source: 'Awakening Wyvern Lord/Fates Wyvern Lord', classes: SKILL_CLASS_GROUPS.wyvern, family: 'breaker', breaker: 'sword', hit: 25, avoid: 25 },
   { rarity: 'uncommon', id: 'rally_defense_wyvern', name: 'Rally Defense', desc: 'Allies gain Def +4 on their first turn.', source: 'Fates Wyvern Lord', classes: SKILL_CLASS_GROUPS.wyvern, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
 
   // Fighter, warrior, and axe skills
-  { rarity: 'normal', id: 'hp_plus_5', name: 'HP +5', desc: 'Max HP +5.', source: 'Awakening/Fates Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'stat', stats: { hp: 5 } },
+  { rarity: 'normal', id: 'hp_plus_5', name: 'HP +5', desc: 'Grants passive Max HP +5.', source: 'Awakening/Fates Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'stat', stats: { hp: 5 } },
   { rarity: 'normal', id: 'zeal', name: 'Zeal', desc: 'Grants passive Crit +5.', source: 'Awakening Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'stat', crit: 5 },
   { rarity: 'normal', id: 'gamble', name: 'Gamble', desc: 'Hit -10 and Crit +15.', source: 'Awakening/Fates Barbarian/Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'combat', hit: -10, crit: 15 },
   // { rarity: 'rare', id: 'counter', name: 'Counter', desc: 'Reflects 30% of physical damage taken.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'retaliation', trigger: 'physicalHitTaken', effect: 'reflectDamagePercent', amountPercent: 30 },
   { rarity: 'uncommon', id: 'death_blow', name: 'Death Blow', desc: 'Crit +20 when attacking.', source: 'Fates Berserker', classes: SKILL_CLASS_GROUPS.fighter, family: 'playerPhase', crit: 20 },
   { rarity: 'rare', id: 'axefaire', name: 'Axefaire', desc: 'Deals +4 damage with axes.', source: 'Awakening/Fates Berserker', classes: SKILL_CLASS_GROUPS.fighter, family: 'faire', weaponType: 'axe', damageDealt: 4 },
-  { rarity: 'uncommon', id: 'rally_strength', name: 'Rally Strength', desc: 'Allies gain Str +4 on their first turn.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'rally', trigger: 'battleStart', rallyTarget: 'physical', stats: { str: 4 } },
+  { rarity: 'uncommon', id: 'rally_strength', name: 'Rally Strength', desc: 'Non-magic allies gain Str +4 on their first turn.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'rally', trigger: 'battleStart', rallyTarget: 'physical', stats: { str: 4 } },
 
   // Archer and sniper skills
   { rarity: 'normal', id: 'skill_plus_2', name: 'Skill +2', desc: 'Grants passive Skl +2.', source: 'Awakening/Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'stat', stats: { skl: 2 } },

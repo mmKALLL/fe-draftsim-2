@@ -146,7 +146,7 @@ export function skillBiomeBonus(u: Unit, key: string) {
 // contribution for `key`. u's team is chosen by its own isEnemy flag, so player auras
 // only ever buff player units and enemy auras only buff enemy units. Multiple holders
 // stack (their contributions add).
-export function teamAuraBonus(u: Unit, key: 'hit' | 'avoid' | 'damageDealt' | 'damageTakenFlat' | 'magicDamageDealt') {
+export function teamAuraBonus(u: Unit, key: 'hit' | 'avoid' | 'crit' | 'critAvoid' | 'damageDealt' | 'damageTakenFlat' | 'magicDamageDealt') {
   const team = u.isEnemy ? state.enemy : state.player
   let total = 0
   for (const member of team) {
@@ -233,7 +233,7 @@ export function critRate(a: Unit, d: Unit) {
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
   // Quixotic: the defender feeds its attacker extra crit (incomingCrit) — the
   // downside mirroring the holder's own +crit when it attacks.
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0) + (d.skill?.incomingCrit || 0) - (a.skill?.enemyCritAvoid || 0)), 0, 100)
+  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0) + teamAuraBonus(a, 'crit') + (d.skill?.incomingCrit || 0) - (a.skill?.enemyCritAvoid || 0) - teamAuraBonus(d, 'critAvoid')), 0, 100)
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'
