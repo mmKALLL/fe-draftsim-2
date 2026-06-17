@@ -547,7 +547,7 @@ export function healUnit(u: Unit, amount: number) {
 //   - regenPercent / regenFlat: unconditional self-heal.
 //   - luckHealChance (Good Fortune): Lck% chance to heal a flat amount.
 //   - regenIfNoAllyFallen (Relief): self-heal only if no ally on the team is fallen.
-//   - regenFlatIfAlliesAlive (Camaraderie): self-heal only if >= 2 allies alive.
+//   - regenFlatIfAlliesAlive (Camaraderie): self-heal only if >= skill.minAllies OTHER allies are alive (excludes the user).
 //   - allyRegenFlat (Amaterasu): flat heal to every living ally.
 export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
   const s = actor?.skill
@@ -582,7 +582,8 @@ export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
   } else if (s.effect === 'regenIfAdjacentAllyFallen') {
     amount = allAdjacentAlliesFallen(actor) ? floor((actor.maxHp * (s.amount || 0)) / 100) : 0
   } else if (s.effect === 'regenFlatIfAlliesAlive') {
-    amount = living.length >= 2 ? s.amount || 0 : 0
+    const otherAllies = living.filter((u) => u !== actor).length
+    amount = otherAllies >= (s.minAllies ?? 1) ? s.amount || 0 : 0
   } else return
   const healed = healUnit(actor, amount)
   if (healed <= 0) return
