@@ -156,6 +156,25 @@ export function teamAuraBonus(u: Unit, key: 'hit' | 'avoid' | 'crit' | 'critAvoi
   }
   return total
 }
+// A unit's "adjacent" allies are its immediate neighbours in the team array (slot
+// order). True only when EVERY existing adjacent ally has fallen — end slots have a
+// single neighbour, and this makes no assumption about team size. Used by Relief
+// (turn-start regen) and Tantivy ('solo' Hit/Avoid).
+export function allAdjacentAlliesFallen(u: Unit) {
+  const team = u.isEnemy ? state.enemy : state.player
+  const i = team.indexOf(u)
+  if (i < 0) return false
+  const neighbours: Unit[] = []
+  if (i > 0) neighbours.push(team[i - 1])
+  if (i < team.length - 1) neighbours.push(team[i + 1])
+  return neighbours.length > 0 && neighbours.every((n) => n.hp <= 0)
+}
+// 'solo' skills (e.g. Tantivy) grant a conditional Hit/Avoid while an adjacent ally
+// has fallen. Applied per-side in hitRate (attacker) and avoid (defender).
+export function skillSoloBonus(u: Unit, key: 'hit' | 'avoid') {
+  if (u.skill?.family !== 'solo') return 0
+  return allAdjacentAlliesFallen(u) ? u.skill[key] || 0 : 0
+}
 // Flat bonus damage from a skill the attacker applies on its own strike. Covers
 // 'playerPhase' ("when attacking", e.g. Quick Draw) and 'combat' (always-on, e.g.
 // Life and Death) families; both resolve to the same thing here since the actor is
@@ -209,7 +228,7 @@ export function hitRate(a: Unit, d: Unit) {
   // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
   // downside that mirrors the holder's own +hit when it attacks.
   return floor(
-    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + attackerHit + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') + skillBiomeBonus(a, 'hit') - (a.skill?.enemyAvoid || 0) + teamAuraBonus(a, 'hit')
+    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + attackerHit + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') + skillBiomeBonus(a, 'hit') - (a.skill?.enemyAvoid || 0) + teamAuraBonus(a, 'hit') + skillSoloBonus(a, 'hit')
   )
 }
 export function avoid(d: Unit, opponent: Unit | null = null) {
@@ -218,7 +237,7 @@ export function avoid(d: Unit, opponent: Unit | null = null) {
   const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'biome' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
   // Breaker avoid is conditional on the opponent's weapon type, so it only applies
   // when an opponent is supplied (i.e. during an actual matchup, not card displays).
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid') + skillBiomeBonus(d, 'avoid') + teamAuraBonus(d, 'avoid'))
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid') + skillBiomeBonus(d, 'avoid') + teamAuraBonus(d, 'avoid') + skillSoloBonus(d, 'avoid'))
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d, a), 0, 100)
@@ -496,6 +515,19 @@ export function applyBattleStartRallies() {
     logLine(null, `${caster.name} uses ${s.name}; allies gain ${label} on their first turn.`, 'heal')
     applied = true
   }
+  // Tempo skills (e.g. Movement) give the holder a one-turn self buff at battle start
+  // for any stat(s) in skill.stats, lasting through its first turn via the same
+  // turnBuffs lifecycle rally uses.
+  for (const u of living) {
+    const s = u.skill
+    if (s?.family !== 'tempo' || !s.stats) continue
+    const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
+    if (!entries.length) continue
+    for (const [stat, amt] of entries) applyStatBuff(u, stat, amt, 'turnBuffs')
+    const label = entries.map(([stat, amt]) => `${statLabel(u, stat)} +${amt}`).join(', ')
+    logLine(null, `${u.name}'s ${s.name} grants ${label} on its first turn.`, 'heal')
+    applied = true
+  }
   if (applied) renderTeams()
 }
 
@@ -547,6 +579,8 @@ export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
     amount = rint(100) + 1 <= chance ? s.amount || 0 : 0
   } else if (s.effect === 'regenIfNoAllyFallen') {
     amount = fallen ? 0 : floor((actor.maxHp * (s.amount || 0)) / 100)
+  } else if (s.effect === 'regenIfAdjacentAllyFallen') {
+    amount = allAdjacentAlliesFallen(actor) ? floor((actor.maxHp * (s.amount || 0)) / 100) : 0
   } else if (s.effect === 'regenFlatIfAlliesAlive') {
     amount = living.length >= 2 ? s.amount || 0 : 0
   } else return
