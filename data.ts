@@ -452,7 +452,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'salvage_blow', name: 'Salvage Blow', desc: '10% chance after the user defeats an enemy to add a weapon reward option.', source: 'Fates Blacksmith', classes: SKILL_CLASS_GROUPS.any, family: 'reward', trigger: 'kill', effect: 'weaponRewardChance', chance: 10 },
   // { rarity: 'normal', id: 'potent_potion', name: 'Potent Potion', desc: 'Healing consumables used by the user restore +5 HP.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'consumableHealBonus', amount: 5 },
   // { rarity: 'uncommon', id: 'quick_salve', name: 'Quick Salve', desc: 'User can use self-targeted consumables without ending their action.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'freeConsumableSelf' },
-  // { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'User and enemies both gain Hit +10 and Crit +10 during user combat.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 10, crit: 10, incomingHit: 10, incomingCrit: 10 },
+  { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +10 and Crit +10 for both the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 10, crit: 10, incomingHit: 10, incomingCrit: 10 },
 
   // Lord and royal-flavored skills
   // { rarity: 'normal', id: 'charm', name: 'Charm', desc: 'All allies gain Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', hit: 5, avoid: 5 },
@@ -476,11 +476,12 @@ export const TEACHABLE_SKILLS: SkillData[] = [
 
   // Myrmidon and swordmaster skills
   { rarity: 'normal', id: 'avoid_plus_10', name: 'Avoid +10', desc: 'Grants passive Avoid +10.', source: 'Awakening Myrmidon', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'stat', avoid: 10 },
+  // Left disabled: a "when attacking" Avoid bonus is inert here — 'playerPhase' avoid would only matter while attacking, and this engine has no counterattacks, so the attacker is never the one being hit (see avoid() in combat.ts).
   // { rarity: 'normal', id: 'duelists_blow', name: "Duelist's Blow", desc: 'Avoid +20 when initiating combat.', source: 'Fates Samurai', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'playerPhase', avoid: 20 },
   // { rarity: 'uncommon', id: 'vantage', name: 'Vantage', desc: 'When below 50% HP, counters before the attacker.', source: 'Awakening/Fates Myrmidon', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'enemyPhase', trigger: 'hpBelowHalf', effect: 'counterFirst' },
   // { rarity: 'rare', id: 'astra', name: 'Astra', desc: 'Skl%/2 chance to strike 5 times at half damage.', source: 'Awakening/Fates Swordmaster', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'proc', trigger: 'attack', effect: 'multiStrikeChance', chanceStat: 'sklHalf', strikes: 5, damageMultiplier: 0.5 },
   { rarity: 'rare', id: 'swordfaire', name: 'Swordfaire', desc: 'Deals +4 damage with swords.', source: 'Awakening/Fates Swordmaster', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'faire', weaponType: 'sword', damageDealt: 4 },
-  // { rarity: 'rare', id: 'life_and_death', name: 'Life and Death', desc: 'Deals +6 damage, but takes +6 damage.', source: 'Fates Master of Arms', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'combat', damageDealt: 6, damageTakenFlat: 6 },
+  { rarity: 'rare', id: 'life_and_death', name: 'Life and Death', desc: '+6 damage dealt and +6 damage taken.', source: 'Fates Master of Arms', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'combat', damageDealt: 6, damageTakenFlat: 6 },
 
   // Thief, ninja, and assassin skills
   // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +50 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 50 },
@@ -495,6 +496,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'normal', id: 'natural_cover', name: 'Natural Cover', desc: 'In Forest, Fort, Castle, Mountain, or Dungeon biomes, Def +2 and Res +2.', source: 'Fates Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'biome', effect: 'forestFortBonus', stats: { def: 2, res: 2 } },
   // { rarity: 'uncommon', id: 'wary_fighter', name: 'Wary Fighter', desc: 'Neither combatant can double during user combat.', source: 'Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'combat', effect: 'preventDoubles' },
   // { rarity: 'rare', id: 'pavise', name: 'Pavise', desc: 'Skl% chance to halve incoming physical damage.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'proc', trigger: 'physicalHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
+  // Left disabled: a "when attacking" Def bonus is inert here (no counterattacks, so the attacker never takes damage during its own combat).
   // { rarity: 'uncommon', id: 'armored_blow', name: 'Armored Blow', desc: 'Def +6 when initiating combat.', source: 'Fates Great Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'playerPhase', stats: { def: 6 } },
   { rarity: 'uncommon', id: 'rally_defense', name: 'Rally Defense', desc: 'Allies gain Def +4 on their first turn.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
 
@@ -510,10 +512,11 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // Pegasus and falcon knight skills
   { rarity: 'normal', id: 'speed_plus_2', name: 'Speed +2', desc: 'Grants passive Spd +2.', source: 'Awakening/Fates Pegasus Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'stat', stats: { spd: 2 } },
   { rarity: 'normal', id: 'relief', name: 'Relief', desc: 'Restores 10% max HP at the start of the turn if no ally has fallen.', source: 'Awakening Pegasus Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'survival', trigger: 'turnStart', effect: 'regenIfNoAllyFallen', amount: 10 },
-  // { rarity: 'uncommon', id: 'darting_blow', name: 'Darting Blow', desc: 'Spd +5 when initiating combat.', source: 'Fates Sky Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'playerPhase', stats: { spd: 5 } },
+  { rarity: 'uncommon', id: 'darting_blow', name: 'Darting Blow', desc: 'Spd +5 when attacking.', source: 'Fates Sky Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'playerPhase', stats: { spd: 5 } },
   { rarity: 'normal', id: 'camaraderie', name: 'Camaraderie', desc: 'Restores 5 HP at the start of the turn if at least two allies are alive.', source: 'Fates Sky Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'survival', trigger: 'turnStart', effect: 'regenFlatIfAlliesAlive', amount: 5 },
   { rarity: 'rare', id: 'lancefaire', name: 'Lancefaire', desc: 'Deals +4 damage with lances.', source: 'Awakening Falcon Knight/Fates Spear Master', classes: SKILL_CLASS_GROUPS.pegasus, family: 'faire', weaponType: 'lance', damageDealt: 4 },
   // { rarity: 'rare', id: 'galeforce', name: 'Galeforce', desc: 'Once per battle, the user gets another action after their first kill.', source: 'Awakening Dark Flier', classes: SKILL_CLASS_GROUPS.pegasus, family: 'tempo', trigger: 'firstKill', effect: 'extraAction', uses: 1 },
+  // Left disabled: a "when attacking" Res bonus is inert here (no counterattacks, so the attacker never takes damage during its own combat).
   // { rarity: 'uncommon', id: 'warding_blow', name: 'Warding Blow', desc: 'Res +8 when initiating combat.', source: 'Fates Falcon Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'playerPhase', stats: { res: 8 } },
   { rarity: 'uncommon', id: 'lancebreaker', name: 'Lancebreaker', desc: 'Hit +25 and Avoid +25 against lance users.', source: 'Awakening Griffon Knight', classes: SKILL_CLASS_GROUPS.pegasus, family: 'breaker', breaker: 'lance', hit: 25, avoid: 25 },
 
@@ -527,7 +530,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'uncommon', id: 'rally_defense_wyvern', name: 'Rally Defense', desc: 'Allies gain Def +4 on their first turn.', source: 'Fates Wyvern Lord', classes: SKILL_CLASS_GROUPS.wyvern, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
 
   // Fighter, warrior, and axe skills
-  // { rarity: 'normal', id: 'hp_plus_5', name: 'HP +5', desc: 'Max HP +5.', source: 'Awakening/Fates Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'stat', stats: { hp: 5 } },
+  { rarity: 'normal', id: 'hp_plus_5', name: 'HP +5', desc: 'Max HP +5.', source: 'Awakening/Fates Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'stat', stats: { hp: 5 } },
   { rarity: 'normal', id: 'zeal', name: 'Zeal', desc: 'Grants passive Crit +5.', source: 'Awakening Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'stat', crit: 5 },
   { rarity: 'normal', id: 'gamble', name: 'Gamble', desc: 'Hit -10 and Crit +15.', source: 'Awakening/Fates Barbarian/Fighter', classes: SKILL_CLASS_GROUPS.fighter, family: 'combat', hit: -10, crit: 15 },
   // { rarity: 'rare', id: 'counter', name: 'Counter', desc: 'Reflects 30% of physical damage taken.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'retaliation', trigger: 'physicalHitTaken', effect: 'reflectDamagePercent', amountPercent: 30 },
@@ -537,6 +540,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
 
   // Archer and sniper skills
   { rarity: 'normal', id: 'skill_plus_2', name: 'Skill +2', desc: 'Grants passive Skl +2.', source: 'Awakening/Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'stat', stats: { skl: 2 } },
+  // Partial: the Hit +15 applies (read in hitRate), but the Avoid +15 is currently inert — 'playerPhase' avoid is only relevant when attacking, and this engine has no counterattacks, so a unit never evades during its own combat (see avoid() in combat.ts).
   { rarity: 'normal', id: 'prescience', name: 'Prescience', desc: 'Hit +15 and Avoid +15 when attacking.', source: 'Awakening Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', hit: 15, avoid: 15 },
   { rarity: 'normal', id: 'quick_draw', name: 'Quick Draw', desc: '+4 damage when attacking.', source: 'Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', damageDealt: 4 },
   { rarity: 'uncommon', id: 'certain_blow', name: 'Certain Blow', desc: 'Hit +40 when attacking.', source: 'Fates Sniper', classes: SKILL_CLASS_GROUPS.archer, family: 'playerPhase', hit: 40 },

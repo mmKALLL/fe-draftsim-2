@@ -1,6 +1,6 @@
 import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
-import { consumableSummary, statLabel, unitTags } from './combat'
+import { computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
@@ -158,11 +158,17 @@ export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
   if (!cfg) return
   if (rollFractionalCount(cfg.skill) >= 1) {
     const pool = TEACHABLE_SKILLS.filter((s) => skillClassMatches(s, unit))
-    if (pool.length) unit.skill = pick(pool)
+    if (pool.length) {
+      unit.skill = pick(pool)
+      refreshMaxHp(unit) // a rolled HP +5 raises the enemy's maxHp before its hp is set to full
+    }
   }
   if (rollFractionalCount(cfg.held) >= 1) {
     const pool = HELD_ITEMS.filter((i: any) => heldItemRelevantToUnit(i, unit))
-    if (pool.length) unit.heldItem = pick(pool)
+    if (pool.length) {
+      unit.heldItem = pick(pool)
+      refreshMaxHp(unit) // keep maxHp in sync if a held item ever grants HP
+    }
   }
 }
 export function firstEmptyConsumableSlot() {
@@ -293,7 +299,7 @@ export function applyBoostToUnit(r: any, u: Unit) {
   }
   u.stats[r.stat] = Math.min(capStat(u, r.stat), u.stats[r.stat] + r.amt)
   if (r.stat === 'hp') {
-    u.maxHp = u.stats.hp
+    u.maxHp = computeMaxHp(u)
     u.hp = u.maxHp
   }
   return `${u.name} used ${boosterName(r.stat)}.`

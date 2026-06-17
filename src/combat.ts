@@ -58,10 +58,23 @@ export function biomeStatDelta(stat: StatKey) {
   }
   return delta
 }
+// 'playerPhase'-family skills grant a stat bonus only while the holder is the
+// attacker (this engine has no counterattacks, so "when attacking" == "on the
+// holder's own action"). Their `stats` are therefore EXCLUDED from combatStat
+// (which is shared by both phases and by passive/display contexts) and added back
+// in the attacker-only context — see playerPhaseStat / canDouble (Darting Blow).
 export function combatStat(u: Unit, stat: StatKey) {
-  let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0) + (u.skill?.stats?.[stat] || 0)
+  const skillStat = u.skill?.family === 'playerPhase' ? 0 : u.skill?.stats?.[stat] || 0
+  let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0) + skillStat
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
+}
+// Attacker-only stat bonus from a 'playerPhase' skill (e.g. Darting Blow's Spd +5).
+// Add this to the attacker's effective stat in attacker-only contexts; never to a
+// defender or to passive/display contexts (it would be inert there anyway since
+// this engine has no counterattacks).
+export function playerPhaseStat(u: Unit, stat: StatKey) {
+  return u.skill?.family === 'playerPhase' ? u.skill?.stats?.[stat] || 0 : 0
 }
 export function biomePhysicalPowerDelta(weapon: Weapon) {
   return hasBiomeEffect('strUp') && !weapon?.magic ? BIOME_STAT_DELTA : 0
@@ -109,13 +122,18 @@ export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | '
   if (!s || s.family !== 'breaker' || !opponent) return 0
   return weaponTypeMatches(s.breaker, opponent.weapon?.type) ? s[key] || 0 : 0
 }
+// Flat bonus damage from a skill the attacker applies on its own strike. Covers
+// 'playerPhase' ("when attacking", e.g. Quick Draw) and 'combat' (always-on, e.g.
+// Life and Death) families; both resolve to the same thing here since the actor is
+// always the attacker (this engine has no counterattacks). 'faire' is handled
+// separately via skillFaireBonus, so it is not counted here (no double-apply).
+export function skillAttackDamage(a: Unit) {
+  return a.skill?.family === 'playerPhase' || a.skill?.family === 'combat' ? a.skill.damageDealt || 0 : 0
+}
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
   const stat = combatStat(a, 'str')
-  // "When initiating" damage skills (e.g. Quick Draw) always apply here, since
-  // the actor is always the attacker (this engine has no counterattacks).
-  const initiateDamage = a.skill?.family === 'playerPhase' ? a.skill.damageDealt || 0 : 0
-  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + initiateDamage
+  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a)
 }
 // Target-independent attack power for card displays: weapon Might + the unit's
 // attack stat (str doubles as Mag here) plus its non-target-dependent bonuses.
@@ -124,23 +142,30 @@ export function attackPower(a: Unit, d: Unit) {
 export function displayAttackPower(a: Unit) {
   if (a.weapon?.staff) return 0
   const stat = combatStat(a, 'str')
-  const initiateDamage = a.skill?.family === 'playerPhase' ? a.skill.damageDealt || 0 : 0
-  return stat + (a.weapon?.mt || 0) + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + initiateDamage
+  return stat + (a.weapon?.mt || 0) + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a)
 }
 export function defenseAgainst(d: Unit, weapon: Weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)
+}
+// Flat extra damage the DEFENDER suffers from its own skill (Life and Death's
+// "+6 damage taken"). Added to each hit's base damage (before any crit multiplier),
+// and clamped together with the attacker's min-damage floor in rawDamage.
+export function damageTakenFlat(d: Unit) {
+  return d.skill?.damageTakenFlat || 0
 }
 export function rawDamage(a: Unit, d: Unit) {
   if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
   let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
   if (a.weapon.halfDef) def = floor(def / 2)
   const minDamage = a.skill?.effect === 'minimumDamage' ? a.skill.amount || 1 : 1
-  return Math.max(minDamage, attackPower(a, d) - def)
+  return Math.max(minDamage, attackPower(a, d) - def + damageTakenFlat(d))
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
+  // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
+  // downside that mirrors the holder's own +hit when it attacks.
   return floor(
-    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) + skillBreakerBonus(a, d, 'hit') - (a.skill?.enemyAvoid || 0)
+    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') - (a.skill?.enemyAvoid || 0)
   )
 }
 export function avoid(d: Unit, opponent: Unit | null = null) {
@@ -161,7 +186,9 @@ export function critRate(a: Unit, d: Unit) {
   if (a.weapon?.halveHp) return 0
   if (d.heldItem?.effect === 'critImmune') return 0
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0) - (a.skill?.enemyCritAvoid || 0)), 0, 100)
+  // Quixotic: the defender feeds its attacker extra crit (incomingCrit) — the
+  // downside mirroring the holder's own +crit when it attacks.
+  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0) + (d.skill?.incomingCrit || 0) - (a.skill?.enemyCritAvoid || 0)), 0, 100)
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'
@@ -229,7 +256,9 @@ export function enemyDisplayName(u: Unit) {
   return classAbbrev(u.displayCls)
 }
 export function canDouble(a: Unit, d: Unit) {
-  return attackSpeed(a) - attackSpeed(d) >= 4
+  // The attacker (a) always initiates here, so its 'playerPhase' Spd bonus (Darting
+  // Blow) boosts its attack speed for the doubling check only — not the defender's.
+  return attackSpeed(a) + playerPhaseStat(a, 'spd') - attackSpeed(d) >= 4
 }
 // Healtouch (family 'staff', healBonus N): the user's healing staves restore +N HP.
 export function staffHealBonus(a: Unit) {
@@ -284,11 +313,28 @@ export function temporaryBuffLabel(u: Unit) {
   if (!buffs.length) return ''
   return buffs.join(', ')
 }
+// Centralized max-HP: the unit's base HP (u.stats.hp, which already folds in any
+// active HP tonic/buff) plus flat HP bonuses from its skill (HP +5) and held item.
+// All maxHp assignments route through this so the skill/item HP layer survives
+// level-ups, promotions, and buff add/clear cycles.
+export function computeMaxHp(u: Unit) {
+  return (u.stats.hp || 0) + (u.skill?.stats?.hp || 0) + (u.heldItem?.stats?.hp || 0)
+}
+// Recompute maxHp after the skill/held-item HP layer changes (e.g. learning HP +5).
+// A living unit's current HP rises by the same delta so the gain is immediately
+// usable; clamps to [1, maxHp]. A fallen unit (hp <= 0) stays fallen.
+export function refreshMaxHp(u: Unit) {
+  const before = u.maxHp
+  u.maxHp = computeMaxHp(u)
+  const delta = u.maxHp - before
+  if (u.hp > 0) u.hp = clamp(u.hp + Math.max(0, delta), 1, u.maxHp)
+  else u.hp = Math.min(u.hp, u.maxHp)
+}
 export function clearBuffBucket(u: Unit, bucketName: any) {
   for (const [stat, amt] of (Object.entries(u[bucketName] || {}) as [string, number][])) {
     u.stats[stat] = Math.max(0, u.stats[stat] - amt)
     if (stat === 'hp') {
-      u.maxHp = u.stats.hp
+      u.maxHp = computeMaxHp(u)
       u.hp = Math.min(u.hp, u.maxHp)
     }
   }
@@ -298,7 +344,7 @@ export function clearTemporaryBuffs(units: Unit[]) {
   units.forEach((u: Unit) => {
     clearBuffBucket(u, 'turnBuffs')
     clearBuffBucket(u, 'tempBuffs')
-    u.maxHp = u.stats.hp
+    u.maxHp = computeMaxHp(u)
     u.hp = Math.min(u.hp, u.maxHp)
   })
 }
@@ -336,7 +382,7 @@ export function applyStatBuff(u: Unit, stat: StatKey, amount: number, bucketName
   u.stats[stat] += gained
   u[bucketName][stat] = current + gained
   if (stat === 'hp') {
-    u.maxHp = u.stats.hp
+    u.maxHp = computeMaxHp(u)
     u.hp = Math.min(u.maxHp, u.hp + gained)
   }
   return gained
@@ -524,9 +570,10 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   if (proc) {
     if (proc.effect === 'damageMultiplierChance') dmg = floor(dmg * (proc.multiplier || 1)) // Dragon Fang
     else if (proc.effect === 'halveDefenseChance' || proc.effect === 'aetherChance') {
-      // Luna / Aether: ignore half of the target's defense.
+      // Luna / Aether: ignore half of the target's defense. This branch rebuilds the
+      // damage from scratch, so re-apply the defender's flat damage-taken (Life and Death).
       const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
-      dmg = Math.max(1, attackPower(a, d) - floor(def / 2))
+      dmg = Math.max(1, attackPower(a, d) - floor(def / 2) + damageTakenFlat(d))
     } else if (proc.effect === 'addDefenseToDamageChance') dmg += floor(combatDefense(a) / 2) // Ignis
     else if (proc.effect === 'addMissingHpChance') dmg += floor(((a.maxHp - a.hp) * (proc.amountPercent || 50)) / 100) // Vengeance
   }

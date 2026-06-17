@@ -1,7 +1,7 @@
 import { SHOP_BOOST_OFFERS, SHOP_BOOST_PRICES, SHOP_CONSUMABLE_OFFERS, SHOP_CONSUMABLE_PRICES, SHOP_FORGE_PRICE, SHOP_HELD_ITEM_OFFERS, SHOP_SKILL_OFFERS, SHOP_SKILL_PRICES, SHOP_WEAPON_OFFERS, SHOP_WEAPON_PRICES } from '../constants'
 import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS } from '../data'
 import { setShopOpen } from './biomes'
-import { consumableSummary, statLabel } from './combat'
+import { consumableSummary, refreshMaxHp, statLabel } from './combat'
 import { beginNextBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity, skillTargets } from './rewards'
@@ -307,6 +307,7 @@ export function chooseShopHeldItemTarget(i: number) {
           return
         }
         u.heldItem = { ...offer.item }
+        refreshMaxHp(u) // keep maxHp in sync if a held item ever grants HP
         offer.sold = true
         closeModal()
         renderTeams()
@@ -338,6 +339,7 @@ export function chooseShopSkillTarget(i: number) {
           return
         }
         u.skill = { ...offer.item }
+        refreshMaxHp(u) // HP +5 etc. raises maxHp (and current HP) immediately on learning
         recordRewardCooldown(u.id, 'skill')
         offer.sold = true
         closeModal()
@@ -479,12 +481,14 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
   }
   if (r.type === 'heldItem') {
     r.unit.heldItem = r.item
+    refreshMaxHp(r.unit) // keep maxHp in sync if a held item ever grants HP
     recordRewardCooldown(r.unit.id, 'heldItem')
     closeModal()
     afterReward(`${r.unit.name} received ${r.item.name}.`)
   }
   if (r.type === 'skill') {
     r.unit.skill = r.item
+    refreshMaxHp(r.unit) // HP +5 etc. raises maxHp (and current HP) immediately on learning
     recordRewardCooldown(r.unit.id, 'skill')
     closeModal()
     afterReward(`${r.unit.name} learned ${r.item.name}.`)

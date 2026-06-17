@@ -1,6 +1,6 @@
 import { BOSS_TIER_BIOME, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
-import { sleep, statLabel } from './combat'
+import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
@@ -20,7 +20,7 @@ export function promote(u: Unit, showLog = true) {
   u.lvl = 1
   u.internalLevel = Math.max(u.internalLevel || 20, 21)
   syncDisplayLevel(u)
-  u.maxHp = u.stats.hp
+  u.maxHp = computeMaxHp(u)
   u.hp = Math.min(u.hp, u.maxHp)
   if (showLog) logLine(null, `${u.name} promotes to ${u.displayCls}!`, 'heal')
 }
@@ -41,7 +41,7 @@ export function applyGrowthLevel(u: Unit) {
     const growth = (u.growths[k] || 0) + (u.heldItem?.growths?.[k] || 0) + skillGrowth
     if (rint(100) + 1 <= growth) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
   }
-  u.maxHp = u.stats.hp
+  u.maxHp = computeMaxHp(u)
   u.hp = Math.min(u.hp, u.maxHp)
   return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].filter((k) => u.stats[k] > before[k])
 }
@@ -98,7 +98,7 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
   // Enemies are "unlucky": lower Luck growth (applied before leveling) makes them
   // easier to hit and easier to crit, without touching the FE7 formulas.
   if (enemy) u.growths.lck = Math.max(0, (u.growths.lck || 0) - ENEMY_LUCK_GROWTH_PENALTY)
-  u.maxHp = u.stats.hp
+  u.maxHp = computeMaxHp(u)
   u.hp = u.maxHp
   const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset || 0)
   const internalLevel = clamp(requestedInternalLevel, 1, 40)
