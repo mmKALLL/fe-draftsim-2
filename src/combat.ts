@@ -1,6 +1,6 @@
 import { BIOME_AVOID_DELTA, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
-import { activeBiomeEffects, hasBiomeEffect } from './biomes'
+import { activeBiomeEffects, activeBiomeEntry, hasBiomeEffect } from './biomes'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
 import { closeModal, showModal } from './ui'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
@@ -58,13 +58,13 @@ export function biomeStatDelta(stat: StatKey) {
   }
   return delta
 }
-// 'playerPhase'-family skills grant a stat bonus only while the holder is the
-// attacker (this engine has no counterattacks, so "when attacking" == "on the
-// holder's own action"). Their `stats` are therefore EXCLUDED from combatStat
-// (which is shared by both phases and by passive/display contexts) and added back
-// in the attacker-only context — see playerPhaseStat / canDouble (Darting Blow).
+// 'playerPhase' and 'biome' skills grant their `stats` only under a condition
+// (when attacking / while in a matching biome), so they are EXCLUDED from this
+// shared, condition-free combatStat (used by both phases and passive/display
+// contexts) and added back in the right context: 'playerPhase' via playerPhaseStat
+// (attacker only), 'biome' via skillBiomeBonus inside combatDefense/combatResistance.
 export function combatStat(u: Unit, stat: StatKey) {
-  const skillStat = u.skill?.family === 'playerPhase' ? 0 : u.skill?.stats?.[stat] || 0
+  const skillStat = u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' ? 0 : u.skill?.stats?.[stat] || 0
   let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0) + skillStat
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
@@ -90,10 +90,10 @@ export function attackSpeed(u: Unit) {
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
 export function combatDefense(u: Unit) {
-  return combatStat(u, 'def') + (u.weapon?.defBonus || 0)
+  return combatStat(u, 'def') + (u.weapon?.defBonus || 0) + skillBiomeBonus(u, 'def')
 }
 export function combatResistance(u: Unit) {
-  return combatStat(u, 'res') + (u.weapon?.resBonus || 0)
+  return combatStat(u, 'res') + (u.weapon?.resBonus || 0) + skillBiomeBonus(u, 'res')
 }
 export function effectiveMt(a: Unit, d: Unit) {
   const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
@@ -122,6 +122,19 @@ export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | '
   if (!s || s.family !== 'breaker' || !opponent) return 0
   return weaponTypeMatches(s.breaker, opponent.weapon?.type) ? s[key] || 0 : 0
 }
+// 'biome'-family skills grant a CONDITIONAL bonus that only applies while the team
+// is in one of the skill's listed biomes (skill.biomes is a list of biome ids — the
+// canonical key from BIOMES, also used for asset paths). The active biome is read
+// from activeBiomeEntry().biome.id. `key` selects which value to read: a top-level
+// numeric field (e.g. 'hit'/'avoid'/'damageDealt') or a stat under skill.stats
+// (e.g. 'def'/'res' for Natural Cover). Returns 0 when the family/biome doesn't match.
+export function skillBiomeBonus(u: Unit, key: string) {
+  const s = u.skill
+  if (!s || s.family !== 'biome' || !Array.isArray(s.biomes)) return 0
+  const biomeId = activeBiomeEntry()?.biome.id
+  if (!biomeId || !s.biomes.includes(biomeId)) return 0
+  return s.stats?.[key] ?? s[key] ?? 0
+}
 // Flat bonus damage from a skill the attacker applies on its own strike. Covers
 // 'playerPhase' ("when attacking", e.g. Quick Draw) and 'combat' (always-on, e.g.
 // Life and Death) families; both resolve to the same thing here since the actor is
@@ -133,7 +146,7 @@ export function skillAttackDamage(a: Unit) {
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
   const stat = combatStat(a, 'str')
-  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a)
+  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a) + skillBiomeBonus(a, 'damageDealt')
 }
 // Target-independent attack power for card displays: weapon Might + the unit's
 // attack stat (str doubles as Mag here) plus its non-target-dependent bonuses.
@@ -162,18 +175,23 @@ export function rawDamage(a: Unit, d: Unit) {
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
+  // 'biome' and 'breaker' skills carry their Hit conditionally (applied via
+  // skillBiomeBonus / skillBreakerBonus), so their top-level `hit` is excluded
+  // from the condition-free attacker term below (avoids double-counting).
+  const attackerHit = a.skill?.family === 'biome' || a.skill?.family === 'breaker' ? 0 : a.skill?.hit || 0
   // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
   // downside that mirrors the holder's own +hit when it attacks.
   return floor(
-    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + (a.skill?.hit || 0) + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') - (a.skill?.enemyAvoid || 0)
+    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + attackerHit + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') + skillBiomeBonus(a, 'hit') - (a.skill?.enemyAvoid || 0)
   )
 }
 export function avoid(d: Unit, opponent: Unit | null = null) {
-  // playerPhase avoid ("when initiating") is inert on defense — exclude it here.
-  const skillAvoid = d.skill && d.skill.family !== 'playerPhase' ? d.skill.avoid || 0 : 0
+  // playerPhase avoid ("when initiating") is inert on defense, and 'biome' avoid is
+  // conditional (applied via skillBiomeBonus) — exclude both from this flat term.
+  const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'biome' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
   // Breaker avoid is conditional on the opponent's weapon type, so it only applies
   // when an opponent is supplied (i.e. during an actual matchup, not card displays).
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid'))
+  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid') + skillBiomeBonus(d, 'avoid'))
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d, a), 0, 100)
