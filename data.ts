@@ -485,7 +485,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
 
   // Thief, ninja, and assassin skills
   // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +100 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 100 },
-  // { rarity: 'uncommon', id: 'movement_plus_1', name: 'Movement', desc: "Spd +3 during user's first turn each battle.", source: 'Awakening Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', effect: 'firstActionSpeedBonus', amount: 3 },
+  // { rarity: 'uncommon', id: 'movement_plus_1', name: 'Movement', desc: "Spd +4 during user's first turn each battle.", source: 'Awakening Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', effect: 'firstActionSpeedBonus', amount: 3 },
   // { rarity: 'uncommon', id: 'pass', name: 'Pass', desc: 'User ignores enemy held-item and aura damage reduction.', source: 'Awakening Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'combat', effect: 'ignoreGuardAuras' },
   // { rarity: 'uncommon', id: 'poison_strike', name: 'Poison Strike', desc: 'After the user initiates combat, target loses 20% max HP.', source: 'Fates Ninja', classes: SKILL_CLASS_GROUPS.thief, family: 'debuff', trigger: 'afterCombat', effect: 'poisonStrike', amountPercent: 20 },
   { rarity: 'rare', id: 'lethality', name: 'Lethality', desc: 'Skl%/4 chance to instantly defeat an enemy.', source: 'Awakening/Fates Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'proc', trigger: 'attack', effect: 'lethalChance', chanceStat: 'sklQuarter' },
@@ -495,7 +495,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'normal', id: 'defense_plus_2', name: 'Defense +2', desc: 'Grants passive Def +2.', source: 'Awakening/Fates Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'stat', stats: { def: 2 } },
   { rarity: 'normal', id: 'natural_cover', name: 'Natural Cover', desc: 'In Forest, Fort, Castle, Mountain, or Dungeon biomes, Def +2 and Res +2.', source: 'Fates Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'biome', biomes: ['forest', 'fort', 'castle', 'mountain', 'dungeon'], stats: { def: 2, res: 2 } },
   // { rarity: 'uncommon', id: 'wary_fighter', name: 'Wary Fighter', desc: 'Neither combatant can double during user combat.', source: 'Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'combat', effect: 'preventDoubles' },
-  // { rarity: 'rare', id: 'pavise', name: 'Pavise', desc: 'Skl% chance to halve incoming physical damage.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'proc', trigger: 'physicalHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
+  { rarity: 'rare', id: 'pavise', name: 'Pavise', desc: 'Skl% chance to halve incoming physical damage.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'proc', trigger: 'physicalHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
   // Left disabled: a "when attacking" Def bonus is inert here (no counterattacks, so the attacker never takes damage during its own combat).
   // { rarity: 'uncommon', id: 'armored_blow', name: 'Armored Blow', desc: 'Def +6 when initiating combat.', source: 'Fates Great Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'playerPhase', stats: { def: 6 } },
   { rarity: 'uncommon', id: 'rally_defense', name: 'Rally Defense', desc: 'Allies gain Def +4 on their first turn.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
@@ -506,7 +506,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'normal', id: 'elbow_room', name: 'Elbow Room', desc: 'Deals +3 damage in Road, Plains, River Delta, and Desert biomes.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'biome', biomes: ['road', 'plains', 'river_delta', 'desert'], damageDealt: 3 },
   // { rarity: 'uncommon', id: 'shelter', name: 'Shelter', desc: 'Once per battle, redirects one attack from an ally below 50% HP to the user.', source: 'Fates Cavalier', classes: SKILL_CLASS_GROUPS.cavalier, family: 'support', trigger: 'allyBelowHalf', effect: 'coverAlly', uses: 1 },
   { rarity: 'uncommon', id: 'defender', name: 'Defender', desc: 'Grants passive Def/Res +2.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'stat', stats: { def: 2, res: 2 } },
-  // { rarity: 'rare', id: 'aegis', name: 'Aegis', desc: 'Skl% chance to halve incoming magical damage.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'proc', trigger: 'magicHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
+  { rarity: 'rare', id: 'aegis', name: 'Aegis', desc: 'Skl% chance to halve incoming magical damage.', source: 'Awakening/Fates Paladin', classes: SKILL_CLASS_GROUPS.cavalier, family: 'proc', trigger: 'magicHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
   { rarity: 'rare', id: 'luna', name: 'Luna', desc: 'Skl% chance to ignore half of target Def or Res.', source: 'Awakening/Fates Great Knight', classes: SKILL_CLASS_GROUPS.cavalier, family: 'proc', trigger: 'attack', effect: 'halveDefenseChance', chanceStat: 'skl' },
 
   // Pegasus and falcon knight skills
@@ -536,7 +536,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'rare', id: 'counter', name: 'Counter', desc: 'Reflects 30% of physical damage taken.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'retaliation', trigger: 'physicalHitTaken', effect: 'reflectDamagePercent', amountPercent: 30 },
   { rarity: 'uncommon', id: 'death_blow', name: 'Death Blow', desc: 'Crit +20 when attacking.', source: 'Fates Berserker', classes: SKILL_CLASS_GROUPS.fighter, family: 'playerPhase', crit: 20 },
   { rarity: 'rare', id: 'axefaire', name: 'Axefaire', desc: 'Deals +4 damage with axes.', source: 'Awakening/Fates Berserker', classes: SKILL_CLASS_GROUPS.fighter, family: 'faire', weaponType: 'axe', damageDealt: 4 },
-  { rarity: 'uncommon', id: 'rally_strength', name: 'Rally Strength', desc: 'Non-magic allies gain Str +4 on their first turn.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'rally', trigger: 'battleStart', rallyTarget: 'physical', stats: { str: 4 } },
+  { rarity: 'uncommon', id: 'rally_strength', name: 'Rally Strength', desc: 'Allies gain Str +4 on their first turn.', source: 'Awakening/Fates Warrior', classes: SKILL_CLASS_GROUPS.fighter, family: 'rally', trigger: 'battleStart', rallyTarget: 'physical', stats: { str: 4 } },
 
   // Archer and sniper skills
   { rarity: 'normal', id: 'skill_plus_2', name: 'Skill +2', desc: 'Grants passive Skl +2.', source: 'Awakening/Fates Archer', classes: SKILL_CLASS_GROUPS.archer, family: 'stat', stats: { skl: 2 } },

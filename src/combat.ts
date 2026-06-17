@@ -531,19 +531,42 @@ export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
   logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
 }
 
+// Shared Skl-based activation chance for any 'proc' skill. Resolves the skill's
+// chanceStat ('skl' / 'sklHalf' / 'sklQuarter' / 'sklTimesTwo') against the unit's
+// combat Skl, clamped to [0, 100]. Reused by both the attacker procs (Aether, Sol,
+// Luna, ...) and the defender procs (Pavise, Aegis).
+export function sklProcChance(u: Unit, chanceStat: string | undefined) {
+  const skl = combatStat(u, 'skl')
+  const byStat: Record<string, number> = { skl, sklHalf: floor(skl / 2), sklQuarter: floor(skl / 4), sklTimesTwo: skl * 2 }
+  return clamp(byStat[chanceStat ?? ''] ?? 0, 0, 100)
+}
 // Skl-based activation chance for an attack proc skill (Aether, Sol, Luna, ...).
 export function attackProcChance(a: Unit) {
   const s = a.skill
   if (!s || s.family !== 'proc' || s.trigger !== 'attack') return 0
-  const skl = combatStat(a, 'skl')
-  const byStat: Record<string, number> = { skl, sklHalf: floor(skl / 2), sklQuarter: floor(skl / 4), sklTimesTwo: skl * 2 }
-  return clamp(byStat[s.chanceStat] ?? 0, 0, 100)
+  return sklProcChance(a, s.chanceStat)
 }
 export function rollAttackProc(a: Unit) {
   const isProc = a.skill?.family === 'proc' && a.skill?.trigger === 'attack'
   if (!isProc) return null
   const chance = DEBUG_SKILLS ? 100 : attackProcChance(a)
   return rint(100) + 1 <= chance ? a.skill : null
+}
+// Defensive proc (Pavise / Aegis): the DEFENDER d has a Skl% chance to HALVE an
+// incoming hit of the matching damage type. The skill's trigger gates the type:
+// 'physicalHitTaken' fires only vs non-magic weapons, 'magicHitTaken' only vs magic
+// weapons. Returns the defender's proc skill on a successful roll (so callers can
+// halve the strike damage and log it), or null otherwise. Independent of the
+// attacker-side proc check, so it never disturbs Luna/Aether/Sol/etc.
+export function rollDefenseProc(a: Unit, d: Unit) {
+  const s = d?.skill
+  if (!s || s.family !== 'proc' || s.effect !== 'halveDamageChance') return null
+  const wantsMagic = s.trigger === 'magicHitTaken'
+  const wantsPhysical = s.trigger === 'physicalHitTaken'
+  if ((wantsMagic && !a.weapon.magic) || (wantsPhysical && a.weapon.magic)) return null
+  if (!wantsMagic && !wantsPhysical) return null
+  const chance = DEBUG_SKILLS ? 100 : sklProcChance(d, s.chanceStat)
+  return rint(100) + 1 <= chance ? s : null
 }
 // Miracle (effect 'miracleChance', trigger 'lethalDamage'): when a hit would be
 // lethal, the defender's Luck is the chance to survive at 1 HP. Returns true only
@@ -571,18 +594,18 @@ export async function applyLifetaker(actor: Unit) {
 export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const dh = displayedHit(a, d),
     cr = critRate(a, d)
-  if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix, proc: null as any, procHeal: 0, lethal: false, miracle: false }
+  if (!trueHitRoll(dh)) return { hit: false, crit: false, damage: 0, dh, cr, suffix, proc: null as any, procHeal: 0, lethal: false, miracle: false, defenseProc: null as any }
   const proc = rollAttackProc(a)
   // Lethality: instant defeat, bypassing damage — unless Miracle saves the target.
   if (proc?.effect === 'lethalChance') {
     if (d.hp > 1 && rollMiracle(d)) {
       const before = d.hp
       d.hp = 1
-      return { hit: true, crit: false, damage: before - 1, dh, cr, suffix, proc, procHeal: 0, lethal: false, miracle: true }
+      return { hit: true, crit: false, damage: before - 1, dh, cr, suffix, proc, procHeal: 0, lethal: false, miracle: true, defenseProc: null as any }
     }
     const before = d.hp
     d.hp = 0
-    return { hit: true, crit: false, damage: before, dh, cr, suffix, proc, procHeal: 0, lethal: true, miracle: false }
+    return { hit: true, crit: false, damage: before, dh, cr, suffix, proc, procHeal: 0, lethal: true, miracle: false, defenseProc: null as any }
   }
   let dmg = rawDamage(a, d)
   if (proc) {
@@ -595,8 +618,16 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
     } else if (proc.effect === 'addDefenseToDamageChance') dmg += floor(combatDefense(a) / 2) // Ignis
     else if (proc.effect === 'addMissingHpChance') dmg += floor(((a.maxHp - a.hp) * (proc.amountPercent || 50)) / 100) // Vengeance
   }
-  const crit = rint(100) + 1 <= cr,
-    finalDmg = crit ? dmg * 3 : dmg
+  const crit = rint(100) + 1 <= cr
+  let finalDmg = crit ? dmg * 3 : dmg
+  // Defensive proc (Pavise / Aegis): the defender's Skl% chance to halve this hit's
+  // damage, gated to the matching damage type (physical vs magical). Applied to the
+  // post-crit total and floored, never below the min-damage floor of 1. This is a
+  // defender-side check independent of the attacker proc, so it fires whenever the
+  // defender is a player (enemy phase) or an enemy (player phase) — strikeResult is
+  // the single shared damage path for both.
+  const defenseProc = rollDefenseProc(a, d)
+  if (defenseProc) finalDmg = Math.max(1, floor(finalDmg / 2))
   const before = d.hp
   // Miracle: a hit that would be lethal (from above 1 HP) instead leaves the
   // defender at 1 HP on a successful Luck roll.
@@ -606,7 +637,7 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const damage = before - d.hp
   // Sol heals half of damage dealt; Aether heals all of it.
   const procHeal = proc?.effect === 'drainChance' ? floor((damage * (proc.healPercent || 50)) / 100) : proc?.effect === 'aetherChance' ? damage : 0
-  return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false, miracle }
+  return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false, miracle, defenseProc }
 }
 export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {
   const r = strikeResult(a, d, suffix)
@@ -615,6 +646,7 @@ export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {
     return r
   }
   logLine(log, `${a.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${d.name} for ${r.damage}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit ? 'crit' : 'hit')
+  if (r.defenseProc) logLine(log, `${d.name}'s ${r.defenseProc.name} halves the blow.`, 'crit')
   if (r.miracle) logLine(log, `${d.name}'s Miracle activates — survives at 1 HP!`, 'crit')
   if (d.hp <= 0) logLine(log, `${d.name} falls.`, 'death')
   return r
@@ -1117,10 +1149,12 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
           r.crit ? 'crit' : 'hit'
         )
         if (r.proc) logLine(null, `${actor.name}'s ${r.proc.name} activates${r.lethal ? ' — instant defeat' : ''}!`, 'crit')
+        if (r.defenseProc) logLine(null, `${target.name}'s ${r.defenseProc.name} halves the blow.`, 'crit')
         if (r.miracle) logLine(null, `${target.name}'s Miracle activates — survives at 1 HP!`, 'crit')
         if (target.hp <= 0) logLine(null, `${target.name} falls.`, 'death')
       }
       if (r.proc) await animateSkillProc(actor, r.proc)
+      if (r.defenseProc) await animateSkillProc(target, r.defenseProc)
       await animateStrike(actor, target, r)
       // Lifetaker: a player unit that defeats an enemy on player phase heals 50% max HP.
       if (target.hp <= 0 && r.hit) await applyLifetaker(actor)
