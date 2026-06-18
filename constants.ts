@@ -59,9 +59,9 @@ export const ROSTER_SIZE = 5,
   BIOME_SPEED_MULTIPLIER = 0.6
 
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
-  E: 400,
-  D: 600,
-  C: 900,
+  E: 300,
+  D: 500,
+  C: 800,
   B: 1100,
   A: 1500,
   S: 2200,
