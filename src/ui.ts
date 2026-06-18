@@ -1,7 +1,7 @@
 import { makeBiomePlan, renderBiomeMap } from './biomes'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
-import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount } from './render'
+import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { startShop } from './shop'
 import { goldHTML, updateGoldUI } from './state'
@@ -29,7 +29,7 @@ export function chooseBoostTarget(r: any, backToRewards: (() => void) | null = n
     const label = r.stat === 'level' ? 'Level' : statLabel(u, r.stat)
     const growths = r.stat === 'level' ? ` ${growthSummaryHTML(u)}` : ''
     const details = boostDetailHTML(r, u)
-    html += `<div class="choice"><div>${u.name}: ${label} ${before} -> ${after}${growths}${details}</div><button data-t="${i}">Use</button></div>`
+    html += `<div class="choice"><div>${u.name}: ${label} ${before} ${SPD_ARROW} ${after}${growths}${details}</div><button data-t="${i}">Use</button></div>`
   })
   showModal(html)
   document.querySelectorAll<HTMLElement>('[data-t]').forEach(

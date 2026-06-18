@@ -259,12 +259,14 @@ export function weaponNetSpeed(unit: Unit, item: any) {
   return (item.speedBonus || 0) - Math.max(0, (item.wt || 0) - unit.stats.con)
 }
 function fmtSignedSpd(n: number) {
-  return n > 0 ? `+${n}` : n < 0 ? `${n}` : '±0'
+  // Negatives use a true minus sign (U+2212) so −N sits on the same math axis as +N and ±0,
+  // unlike the lower/shorter hyphen-minus that number→string produces.
+  return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '±0'
 }
 export function weaponReplacementText(unit: Unit) {
   return unit.weapon ? `${unit.weapon.name} (${weaponSummary(unit.weapon)})` : 'nothing'
 }
-const SPD_ARROW = '<span class="spdArrow">→</span>'
+export const SPD_ARROW = '<span class="spdArrow">→</span>'
 export function weaponOfferTitle(item: any, unit: Unit | null = null) {
   if (!unit) return item.name
   // Show the con-based net speed change as an arrow (current weapon → this weapon), with the
@@ -306,11 +308,11 @@ export function skillOfferTitle(skill: any, unit: Unit | null = null) {
 // general ('Any'-class) skill. Mirrors skillClassMatches in rewards.ts (inlined
 // here to avoid a render <-> rewards import cycle).
 export function skillEligibleUnitsLabel(skill: any) {
-  if (skill.classes?.includes('Any')) return 'All units'
-  return state.player
-    .filter((u) => skill.classes?.includes(u.cls) || skill.classes?.includes(u.displayCls))
-    .map((u) => u.name)
-    .join(', ')
+  const withSkill = (u: Unit) => `${u.name} (${u.skill?.name || 'None'})`
+  const eligible = skill.classes?.includes('Any')
+    ? state.player
+    : state.player.filter((u) => skill.classes?.includes(u.cls) || skill.classes?.includes(u.displayCls))
+  return eligible.map(withSkill).join(', ')
 }
 export function skillOfferDescription(skill: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Teach'

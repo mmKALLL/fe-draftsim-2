@@ -312,8 +312,10 @@ export function classAbbrev(cls: string) {
   return map[cls] || String(cls).slice(0, 7)
 }
 export function statLabel(entity: any, stat: StatKey) {
-  if (stat === 'str') return CLASSES[entity?.cls]?.strLabel || 'STR'
-  return stat.toUpperCase()
+  if (stat === 'hp') return 'HP'
+  const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+  if (stat === 'str') return pascal(CLASSES[entity?.cls]?.strLabel || 'str') // 'MAG' -> 'Mag', else 'Str'
+  return pascal(stat)
 }
 export function bossNameFor(u: Unit) {
   const list = BOSS_NAMES_BY_CLASS[u.displayCls] || BOSS_NAMES_BY_CLASS[u.cls]

@@ -2,7 +2,7 @@ import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_RE
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
 import { computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
-import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle } from './render'
+import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, SPD_ARROW, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
 import { formatGold, goldHTML } from './state'
 import { levelLabel, showModal } from './ui'
@@ -256,12 +256,12 @@ export function targetedBoostReward(r: any) {
 export function boostRewardDescription(r: any, u: Unit) {
   if (r.stat === 'level') {
     const growths = `<div class="small rewardMeta">Growths ${growthSummaryHTML(u)}</div>`
-    return `Immediately levels up ${u.name} ${levelLabel(u)} -> L${u.lvl + 1}.${growths}`
+    return `Immediately levels up ${u.name} ${levelLabel(u)} ${SPD_ARROW} L${u.lvl + 1}.${growths}`
   }
   const label = statLabel(u, r.stat)
   const before = u.stats[r.stat]
   const after = Math.min(capStat(u, r.stat), before + r.amt)
-  return `Permanently grants ${u.name} ${label} +${r.amt} (${before} -> ${after}).${boostDetailHTML(r, u)}`
+  return `Permanently grants ${u.name} ${label} +${r.amt} (${before} ${SPD_ARROW} ${after}).${boostDetailHTML(r, u)}`
 }
 export function equippedWeaponWeightText(u: Unit) {
   return u.weapon ? `Equipped: ${u.weapon.name}, Wt ${u.weapon.wt || 0}` : 'Equipped: none'

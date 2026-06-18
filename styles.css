@@ -1026,11 +1026,10 @@ h4 {
   }
 }
 
-/* Reward speed-change arrow: a serif glyph (slight curvature) stretched a touch wider
-   for a longer line. System fonts only + generic serif fallback, so it always renders
-   offline with no web-font download. */
+/* Speed-change arrow: inherit the surrounding font and size so the → glyph sits on the same
+   axis as the text's hyphen-minus, keeping its center aligned with the "-" on every platform.
+   (A serif font-family override drifts off-center on devices lacking that font, e.g. Android.) */
 .spdArrow {
-  font-family: 'Palatino Linotype', Palatino, 'Hoefler Text', Georgia, 'Times New Roman', serif;
   font-weight: normal;
-  font-size: medium;
+  vertical-align: -1px
 }
