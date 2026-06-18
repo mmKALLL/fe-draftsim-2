@@ -64,7 +64,12 @@ export function biomeStatDelta(stat: StatKey) {
 // contexts) and added back in the right context: 'playerPhase' via playerPhaseStat
 // (attacker only), 'biome' via skillBiomeBonus inside combatDefense/combatResistance.
 export function combatStat(u: Unit, stat: StatKey) {
-  const skillStat = u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' ? 0 : u.skill?.stats?.[stat] || 0
+  // 'rally'/'tempo' (like 'playerPhase'/'biome') deliver their stats via the
+  // battle-start turnBuff (applyBattleStartRallies), so the skill's own `stats`
+  // must NOT also count as a passive self-bonus — that double-buffed the holder.
+  const deliveredViaBuff =
+    u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
+  const skillStat = deliveredViaBuff ? 0 : u.skill?.stats?.[stat] || 0
   let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0) + skillStat
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
@@ -369,10 +374,10 @@ export function weaponEffectLabels(w: Weapon) {
 export function temporaryBuffLabel(u: Unit) {
   const battleBuffs = (Object.entries(u.tempBuffs || {}) as [string, number][])
     .filter(([, amt]) => amt > 0)
-    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)}+${amt}`)
+    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)} +${amt}`)
   const turnBuffs = (Object.entries(u.turnBuffs || {}) as [string, number][])
     .filter(([, amt]) => amt > 0)
-    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)}+${amt} turn`)
+    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)} +${amt} turn`)
   const buffs = [...battleBuffs, ...turnBuffs]
   if (!buffs.length) return ''
   return buffs.join(', ')
@@ -677,7 +682,7 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
       // damage from scratch, so re-apply the defender's flat damage-taken (Life and Death).
       const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
       dmg = Math.max(1, attackPower(a, d) - floor(def / 2) + damageTakenFlat(d))
-    } else if (proc.effect === 'addDefenseToDamageChance') dmg += floor(combatDefense(a) / 2) // Ignis
+    } else if (proc.effect === 'addResToDamageChance') dmg += combatResistance(a) // Ignis
     else if (proc.effect === 'addMissingHpChance') dmg += floor(((a.maxHp - a.hp) * (proc.amountPercent || 50)) / 100) // Vengeance
   }
   const crit = rint(100) + 1 <= cr
@@ -1023,7 +1028,7 @@ export async function animateConsumable(actor: Unit, target: Unit, item: any) {
     const gained = applyStatBuff(target, item.stat, item.amount, bucketName)
     const duration = item.effect === 'turnBuff' ? 'until its next action ends' : 'for this battle'
     const label = statLabel(target, item.stat)
-    floatText(target, `${label}+${gained}`, 'healing')
+    floatText(target, `${label} +${gained}`, 'healing')
     logLine(null, `${actor.name} uses ${item.name} on ${target.name}; ${target.name} gains ${label} +${gained} ${duration}.`, 'heal')
   } else if (item.effect === 'restore') {
     const status = statusName(target.status)

@@ -123,7 +123,11 @@ export function statHTML(u: Unit, showGrowths = false) {
   return (['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[])
     .map((k) => {
       const growth = u.growths[k] == null ? '--' : u.growths[k]
-      return `<span><b>${statLabel(u, k)}</b> ${showGrowths ? growth : u.stats[k]}</span>`
+      // Show base/permanent stats, not temporary buffs: applyStatBuff adds rally/tonic
+      // buffs into u.stats, so subtract the buff buckets here. The buff stays visible in
+      // the card's buff label and in the derived dmg/AS/Hit/Avo values.
+      const tempBuff = ((u.turnBuffs?.[k] as number) || 0) + ((u.tempBuffs?.[k] as number) || 0)
+      return `<span><b>${statLabel(u, k)}</b> ${showGrowths ? growth : (u.stats[k] || 0) - tempBuff}</span>`
     })
     .join('')
 }

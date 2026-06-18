@@ -453,6 +453,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'normal', id: 'potent_potion', name: 'Potent Potion', desc: 'Healing consumables used by the user restore +5 HP.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'consumableHealBonus', amount: 5 },
   // { rarity: 'uncommon', id: 'quick_salve', name: 'Quick Salve', desc: 'User can use self-targeted consumables without ending their action.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'freeConsumableSelf' },
   { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +30 and Crit +15 for both the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 30, crit: 15, incomingHit: 30, incomingCrit: 15 },
+  { rarity: 'uncommon', id: 'ignis', name: 'Ignis', desc: 'Skl% chance to add Res to damage.', source: 'Awakening Grandmaster', classes: SKILL_CLASS_GROUPS.any, family: 'proc', trigger: 'attack', effect: 'addResToDamageChance', chanceStat: 'skl' },
 
   // Lord and royal-flavored skills
   { rarity: 'normal', id: 'charm', name: 'Charm', desc: 'Allies have Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', teamAura: { hit: 5, avoid: 5 } },
@@ -553,7 +554,6 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'normal', id: 'focus', name: 'Focus', desc: 'Crit +10 while at least one ally is fallen.', source: 'Awakening Mage', classes: SKILL_CLASS_GROUPS.mage, family: 'solo', crit: 10 },
   // { rarity: 'normal', id: 'future_sight', name: 'Future Sight', desc: "15% chance each turn to make the user's next hit roll use the better of two rolls.", source: 'Fates Diviner', classes: SKILL_CLASS_GROUPS.mage, family: 'rng', trigger: 'turnStart', effect: 'rerollLowHit', chance: 15 },
   { rarity: 'uncommon', id: 'rally_magic', name: 'Rally Magic', desc: 'Magic allies gain Mag +4 on their first turn.', source: 'Awakening Sage/Fates Onmyoji', classes: SKILL_CLASS_GROUPS.mage, family: 'rally', trigger: 'battleStart', rallyTarget: 'magic', stats: { str: 4 } },
-  { rarity: 'uncommon', id: 'ignis', name: 'Ignis', desc: 'Skl% chance to ignore half Def/Res.', source: 'Awakening Grandmaster', classes: SKILL_CLASS_GROUPS.mage, family: 'proc', trigger: 'attack', effect: 'halveDefenseChance', chanceStat: 'skl' },
   { rarity: 'rare', id: 'tomefaire', name: 'Tomefaire', desc: 'Deals +4 magic damage.', source: 'Awakening Sage/Fates Onmyoji', classes: SKILL_CLASS_GROUPS.mage, family: 'faire', weaponType: 'tome', damageDealt: 4 },
   { rarity: 'rare', id: 'lifetaker', name: 'Lifetaker', desc: 'After the user defeats an enemy on its turn, heals 50% max HP.', source: 'Awakening Dark Knight/Fates Dark Knight', classes: SKILL_CLASS_GROUPS.mage, family: 'survival', trigger: 'playerPhaseKill', effect: 'healPercent', amount: 50 },
 
