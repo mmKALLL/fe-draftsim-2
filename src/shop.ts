@@ -1,5 +1,5 @@
-import { SHOP_BOOST_OFFERS, SHOP_BOOST_PRICES, SHOP_CONSUMABLE_OFFERS, SHOP_CONSUMABLE_PRICES, SHOP_FORGE_PRICE, SHOP_HELD_ITEM_OFFERS, SHOP_SKILL_OFFERS, SHOP_SKILL_PRICES, SHOP_WEAPON_OFFERS, SHOP_WEAPON_PRICES } from '../constants'
-import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS } from '../data'
+import { CONSUMABLE_SLOTS, SHOP_BOOST_OFFERS, SHOP_BOOST_PRICES, SHOP_CONSUMABLE_OFFERS, SHOP_CONSUMABLE_PRICES, SHOP_FORGE_PRICE, SHOP_HELD_ITEM_OFFERS, SHOP_SKILL_OFFERS, SHOP_SKILL_PRICES, SHOP_WEAPON_OFFERS, SHOP_WEAPON_PRICES } from '../constants'
+import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
 import { setShopOpen } from './biomes'
 import { consumableSummary, refreshMaxHp, statLabel } from './combat'
 import { beginNextBattle } from './game'
@@ -166,6 +166,18 @@ export function renderShop(message = '') {
   let html = `<div class="shopHeader"><div><h3>Welcome to the shop. What do you need? (Gold: ${goldHTML(state.gold)})</h3></div></div>`
   if (message) html += `<div class="notice">${message}</div>`
 
+  // Read-only display of the player's current consumables; appended at the very bottom,
+  // below the Leave shop button (see end of renderShop).
+  const filledConsumables = state.consumables.filter(Boolean).length
+  const consumableSlotsHtml = Array.from({ length: CONSUMABLE_SLOTS }, (_, i) => state.consumables[i] || null)
+    .map((item, i) =>
+      item
+        ? `<div class="consumableSlot"><div class="small">${weaponTierLabel(item.tier)}</div><div class="name">${item.name}</div><div class="small">${consumableSummary(item)}</div></div>`
+        : `<div class="consumableSlot empty"><div class="small">Slot ${i + 1}</div><div>Empty</div></div>`
+    )
+    .join('')
+  const yourConsumablesPanel = `<section class="shopSection"><div class="row space"><h3>Your Consumables</h3><span class="badge">${filledConsumables}/${CONSUMABLE_SLOTS}</span></div><div class="consumableSlots">${consumableSlotsHtml}</div></section>`
+
   html += `<section class="shopSection"><h3>Weapons</h3>`
   html += `<div class="small shopSectionNote">Bought weapons can be equipped to anyone eligible to wield them.</div>`
 
@@ -177,6 +189,7 @@ export function renderShop(message = '') {
   html += `<section class="shopSection"><h3>Forge</h3><div class="shopRow">${groups.forge.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
 
   html += `<div class="row space shopActions"><button id="leaveShopBtn" class="primary">Leave shop</button></div>`
+  html += yourConsumablesPanel
 
   setShopOpen(true)
   $('shopScreen').innerHTML = html

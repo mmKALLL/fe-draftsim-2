@@ -70,6 +70,9 @@ export function generateEnemy() {
     e.bossTier = isBossSlot ? bossTier : null
     e.palette = 'red'
     e.team = 'red'
+    // Unpromoted lord-class enemies (e.g. Hector, whose weaponType is axe) should always
+    // wield a sword; force the sword type so enemyWeaponFor picks from the sword pool.
+    if (e.kind === 'lord' && !e.promoted && e.weaponType !== 'sword') e.weaponType = 'sword'
     e.weapon = enemyWeaponFor(e, e.bossTier, !!isBossSlot || goodMinionSlots.has(i))
     e.name = enemyDisplayName(e)
     assignEnemyBonuses(e, isBossSlot ? 'boss' : 'minion')

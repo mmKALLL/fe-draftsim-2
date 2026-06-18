@@ -1,4 +1,4 @@
-import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS } from '../constants'
+import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
 import { computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags } from './combat'
 import { bossTierForBattle } from './game'
@@ -145,7 +145,11 @@ export function skillReward(rarity: Rarity = 'normal') {
   // appear so a specific skill can be tested. Pair with DEBUG_SKILLS for frequent rolls.
   const forced = offerable.filter((s) => s.debugAlways)
   const tierPool = forced.length ? forced : offerable.filter((s) => s.rarity === rarity)
-  const skill = pick(tierPool.length ? tierPool : offerable)
+  const pool = tierPool.length ? tierPool : offerable
+  // Universal ('Any'-class) skills are eligible for every unit, so weight them down
+  // (UNIVERSAL_SKILL_WEIGHT) relative to class-specific skills (weight 1) when choosing.
+  const weighted = pool.map((s) => [s, s.classes.includes('Any') ? UNIVERSAL_SKILL_WEIGHT : 1] as [any, number])
+  const skill = weightedTier(weighted)
   const unit = pick(skillTargets(skill))
   return { type: 'skill', title: skillOfferTitle(skill, unit), desc: skillOfferDescription(skill, unit), unit, item: skill }
 }

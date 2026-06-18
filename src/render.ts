@@ -252,17 +252,28 @@ export function weaponSummary(w: Weapon, forForge = false) {
   if (forForge) return `Mt ${w.mt}, Hit ${w.hit}`
   return `Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}, Rank ${w.rank}${effectText}`
 }
-export function weaponSpeedImpact(unit: Unit, item: any) {
-  const speedImpact = Math.min(0, unit.stats.con - item.wt + (item.speedBonus || 0))
-  const symbol = speedImpact < 0 ? '-' : speedImpact === 0 ? '±' : '+'
-  return `${symbol}${Math.abs(speedImpact)}`
+// Net per-weapon speed impact: the weapon's speed bonus minus the Con-based weight
+// penalty (max(0, wt - con)). Unclamped, so a light weapon's bonus reads as a positive
+// (e.g. Slim Sword: +4) and a heavy weapon reads as a negative.
+export function weaponNetSpeed(unit: Unit, item: any) {
+  return (item.speedBonus || 0) - Math.max(0, (item.wt || 0) - unit.stats.con)
+}
+function fmtSignedSpd(n: number) {
+  return n > 0 ? `+${n}` : n < 0 ? `${n}` : '±0'
 }
 export function weaponReplacementText(unit: Unit) {
   return unit.weapon ? `${unit.weapon.name} (${weaponSummary(unit.weapon)})` : 'nothing'
 }
+const SPD_ARROW = '<span class="spdArrow">→</span>'
 export function weaponOfferTitle(item: any, unit: Unit | null = null) {
   if (!unit) return item.name
-  return `${item.name} to ${unit.name} (Con: ${unit.stats.con}, Speed ${weaponSpeedImpact(unit, item)})`
+  // Show the con-based net speed change as an arrow (current weapon → this weapon), with the
+  // weapon's speed bonus folded in: e.g. "Spd -4 → -1". When equipping wouldn't change the
+  // net speed (or there's no current weapon), show just the single value: e.g. "Spd +4".
+  const next = weaponNetSpeed(unit, item)
+  const cur = unit.weapon ? weaponNetSpeed(unit, unit.weapon) : next
+  const spdText = cur === next ? `Spd ${fmtSignedSpd(next)}` : `Spd ${fmtSignedSpd(cur)} ${SPD_ARROW} ${fmtSignedSpd(next)}`
+  return `${item.name} to ${unit.name} (${spdText})`
 }
 export function weaponOfferDescription(item: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Equip'

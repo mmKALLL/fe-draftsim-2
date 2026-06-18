@@ -59,16 +59,18 @@ export function afterReward(msg: string, cls = 'heal') {
   }
   beginNextBattle()
 }
-export function winCount() {
-  // state.battle is the current/last-started battle (0 before any battle, 1 while fighting battle 1, ...),
-  // so wins == battle - 1, floored at 0 so a brand-new game shows 0 wins instead of -1.
-  return Math.max(0, state.battle - 1)
+export function winCount(currentBattleWon = false) {
+  // state.battle is the current/last-started battle (0 before any battle, 1 while fighting battle 1, ...).
+  // While fighting (or after losing) battle N, wins == battle - 1, floored at 0 so a brand-new game
+  // shows 0 wins. After winning the current battle (e.g. the final 20th), that battle counts too.
+  return Math.max(0, state.battle - (currentBattleWon ? 0 : 1))
 }
-export function currentScore() {
-  return winCount() * 1000 + state.gold
+export function currentScore(currentBattleWon = false) {
+  return winCount(currentBattleWon) * 1000 + state.gold
 }
 export function scoreHTML(finalScore = false) {
-  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore()}</b> (${winCount()} wins × 1000 + ${goldHTML(state.gold)})</p>`
+  // finalScore is only shown on the victory screen, where the current (20th) battle was just won.
+  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore(finalScore)}</b> (${winCount(finalScore)} wins × 1000 + ${goldHTML(state.gold)})</p>`
 }
 export function showWin() {
   showModal(

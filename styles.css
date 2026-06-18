@@ -1025,3 +1025,12 @@ h4 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Reward speed-change arrow: a serif glyph (slight curvature) stretched a touch wider
+   for a longer line. System fonts only + generic serif fallback, so it always renders
+   offline with no web-font download. */
+.spdArrow {
+  font-family: 'Palatino Linotype', Palatino, 'Hoefler Text', Georgia, 'Times New Roman', serif;
+  font-weight: normal;
+  font-size: medium;
+}

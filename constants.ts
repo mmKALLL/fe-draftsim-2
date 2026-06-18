@@ -116,13 +116,13 @@ export const ENEMY_LUCK_GROWTH_PENALTY = 10
 // active arena + boss type. Tune any cell; <= 0 drops a rarity from that pool.
 export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'biome', Record<Rarity, number>>[] = [
   // Arena 1
-  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 40, uncommon: 55, rare: 5 }, biome: { normal: 20, uncommon: 60, rare: 20 } },
+  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 40, uncommon: 55, rare: 5 }, biome: { normal: 0, uncommon: 90, rare: 10 } },
   // Arena 2
   { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 30, uncommon: 40, rare: 20 }, biome: { normal: 0, uncommon: 60, rare: 40 } },
   // Arena 3
-  { standard: { normal: 25, uncommon: 55, rare: 20 }, regular: { normal: 10, uncommon: 45, rare: 45 }, biome: { normal: 0, uncommon: 20, rare: 80 } },
+  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 10, uncommon: 45, rare: 45 }, biome: { normal: 0, uncommon: 20, rare: 80 } },
   // Arena 4
-  { standard: { normal: 10, uncommon: 60, rare: 30 }, regular: { normal: 0, uncommon: 30, rare: 70 }, biome: { normal: 0, uncommon: 10, rare: 90 } },
+  { standard: { normal: 10, uncommon: 70, rare: 20 }, regular: { normal: 0, uncommon: 30, rare: 70 }, biome: { normal: 0, uncommon: 10, rare: 90 } },
 ]
 
 // Gentle early ramp: enemies in the first EARLY_ENEMY_NERF_BATTLES fights are
@@ -132,6 +132,10 @@ export const EARLY_ENEMY_LEVEL_PENALTY = 1
 
 // Debug: skills appear ~10x more often as rewards and attack procs always fire.
 export const DEBUG_SKILLS = false
+
+// Universal (Any class) skills are eligible for every unit, so without a penalty
+// they dominate the skill-reward pool. This multiplier weight adjusts their prevalence.
+export const UNIVERSAL_SKILL_WEIGHT = 0.25
 
 // --- Enemy weapon selection, tunable per arena (1-4) & role -----------------
 // Weapons have no rarity field, so we map letter rank -> rarity group for selection.
