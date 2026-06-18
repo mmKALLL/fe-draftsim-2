@@ -140,7 +140,11 @@ export function skillTargets(skill: any) {
 export function skillReward(rarity: Rarity = 'normal') {
   const offerable = TEACHABLE_SKILLS.filter((s) => skillTargets(s).length)
   if (!offerable.length) return null
-  const tierPool = offerable.filter((s) => s.rarity === rarity)
+  // Debug: marking a skill with `debugAlways: true` in data.ts collapses the skill
+  // pool to only the flagged skills (ignoring the rolled rarity), forcing them to
+  // appear so a specific skill can be tested. Pair with DEBUG_SKILLS for frequent rolls.
+  const forced = offerable.filter((s) => s.debugAlways)
+  const tierPool = forced.length ? forced : offerable.filter((s) => s.rarity === rarity)
   const skill = pick(tierPool.length ? tierPool : offerable)
   const unit = pick(skillTargets(skill))
   return { type: 'skill', title: skillOfferTitle(skill, unit), desc: skillOfferDescription(skill, unit), unit, item: skill }

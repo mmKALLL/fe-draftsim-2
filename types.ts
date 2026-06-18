@@ -77,6 +77,8 @@ export type SkillData = {
   source: string
   classes: string[]
   family: string
+  // Debug: force this skill to be the only one offered as a reward (see skillReward).
+  debugAlways?: boolean
   [key: string]: unknown
 }
 
