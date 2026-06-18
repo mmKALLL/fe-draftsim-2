@@ -72,7 +72,7 @@ export function scoreHTML(finalScore = false) {
 }
 export function showWin() {
   showModal(
-    `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share your thoughts with the developer.</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
+    `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
@@ -127,7 +127,7 @@ export function showHelpRules() {
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
     <p>Score is calculated as wins × 1000 + remaining gold.</p>
-    <p>(You are playing version 1.2.1-preload)</p>
+    <p>(You are playing version 1.3.0-skills)</p>
     <button data-close class="primary">Back</button>`
   )
 }

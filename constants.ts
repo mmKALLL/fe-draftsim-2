@@ -95,9 +95,9 @@ export const SHOP_BOOST_PRICES: Record<BoostPriceKey, number> = {
 // Only the always-on self-passive skills are wired (see TEACHABLE_SKILLS);
 // support is reserved until implemented.
 export const REWARD_TYPE_WEIGHTS: Record<RewardType, number>[] = [
-  { weapon: 5, consumable: 1, boost: 1, heldItem: 1.5, skill: 3, support: 0 }, // Arena 1
-  { weapon: 5, consumable: 1, boost: 2, heldItem: 1.5, skill: 2.5, support: 0 }, // Arena 2
-  { weapon: 5, consumable: 1.5, boost: 2, heldItem: 1.5, skill: 2, support: 0 }, // Arena 3
+  { weapon: 7, consumable: 1, boost: 1, heldItem: 1.5, skill: 3, support: 0 }, // Arena 1
+  { weapon: 6, consumable: 1, boost: 2, heldItem: 1.5, skill: 2.5, support: 0 }, // Arena 2
+  { weapon: 5, consumable: 1.5, boost: 2, heldItem: 1.5, skill: 2.5, support: 0 }, // Arena 3
   { weapon: 4, consumable: 1.5, boost: 1, heldItem: 2, skill: 1.5, support: 0 }, // Arena 4
 ]
 export const REWARD_OPTIONS_PER_SCREEN = 3
