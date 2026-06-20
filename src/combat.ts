@@ -63,6 +63,11 @@ export function biomeStatDelta(stat: StatKey) {
 // shared, condition-free combatStat (used by both phases and passive/display
 // contexts) and added back in the right context: 'playerPhase' via playerPhaseStat
 // (attacker only), 'biome' via skillBiomeBonus inside combatDefense/combatResistance.
+// A held item with an 'hpBelowHalf' trigger (Wrath/Resolve Scroll) only grants its
+// bonus while the holder is below half HP. Always-on items (no such trigger) pass.
+export function heldItemConditionMet(u: Unit) {
+  return u.heldItem?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
+}
 export function combatStat(u: Unit, stat: StatKey) {
   // 'rally'/'tempo' (like 'playerPhase'/'biome') deliver their stats via the
   // battle-start turnBuff (applyBattleStartRallies), so the skill's own `stats`
@@ -70,7 +75,8 @@ export function combatStat(u: Unit, stat: StatKey) {
   const deliveredViaBuff =
     u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
   const skillStat = deliveredViaBuff ? 0 : u.skill?.stats?.[stat] || 0
-  let value = (u.stats[stat] || 0) + (u.heldItem?.stats?.[stat] || 0) + skillStat
+  const heldItemStat = heldItemConditionMet(u) ? u.heldItem?.stats?.[stat] || 0 : 0
+  let value = (u.stats[stat] || 0) + heldItemStat + skillStat
   if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
   return Math.max(0, value + biomeStatDelta(stat))
 }
@@ -257,7 +263,8 @@ export function critRate(a: Unit, d: Unit) {
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
   // Quixotic: the defender feeds its attacker extra crit (incomingCrit) — the
   // downside mirroring the holder's own +crit when it attacks.
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + (a.heldItem?.crit || 0) + (a.skill?.crit || 0) + teamAuraBonus(a, 'crit') + (d.skill?.incomingCrit || 0) - (a.skill?.enemyCritAvoid || 0) - teamAuraBonus(d, 'critAvoid')), 0, 100)
+  const heldItemCrit = heldItemConditionMet(a) ? a.heldItem?.crit || 0 : 0
+  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + heldItemCrit + (a.skill?.crit || 0) + teamAuraBonus(a, 'crit') + (d.skill?.incomingCrit || 0) - (a.skill?.enemyCritAvoid || 0) - teamAuraBonus(d, 'critAvoid')), 0, 100)
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'
@@ -557,8 +564,22 @@ export function healUnit(u: Unit, amount: number) {
 //   - regenFlatIfAlliesAlive (Camaraderie): self-heal only if >= skill.minAllies OTHER allies are alive (excludes the user).
 //   - allyRegenFlat (Amaterasu): flat heal to every living ally.
 export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
+  if (!actor || actor.hp <= 0) return
+  // Held-item turn-start regen (Renewal Scroll / Life Ring / Troll Charm): fires
+  // independently of any skill the holder may carry.
+  const hi = actor.heldItem
+  if (hi?.trigger === 'turnStart' && (hi.effect === 'regenFlat' || hi.effect === 'regenPercent')) {
+    const amt = hi.effect === 'regenPercent' ? floor((actor.maxHp * (hi.amount || 0)) / 100) : hi.amount || 0
+    const healed = healUnit(actor, amt)
+    if (healed > 0) {
+      floatText(actor, `+${healed}`, 'healing')
+      updateUnitVisual(actor)
+      renderSideCards()
+      logLine(null, `${actor.name}'s ${hi.name} restores ${healed} HP.`, 'heal')
+    }
+  }
   const s = actor?.skill
-  if (!s || actor.hp <= 0 || s.trigger !== 'turnStart') return
+  if (!s || s.trigger !== 'turnStart') return
   const living = allies.filter((u) => u.hp > 0)
   const fallen = allies.some((u) => u.hp <= 0)
   if (s.effect === 'allyRegenFlat') {
@@ -677,6 +698,9 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
     return { hit: true, crit: false, damage: before, dh, cr, suffix, proc, procHeal: 0, lethal: true, miracle: false, defenseProc: null as any }
   }
   let dmg = rawDamage(a, d)
+  // Did a skill proc already ignore half the defender's defense this strike? If so,
+  // the Pierce Badge below must NOT recompute (which would re-ignore from full dmg).
+  let defenseHalved = false
   if (proc) {
     if (proc.effect === 'damageMultiplierChance') dmg = floor(dmg * (proc.multiplier || 1)) // Dragon Fang
     else if (proc.effect === 'halveDefenseChance' || proc.effect === 'aetherChance') {
@@ -684,8 +708,19 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
       // damage from scratch, so re-apply the defender's flat damage-taken (Life and Death).
       const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
       dmg = Math.max(1, attackPower(a, d) - floor(def / 2) + damageTakenFlat(d))
+      defenseHalved = true
     } else if (proc.effect === 'addResToDamageChance') dmg += combatResistance(a) // Ignis
     else if (proc.effect === 'addMissingHpChance') dmg += floor(((a.maxHp - a.hp) * (proc.amountPercent || 50)) / 100) // Vengeance
+  }
+  // Pierce Badge: an independent held-item proc (its own chance roll) to ignore half
+  // the defender's Def/Res, using the same formula as Luna/Aether. Skipped if a skill
+  // proc already halved defense this strike, so the two can't stack into a double-ignore.
+  if (!defenseHalved && a.heldItem?.effect === 'defPierceChance') {
+    const chance = DEBUG_SKILLS ? 100 : (a.heldItem.chance as number) || 0
+    if (rint(100) + 1 <= chance) {
+      const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
+      dmg = Math.max(1, attackPower(a, d) - floor(def / 2) + damageTakenFlat(d))
+    }
   }
   const crit = rint(100) + 1 <= cr
   let finalDmg = crit ? dmg * 3 : dmg
@@ -1227,15 +1262,19 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
       await animateStrike(actor, target, r)
       // Lifetaker: a player unit that defeats an enemy on player phase heals 50% max HP.
       if (target.hp <= 0 && r.hit) await applyLifetaker(actor)
-      if (actor.weapon?.poison && r.hit && target.hp > 0 && applyPoison(target)) {
+      if ((actor.weapon?.poison || actor.heldItem?.effect === 'weaponPoison') && r.hit && target.hp > 0 && applyPoison(target)) {
         logLine(null, `${target.name} is poisoned.`, 'crit')
         floatText(target, 'POISON', 'statusText')
         renderSideCards()
         await sleep(650)
       }
-      if (actor.weapon?.drain && r.hit && r.damage > 0) {
+      // Drain: weapon drain (×1.0) and the Drain Badge (×amount/100) STACK additively.
+      const drainMult =
+        (actor.weapon?.drain ? 1 : 0) + (actor.heldItem?.effect === 'weaponDrainPercent' ? ((actor.heldItem.amount as number) || 0) / 100 : 0)
+      if (r.hit && r.damage > 0 && drainMult > 0) {
         const before = actor.hp
-        actor.hp = Math.min(actor.maxHp, actor.hp + r.damage)
+        const gain = Math.min(actor.maxHp - actor.hp, floor(r.damage * drainMult))
+        actor.hp = before + gain
         const healed = actor.hp - before
         if (healed > 0) {
           floatText(actor, `+${healed}`, 'healing')
