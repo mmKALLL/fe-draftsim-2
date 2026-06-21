@@ -297,8 +297,9 @@ export const WEAPONS: WeaponData[] = [
   { name: 'Physic Staff', type: 'staff', rank: 'C', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal', defBonus: 4 },
   { name: 'Sleep Staff', type: 'staff', rank: 'C', mt: 0, hit: 75, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
   { name: 'Berserk Staff', type: 'staff', rank: 'B', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
-  { name: 'Fortify Staff', type: 'staff', rank: 'A', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
-  { name: 'Restore Staff', type: 'staff', rank: 'S', mt: 30, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+  { name: 'Recover Staff', type: 'staff', rank: 'A', mt: 40, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+  // { name: 'Restore Staff', type: 'staff', rank: 'A', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'healWithStatuses' },
+  { name: 'Fortify Staff', type: 'staff', rank: 'S', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'fortify' },
 ]
 
 export function weaponTierFromRank(rank: WeaponRank): Rarity {
@@ -353,23 +354,23 @@ export const HELD_ITEMS: CandidateItemData[] = [
   { id: 'geosphere_shard', name: 'Geosphere Shard', tier: 'rare', price: 1700, family: 'autoConsumable', trigger: 'battleStart', effect: 'enemyAoeDamage', amount: 5, uses: 1, desc: 'At battle start, deals 5 damage to all enemies.' },
 
   // Shields and guards
-  // { id: 'iron_shield', name: 'Iron Shield', tier: 'normal', price: 300, family: 'shield', stats: { def: 2 }, speedPenalty: 2, desc: 'Def +2, Spd -2.' },
-  // { id: 'steel_shield', name: 'Steel Shield', tier: 'uncommon', price: 500, family: 'shield', stats: { def: 4 }, speedPenalty: 4, desc: 'Def +4, Spd -4.' },
-  // { id: 'tower_shield', name: 'Tower Shield', tier: 'uncommon', price: 750, family: 'shield', stats: { def: 6 }, speedPenalty: 8, desc: 'Def +6, Spd -8.' },
-  // { id: 'silver_shield', name: 'Silver Shield', tier: 'rare', price: 1100, family: 'shield', stats: { def: 5 }, speedPenalty: 2, desc: 'Def +5, Spd -2.' },
-  // { id: 'hexlock_shield', name: 'Hexlock Shield', tier: 'uncommon', price: 800, family: 'shield', stats: { res: 4 }, speedPenalty: 2, desc: 'Res +4, Spd -2.' },
-  // { id: 'aegis_shield', name: 'Aegis Shield', tier: 'rare', price: 1100, family: 'shield', stats: { def: 3, res: 3 }, speedPenalty: 3, desc: 'Def +3, Res +3, Spd -3.' },
+  { id: 'iron_shield', name: 'Iron Shield', tier: 'normal', price: 300, family: 'shield', stats: { def: 2 }, speedPenalty: 2, desc: 'Def +2, Spd -2.' },
+  { id: 'steel_shield', name: 'Steel Shield', tier: 'uncommon', price: 500, family: 'shield', stats: { def: 4 }, speedPenalty: 4, desc: 'Def +4, Spd -4.' },
+  { id: 'tower_shield', name: 'Tower Shield', tier: 'uncommon', price: 750, family: 'shield', stats: { def: 6 }, speedPenalty: 8, desc: 'Def +6, Spd -8.' },
+  { id: 'silver_shield', name: 'Silver Shield', tier: 'rare', price: 1100, family: 'shield', stats: { def: 5 }, speedPenalty: 2, desc: 'Def +5, Spd -2.' },
+  { id: 'hexlock_shield', name: 'Hexlock Shield', tier: 'uncommon', price: 800, family: 'shield', stats: { res: 4 }, speedPenalty: 2, desc: 'Res +4, Spd -2.' },
+  { id: 'aegis_shield', name: 'Aegis Shield', tier: 'rare', price: 1100, family: 'shield', stats: { def: 3, res: 3 }, speedPenalty: 3, desc: 'Def +3, Res +3, Spd -3.' },
 
-  { id: 'iron_rune', name: 'Iron Rune', tier: 'uncommon', price: 1100, family: 'guard', effect: 'critImmune', desc: 'Nullifies incoming critical hits.' },
+  { id: 'iron_rune', name: 'Iron Rune', tier: 'uncommon', price: 800, family: 'guard', effect: 'critImmune', desc: 'Nullifies incoming critical hits.' },
   { id: 'delphi_shield', name: 'Delphi Shield', tier: 'uncommon', price: 900, family: 'guard', effect: 'flyingEffectiveImmune', desc: 'Negates bonus damage against flying units.' },
   { id: 'svalinn_shield', name: 'Svalinn Shield', tier: 'uncommon', price: 900, family: 'guard', effect: 'armoredEffectiveImmune', desc: 'Negates bonus damage against armored units.' },
   { id: 'dragon_mail', name: 'Dragon Mail', tier: 'uncommon', price: 900, family: 'guard', effect: 'dragonEffectiveImmune', desc: 'Negates bonus damage against dragon units.' },
-  // { id: 'troll_charm', name: 'Troll Charm', tier: 'uncommon', price: 800, family: 'charm', trigger: 'turnStart', effect: 'regenPercent', amount: 10, desc: 'Restores 10% max HP each turn.' },
+  { id: 'troll_charm', name: 'Troll Charm', tier: 'uncommon', price: 800, family: 'charm', trigger: 'turnStart', effect: 'regenPercent', amount: 10, desc: 'Restores 10% max HP each turn.' },
 
   // Rings and passive stat items
   { id: 'accuracy_ring', name: 'Accuracy Ring', tier: 'normal', price: 500, family: 'charm', hit: 10, desc: 'Hit +10 while held.' },
   { id: 'evasion_ring', name: 'Evasion Ring', tier: 'normal', price: 550, family: 'charm', avoid: 10, desc: 'Avoid +10 while held.' },
-  { id: 'hunters_ring', name: 'Hunter\'s Ring', tier: 'uncommon', price: 850, family: 'charm', crit: 10, desc: 'Crit +10 while held.' },
+  { id: 'hunters_ring', name: 'Hunter\'s Ring', tier: 'uncommon', price: 750, family: 'charm', crit: 10, desc: 'Crit +10 while held.' },
   { id: 'power_ring', name: 'Power Ring', tier: 'normal', price: 1200, family: 'ring', stats: { str: 4 }, desc: 'Str/Mag +4 while held.' },
   { id: 'skill_ring', name: 'Skill Ring', tier: 'normal', price: 900, family: 'ring', stats: { skl: 4 }, desc: 'Skl +4 while held.' },
   { id: 'speed_ring', name: 'Speed Ring', tier: 'normal', price: 1350, family: 'ring', stats: { spd: 4 }, desc: 'Spd +4 while held.' },
@@ -378,7 +379,7 @@ export const HELD_ITEMS: CandidateItemData[] = [
   { id: 'shield_ring', name: 'Shield Ring', tier: 'normal', price: 1200, family: 'ring', stats: { def: 4 }, desc: 'Def +4 while held.' },
   { id: 'barrier_ring', name: 'Barrier Ring', tier: 'normal', price: 1100, family: 'ring', stats: { res: 4 }, desc: 'Res +4 while held.' },
   { id: 'body_ring_held', name: 'Body Ring', tier: 'uncommon', price: 850, family: 'ring', stats: { con: 4 }, desc: 'Con +4 while held.' },
-  // { id: 'life_ring', name: 'Life Ring', tier: 'uncommon', price: 950, family: 'ring', trigger: 'turnStart', effect: 'regenFlat', amount: 5, desc: 'Restores 5 HP at turn start.' },
+  { id: 'life_ring', name: 'Life Ring', tier: 'uncommon', price: 950, family: 'ring', trigger: 'turnStart', effect: 'regenFlat', amount: 5, desc: 'Restores 5 HP at turn start.' },
   // { id: 'miracle_ring', name: 'Miracle Ring', tier: 'rare', price: 1800, family: 'ring', trigger: 'lethalDamage', effect: 'miracle', uses: 1, desc: 'Once per battle, survives lethal damage at 1 HP.' },
   // { id: 'pursuit_ring', name: 'Pursuit Ring', tier: 'rare', price: 2400, family: 'ring', effect: 'quadrupleStrike', desc: 'Holder can hit 4 times against enemies with 8 less speed.' },
 
@@ -386,7 +387,7 @@ export const HELD_ITEMS: CandidateItemData[] = [
   { id: 'wrath_scroll', name: 'Wrath Scroll', tier: 'uncommon', price: 1000, family: 'scroll', trigger: 'hpBelowHalf', crit: 20, desc: 'Crit +20 while below 50% HP.' },
   // don't enable { id: 'vantage_scroll', name: 'Vantage Scroll', tier: 'uncommon', price: 1100, family: 'scroll', trigger: 'hpBelowHalf', effect: 'counterFirst', desc: 'When below 50% HP, counters before the attacker.' },
   // { id: 'adept_scroll', name: 'Adept Scroll', tier: 'rare', price: 1800, family: 'scroll', trigger: 'afterHit', effect: 'extraStrikeChance', chance: 20, desc: '20% chance to immediately strike again after a hit.' },
-  // { id: 'nihil_scroll', name: 'Nihil Scroll', tier: 'rare', price: 1600, family: 'scroll', effect: 'negateEnemySpecials', desc: 'Negates enemy brave strikes, critical hits, poison, drain, and effective damage against holder.' },
+  // { id: 'nihil_scroll', name: 'Nihil Scroll', tier: 'rare', price: 1600, family: 'scroll', effect: 'negateEnemySpecials', desc: 'Negates enemy critical hits, poison, drain, and effective damage against holder.' },
   { id: 'renewal_scroll', name: 'Renewal Scroll', tier: 'rare', price: 2100, family: 'scroll', trigger: 'turnStart', effect: 'regenPercent', amount: 15, desc: 'Restores 15% max HP at turn start.' },
   { id: 'resolve_scroll', name: 'Resolve Scroll', tier: 'rare', price: 1900, family: 'scroll', trigger: 'hpBelowHalf', stats: { skl: 4, spd: 4 }, desc: 'Skl +4 and Spd +4 while below 50% HP.' },
   // { id: 'parity_scroll', name: 'Parity Scroll', tier: 'uncommon', price: 1200, family: 'scroll', trigger: 'combatStart', effect: 'ignoreBothHeldItems', desc: 'During holder combat, both combatants ignore skills and held-item effects.' },

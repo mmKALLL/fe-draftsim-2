@@ -204,15 +204,14 @@ export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'biome', [
 // read as a FRACTIONAL count: the integer part is guaranteed, the fractional part is the
 // chance of one extra (0.3 = 30% of one; 1 = always one; 2.5 = two guaranteed + 50% of a
 // third). NOTE: enemies currently have a single skill + single held slot, so any count >= 1
-// is stored as one until multi-slot enemies are supported. ACTIVE set below is all-zero.
-// Swap in ENEMY_BONUS_COUNTS_HARD for an optional "hard mode" (card o1xra5n4).
+// is stored as one until multi-slot enemies are supported.
 type EnemyBonusRole = { skill: number; held: number }
 type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
 export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
-  { boss: { skill: 0, held: 1 }, minion: { skill: 0, held: 0 } }, // Arena 3
-  { boss: { skill: 1, held: 1 }, minion: { skill: 0.1, held: 0.1 } }, // Arena 4
+  { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.2, held: 0 } }, // Arena 4
 ]
 // "Hard mode": bosses always carry a skill from arena 2+ and a held item from arena 3+;
 // later arenas sprinkle a chance of them onto minions. Uncomment + assign to ENEMY_BONUS_COUNTS.
