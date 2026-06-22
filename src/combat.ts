@@ -27,11 +27,18 @@ export function enemyWeaponDangerous(u: Unit) {
   if (!w) return false
   if ((w.crit || 0) >= 25) return true
   if (w.rank === 'S') return true
+  // Dangerous tomes (the anima/light/dark group): ignore the target's Res entirely
+  // (Bolting/Purge/Luna) or hit hard enough to threaten squishy units. mt >= 12 catches
+  // Bolting-tier and up while sparing basic tomes (Fire 5 / Elfire 10 / Flux 7).
+  if (weaponTypeMatches('tome', w.type) && (w.pierceRes || (w.mt || 0) >= 12)) return true
   const fx = staffEffect(w)
   if (fx === 'berserk' || fx === 'fortify') return true
   return state.player.some((p) => p.hp > 0 && isWeaponEffective(w, p))
 }
 export function triangle(a: string, b: string, aw: Weapon | null = null, bw: Weapon | null = null) {
+  // Daggers ride the sword side of the weapon triangle (beat axes, lose to lances).
+  if (a === 'dagger') a = 'sword'
+  if (b === 'dagger') b = 'sword'
   const beats: Record<string, string> = { sword: 'axe', axe: 'lance', lance: 'sword', anima: 'light', light: 'dark', dark: 'anima' }
   if (!beats[a] || !beats[b]) return { atk: 0, hit: 0 }
   let sign = 0
@@ -100,6 +107,12 @@ export function biomeAvoidDelta() {
 }
 export function attackSpeed(u: Unit) {
   const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con) + (u.heldItem?.speedPenalty || 0)
+  return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
+}
+// Attack speed the unit would have if its Con changed by conDelta (e.g. a Body Ring boost).
+// Mirrors attackSpeed's weight-penalty formula so the boost chooser can preview the AS gain.
+export function weaponResultingAS(u: Unit, conDelta = 0) {
+  const penalty = Math.max(0, (u.weapon?.wt || 0) - (u.stats.con + conDelta)) + (u.heldItem?.speedPenalty || 0)
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
 export function combatDefense(u: Unit) {
@@ -740,9 +753,14 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const wouldBeLethal = before > 1 && before - finalDmg <= 0
   const miracle = wouldBeLethal && rollMiracle(d)
   d.hp = miracle ? 1 : Math.max(0, d.hp - finalDmg)
-  const damage = before - d.hp
+  // HP actually removed (clamped at the target's remaining HP). Drives life-drain /
+  // Aether healing so overkill never heals more than the defender had.
+  const hpRemoved = before - d.hp
+  // Shown/logged damage is the full unclamped hit (or before-1 on a Miracle save),
+  // so floating text and the log reflect the true blow rather than the clamped value.
+  const damage = miracle ? before - 1 : finalDmg
   // Sol heals half of damage dealt; Aether heals all of it.
-  const procHeal = proc?.effect === 'drainChance' ? floor((damage * (proc.healPercent || 50)) / 100) : proc?.effect === 'aetherChance' ? damage : 0
+  const procHeal = proc?.effect === 'drainChance' ? floor((hpRemoved * (proc.healPercent || 50)) / 100) : proc?.effect === 'aetherChance' ? hpRemoved : 0
   return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false, miracle, defenseProc }
 }
 export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {

@@ -166,7 +166,7 @@ export function unitCard(u: Unit) {
   const itemSkillList = held || skill ? `<div class="cardItemList">${held}${skill}</div>` : ''
   const dmg = displayAttackPower(u)
   const pill = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${dmg} dmg / ${attackSpeed(u)} AS`
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space"><div><div class="name">${u.name}</div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div></div><span class="pill">${pill}</span></div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space nameRow"><div class="name">${u.name}</div><span class="pill">${pill}</span></div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
 }
 export function renderConsumables() {
   const panel = $('consumablePanel')
@@ -308,10 +308,11 @@ export function skillOfferTitle(skill: any, unit: Unit | null = null) {
 // general ('Any'-class) skill. Mirrors skillClassMatches in rewards.ts (inlined
 // here to avoid a render <-> rewards import cycle).
 export function skillEligibleUnitsLabel(skill: any) {
+  // Universal ('Any'-class) skills go on anyone, so listing the whole roster (each with its
+  // current skill) is noise — collapse to a single word instead.
+  if (skill.classes?.includes('Any')) return 'Universal'
   const withSkill = (u: Unit) => `${u.name} (${u.skill?.name || 'None'})`
-  const eligible = skill.classes?.includes('Any')
-    ? state.player
-    : state.player.filter((u) => skill.classes?.includes(u.cls) || skill.classes?.includes(u.displayCls))
+  const eligible = state.player.filter((u) => skill.classes?.includes(u.cls) || skill.classes?.includes(u.displayCls))
   return eligible.map(withSkill).join(', ')
 }
 export function skillOfferDescription(skill: any, unit: Unit | null = null, opts: any = {}) {

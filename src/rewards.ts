@@ -1,12 +1,12 @@
-import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
+import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, ENEMY_BONUS_RARITY, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
-import { computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags } from './combat'
+import { attackSpeed, computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags, weaponResultingAS } from './combat'
 import { bossTierForBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, SPD_ARROW, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
 import { formatGold, goldHTML } from './state'
 import { levelLabel, showModal } from './ui'
-import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, isBasicWeapon, levelUp } from './units'
+import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, isBasicWeapon, levelUp, pickWeightedRarity } from './units'
 import { $, capStat, pick, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Rarity, RewardType, StatKey } from '../types'
@@ -49,6 +49,12 @@ export function weightedTier(weights: any) {
 export function pickByRarity<T extends { tier?: Rarity }>(pool: T[], rarity: Rarity): T | null {
   if (!pool.length) return null
   const tierPool = pool.filter((x) => x.tier === rarity)
+  return pick(tierPool.length ? tierPool : pool)
+}
+// Skill equivalent of pickByRarity: skills carry their rarity on `.rarity` (not `.tier`).
+export function pickSkillByRarity<T extends { rarity?: Rarity }>(pool: T[], rarity: Rarity): T | null {
+  if (!pool.length) return null
+  const tierPool = pool.filter((x) => x.rarity === rarity)
   return pick(tierPool.length ? tierPool : pool)
 }
 // Arena index (1..BIOME_CYCLES_PER_RUN) for a given battle number.
@@ -162,19 +168,25 @@ function rollFractionalCount(v: number) {
 // (keyed by current arena + role). All-zero by default, so this is a no-op unless a
 // "hard mode" table is swapped in. Units have one slot each, so a rolled count >= 1 fills it.
 export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
-  const cfg = ENEMY_BONUS_COUNTS[rewardArena(state.battle) - 1]?.[role]
+  const arena = rewardArena(state.battle)
+  const cfg = ENEMY_BONUS_COUNTS[arena - 1]?.[role]
   if (!cfg) return
+  const rarityWeights = ENEMY_BONUS_RARITY[arena - 1]?.[role]
   if (rollFractionalCount(cfg.skill) >= 1) {
     const pool = TEACHABLE_SKILLS.filter((s) => skillClassMatches(s, unit))
-    if (pool.length) {
-      unit.skill = pick(pool)
+    // Roll a rarity, then pick a skill of that tier (steps down to any rarity if empty).
+    const skill = rarityWeights ? pickSkillByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
+    if (skill) {
+      unit.skill = skill
       refreshMaxHp(unit) // a rolled HP +5 raises the enemy's maxHp before its hp is set to full
     }
   }
   if (rollFractionalCount(cfg.held) >= 1) {
     const pool = HELD_ITEMS.filter((i: any) => heldItemRelevantToUnit(i, unit))
-    if (pool.length) {
-      unit.heldItem = pick(pool)
+    // Same rarity-weighted roll for held items, keyed on `.tier` via pickByRarity.
+    const item = rarityWeights ? pickByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
+    if (item) {
+      unit.heldItem = item
       refreshMaxHp(unit) // keep maxHp in sync if a held item ever grants HP
     }
   }
@@ -263,11 +275,20 @@ export function boostRewardDescription(r: any, u: Unit) {
   const after = Math.min(capStat(u, r.stat), before + r.amt)
   return `Permanently grants ${u.name} ${label} +${r.amt} (${before} ${SPD_ARROW} ${after}).${boostDetailHTML(r, u)}`
 }
-export function equippedWeaponWeightText(u: Unit) {
-  return u.weapon ? `Equipped: ${u.weapon.name}, Wt ${u.weapon.wt || 0}` : 'Equipped: none'
+export function conBoostASText(r: any, u: Unit) {
+  // A Con boost only changes attack speed by reducing a weapon's weight penalty, so this is
+  // meaningless without an equipped weapon — and we deliberately don't name the weapon here
+  // (it isn't being replaced). Show the resulting AS so the player can judge the speed gain.
+  if (!u.weapon) return ''
+  const before = attackSpeed(u)
+  const after = weaponResultingAS(u, r.amt)
+  return before === after ? `AS ${after} (no change)` : `AS ${before} ${SPD_ARROW} ${after}`
 }
 export function boostDetailHTML(r: any, u: Unit) {
-  if (r.stat === 'con') return `<div class="small rewardMeta">${equippedWeaponWeightText(u)}</div>`
+  if (r.stat === 'con') {
+    const as = conBoostASText(r, u)
+    return as ? `<div class="small rewardMeta">${as}</div>` : ''
+  }
   return ''
 }
 export function levelBoostReward() {

@@ -1,4 +1,4 @@
-import { BOSS_TIER_BIOME, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
+import { BOSS_TIER_BIOME, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, ENEMY_WEAPON_TYPE_SPLIT, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'
@@ -167,7 +167,7 @@ export function isDefaultWeapon(w: Weapon): boolean {
   return true
 }
 // Weighted pick over the three rarity groups; zero/absent weights are skipped.
-function pickWeightedRarity(weights: Record<Rarity, number>): Rarity {
+export function pickWeightedRarity(weights: Record<Rarity, number>): Rarity {
   const entries = (Object.entries(weights) as [Rarity, number][]).filter(([, weight]) => weight > 0)
   const total = entries.reduce((sum, [, weight]) => sum + weight, 0)
   if (!total) return 'normal'
@@ -208,8 +208,29 @@ for (const w of WEAPONS) {
 export const isBasicWeapon = (w: Weapon) => BASIC_WEAPONS.has(w)
 // forceGood decided per fight by the caller (bosses always good; a bounded number of
 // minions good). 'good' = anything but each type's basic weapon; 'default' = plain weapons only.
+// Weighted pick over an ordered list of weapon types using ENEMY_WEAPON_TYPE_SPLIT
+// (primary type first). One type is trivially that type; a length absent from the map
+// (e.g. >3 types) falls back to an even split.
+function pickWeaponType(types: string[]): string {
+  if (types.length <= 1) return types[0]
+  const split = ENEMY_WEAPON_TYPE_SPLIT[types.length]
+  const weights = split && split.length === types.length ? split : types.map(() => 1)
+  const total = weights.reduce((sum, w) => sum + w, 0)
+  let roll = rnd() * total
+  for (let i = 0; i < types.length; i++) {
+    roll -= weights[i]
+    if (roll <= 0) return types[i]
+  }
+  return types[types.length - 1]
+}
 export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
-  const classWeapons = WEAPONS.filter((w) => allowedWeapons(u).includes(w.type))
+  const allowedTypes = allowedWeapons(u) // ordered, PRIMARY first; promotion types are SECONDARY
+  // Pick the weapon TYPE first (favoring the primary), then restrict the pool to it before
+  // the existing rarity selection runs. Falls back to the full pool if the chosen type has none.
+  const chosenType = pickWeaponType(allowedTypes)
+  const allClassWeapons = WEAPONS.filter((w) => allowedTypes.includes(w.type))
+  const typeWeapons = allClassWeapons.filter((w) => w.type === chosenType)
+  const classWeapons = typeWeapons.length ? typeWeapons : allClassWeapons
   if (!classWeapons.length) return u.weapon
   const arena = clamp(Math.floor((state.battle - 1) / 5) + 1, 1, 4)
   const role = tier ? 'boss' : 'minion'

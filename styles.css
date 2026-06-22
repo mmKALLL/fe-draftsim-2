@@ -381,6 +381,17 @@ button:disabled {
     transform: translateY(calc(var(--sprite-offset, 0px) - var(--sprite-distance, 64px)));
   }
 }
+.nameRow {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+.nameRow .name {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.nameRow .pill {
+  flex: 0 0 auto;
+}
 .name {
   font-weight: 800;
 }

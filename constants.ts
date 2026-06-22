@@ -160,6 +160,13 @@ export const DEFAULT_WEAPON_MAX_CRIT = 13
 // variety among commons (e.g. stat-boost weapons like slim/javelin join the default pool).
 export const DEFAULT_COMMON_FORCES_FIRST_WEAPON = true
 
+// Enemies favor their PRIMARY weapon type (the unpromoted u.weaponType); a promoted
+// unit's extra promotionWeaponTypes are SECONDARY. enemyWeaponFor picks the weapon TYPE
+// first, weighted by these shares (primary weight listed first). Keyed by how many types
+// the class has available: 1 type is trivially primary; >3 types fall back to an even
+// split. Tune to make enemies stick more (raise the primary weight) or less to their main.
+export const ENEMY_WEAPON_TYPE_SPLIT: Record<number, number[]> = { 2: [0.75, 0.25], 3: [0.6, 0.2, 0.2] }
+
 // Per arena x role: rarity weights {normal, uncommon, rare} for each weapon pool. A
 // rolled rarity with no matching weapon for the unit's class steps DOWN one group (see
 // resolveRarity in units.ts). Which pool an enemy uses is decided per fight: bosses are
@@ -223,3 +230,18 @@ export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
 //   { boss: { skill: 1, held: 1 }, minion: { skill: 0.4, held: 0.2 } }, // Arena 3
 //   { boss: { skill: 2, held: 1 }, minion: { skill: 0.5, held: 0.4 } }, // Arena 4
 // ]
+
+// Rarity weights {normal, uncommon, rare} for an enemy's BONUS skill / held item, by arena
+// and role (same length/shape as ENEMY_WEAPON_PROFILE). assignEnemyBonuses rolls a rarity
+// with pickWeightedRarity, then picks from the pool filtered to that tier (stepping down to
+// any rarity if empty). Later arenas + bosses skew rarer, mirroring REWARD_RARITY_WEIGHTS.
+export const ENEMY_BONUS_RARITY: Record<'boss' | 'minion', EnemyWeaponRarityWeights>[] = [
+  // Arena 1
+  { boss: { normal: 60, uncommon: 35, rare: 5 }, minion: { normal: 90, uncommon: 10, rare: 0 } },
+  // Arena 2
+  { boss: { normal: 40, uncommon: 45, rare: 15 }, minion: { normal: 70, uncommon: 28, rare: 2 } },
+  // Arena 3
+  { boss: { normal: 20, uncommon: 45, rare: 35 }, minion: { normal: 50, uncommon: 40, rare: 10 } },
+  // Arena 4
+  { boss: { normal: 5, uncommon: 35, rare: 60 }, minion: { normal: 30, uncommon: 45, rare: 25 } },
+]
