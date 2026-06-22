@@ -277,12 +277,13 @@ export function boostRewardDescription(r: any, u: Unit) {
 }
 export function conBoostASText(r: any, u: Unit) {
   // A Con boost only changes attack speed by reducing a weapon's weight penalty, so this is
-  // meaningless without an equipped weapon — and we deliberately don't name the weapon here
-  // (it isn't being replaced). Show the resulting AS so the player can judge the speed gain.
+  // meaningless without an equipped weapon. Show the resulting AS plus the equipped weapon,
+  // labelled "equipped" so it doesn't read like the weapon is being replaced.
   if (!u.weapon) return ''
   const before = attackSpeed(u)
   const after = weaponResultingAS(u, r.amt)
-  return before === after ? `AS ${after} (no change)` : `AS ${before} ${SPD_ARROW} ${after}`
+  const asText = before === after ? `AS ${after} (no change)` : `AS ${before} ${SPD_ARROW} ${after}`
+  return `${asText}, ${u.weapon.name} (Wt ${u.weapon.wt}) equipped`
 }
 export function boostDetailHTML(r: any, u: Unit) {
   if (r.stat === 'con') {

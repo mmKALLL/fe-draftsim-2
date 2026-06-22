@@ -243,5 +243,5 @@ export const ENEMY_BONUS_RARITY: Record<'boss' | 'minion', EnemyWeaponRarityWeig
   // Arena 3
   { boss: { normal: 20, uncommon: 45, rare: 35 }, minion: { normal: 50, uncommon: 40, rare: 10 } },
   // Arena 4
-  { boss: { normal: 5, uncommon: 35, rare: 60 }, minion: { normal: 30, uncommon: 45, rare: 25 } },
+  { boss: { normal: 5, uncommon: 35, rare: 60 }, minion: { normal: 10, uncommon: 45, rare: 25 } },
 ]
