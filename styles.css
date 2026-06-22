@@ -506,11 +506,14 @@ button:disabled {
   position: absolute;
   top: -1px;
   right: -1px;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   pointer-events: none;
   border-top-right-radius: 8px;
   background: linear-gradient(45deg, transparent 0 56%, #facc15 56% 70%, transparent 70% 100%);
+}
+.combatant.hasBonusBoth::after {
+  background: linear-gradient(45deg, transparent 0 56%, #ef4444 56% 70%, transparent 70% 100%);
 }
 .combatant.active {
   transform: translateY(-10px);
@@ -591,17 +594,20 @@ button:disabled {
   color: #22e06b;
 }
 .combatPreview .hitDis {
-  color: #ff3b3b;
+  color: #f97e7e;
 }
 .combatPreview .hitNeu {
   color: #e2e8f0;
 }
 .combatPreview .effectiveDamage {
-  color: #86efac;
+  color: #22e06b;
   font-weight: 700;
 }
+.combatPreview .lowDamage {
+  color: #f97e7e;
+}
 .combatPreview .attackCountMulti {
-  color: #86efac;
+  color: #22e06b;
   font-weight: 700;
 }
 .combatPreview .attackCountQuad {

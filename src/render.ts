@@ -222,7 +222,7 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
   const st = statusLabel(u)
   const status = st ? `<br>${st}` : ''
-  const bonus = isEnemy && (u.skill || u.heldItem) ? ' hasBonus' : ''
+  const bonus = isEnemy && (u.skill || u.heldItem) ? (u.skill && u.heldItem ? ' hasBonus hasBonusBoth' : ' hasBonus') : ''
   const next =
     isEnemy && u.id === state.combat.nextEnemyMarkerId && u.hp > 0
       ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'

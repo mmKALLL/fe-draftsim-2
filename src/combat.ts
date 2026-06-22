@@ -286,20 +286,36 @@ export function triangleClass(a: Unit, d: Unit) {
   const wt = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
   return wt > 0 ? 'hitAdv' : wt < 0 ? 'hitDis' : 'hitNeu'
 }
+// Below 60% hit, the hit-rate text fades from its weapon-triangle colour toward a deep red as the
+// displayed hit approaches 0% (flagging unreliable attacks). At >=60% the plain triangle class is kept.
+const HIT_BASE_COLORS: Record<string, string> = { hitAdv: '#22e06b', hitDis: '#f97e7e', hitNeu: '#e2e8f0' }
+const HIT_LOW_RED = '#b91c1c'
+function lerpHex(a: string, b: string, t: number) {
+  const ch = (s: string, i: number) => parseInt(s.slice(i, i + 2), 16)
+  const mix = (i: number) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t)
+  const hex = (n: number) => n.toString(16).padStart(2, '0')
+  return `#${hex(mix(1))}${hex(mix(3))}${hex(mix(5))}`
+}
+function hitColorStyle(actor: Unit, target: Unit, hit: number) {
+  if (hit >= 60) return ''
+  const base = HIT_BASE_COLORS[triangleClass(actor, target)] || HIT_BASE_COLORS.hitNeu
+  return ` style="color:${lerpHex(base, HIT_LOW_RED, (60 - hit) / 60)}"`
+}
 export function combatPreviewHTML(actor: Unit, target: Unit) {
   if (!actor || !target || actor.hp <= 0 || target.hp <= 0) return ''
   if (actor.weapon?.staff) {
     const fx = staffEffect(actor.weapon)
     if (!isStatusStaff(actor.weapon)) return ''
-    return `<div><span class="${triangleClass(actor, target)}">${displayedHit(actor, target)}%</span></div><div>${statusName(fx)}</div>`
+    const sHit = displayedHit(actor, target)
+    return `<div><span class="${triangleClass(actor, target)}"${hitColorStyle(actor, target, sHit)}>${sHit}%</span></div><div>${statusName(fx)}</div>`
   }
   const hit = displayedHit(actor, target),
     crit = critRate(actor, target),
     dmg = rawDamage(actor, target),
     hits = (canDouble(actor, target) ? 2 : 1) * (actor.weapon?.brave ? 2 : 1),
-    dmgClass = isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : '',
+    dmgClass = dmg < 3 ? 'lowDamage' : isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : '',
     hitCountClass = hits >= 4 ? 'attackCount attackCountQuad' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
-  return `<div><span class="${triangleClass(actor, target)}">${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
+  return `<div><span class="${triangleClass(actor, target)}"${hitColorStyle(actor, target, hit)}>${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
 }
 export function classAbbrev(cls: string) {
   const map: Record<string, string> = {
