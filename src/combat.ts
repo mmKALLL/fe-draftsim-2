@@ -27,6 +27,8 @@ export function enemyWeaponDangerous(u: Unit) {
   if (!w) return false
   if ((w.crit || 0) >= 25) return true
   if (w.rank === 'S') return true
+  const fx = staffEffect(w)
+  if (fx === 'berserk' || fx === 'fortify') return true
   return state.player.some((p) => p.hp > 0 && isWeaponEffective(w, p))
 }
 export function triangle(a: string, b: string, aw: Weapon | null = null, bw: Weapon | null = null) {
@@ -353,10 +355,10 @@ export function staffEffect(w: Weapon) {
 }
 export function isStatusStaff(w: Weapon) {
   const fx = staffEffect(w)
-  return fx === 'sleep' || fx === 'berserk'
+  return fx === 'sleep' || fx === 'berserk' || fx === 'poison'
 }
 export function statusName(fx: any) {
-  return ({ sleep: 'Sleep', berserk: 'Berserk' } as Record<string, string>)[fx] || ''
+  return ({ sleep: 'Sleep', berserk: 'Berserk', poison: 'Poison' } as Record<string, string>)[fx] || ''
 }
 export function statusLabel(u: Unit) {
   return [statusName(u.status), u.poisoned ? 'Poison' : ''].filter(Boolean).join(' ')
@@ -791,8 +793,10 @@ export function chooseStatusStaffTarget(actor: Unit, foes: Unit[]) {
   const unstated = live.filter((x: any) => !x.status)
   const targets = unstated.length ? unstated : live
   if (!targets.length) return null
-  if (rnd() < 0.65) return [...targets].sort((a, b) => displayedHit(actor, b) - displayedHit(actor, a))[0]
-  return pick(targets)
+  // 50/50 between the highest-current-HP unit and the biggest hitter (highest base attack power).
+  const highestHp = [...targets].sort((a, b) => b.hp - a.hp)[0]
+  const biggestHitter = [...targets].sort((a, b) => displayAttackPower(b) - displayAttackPower(a))[0]
+  return rnd() < 0.5 ? highestHp : biggestHitter
 }
 export function lowestInjured(allies: Unit[]) {
   const injured = allies.filter((x: any) => x.hp > 0 && x.hp < x.maxHp)
@@ -1182,7 +1186,7 @@ export async function resolveStaffTurn(actor: Unit, allies: Unit[], foes: Unit[]
     await animateWait(actor, `${actor.name} waits; no ally needs Fortify.`)
     return
   }
-  if (fx === 'sleep' || fx === 'berserk') {
+  if (fx === 'sleep' || fx === 'berserk' || fx === 'poison') {
     const t = forcedTarget || chooseStatusStaffTarget(actor, foes)
     if (!t) {
       await animateWait(actor, `${actor.name} waits; no status target is available.`)
@@ -1190,7 +1194,8 @@ export async function resolveStaffTurn(actor: Unit, allies: Unit[], foes: Unit[]
     }
     const r = staffStatusResult(actor, t)
     if (r.hit) {
-      applyStatus(t, fx)
+      if (fx === 'poison') applyPoison(t)
+      else applyStatus(t, fx)
       logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: ${statusName(fx)} lands (${r.dh}% chance).`, 'hit')
     } else logLine(null, `${actor.name} uses ${actor.weapon.name} on ${t.name}: miss (${r.dh}% chance).`, 'miss')
     await animateStatusStaff(actor, t, r)

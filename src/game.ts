@@ -7,7 +7,7 @@ import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rew
 import { storeConsumable } from './shop'
 import { addGold, formatGold } from './state'
 import { levelLabel, showGameOver, showWin } from './ui'
-import { advanceTwoLevels, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
+import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
@@ -78,6 +78,13 @@ export function generateEnemy() {
     assignEnemyBonuses(e, isBossSlot ? 'boss' : 'minion')
     e.hp = e.maxHp
     state.enemy.push(e)
+  }
+  // When 2+ staff units (clerics) roll on a team, every one but the LAST gets a 75%
+  // chance of a status staff (sleep/berserk/poison) and 25% chance of a heal staff;
+  // the last cleric keeps its normally rolled weapon. With only 1 cleric, nothing changes.
+  const staffUnits = state.enemy.filter((e) => e.weapon?.staff)
+  if (staffUnits.length >= 2) {
+    for (const e of staffUnits.slice(0, -1)) e.weapon = clericStatusOrHealStaff(e)
   }
   state.ui.activePreviewActor = null
   state.combat.nextEnemyMarkerId = null

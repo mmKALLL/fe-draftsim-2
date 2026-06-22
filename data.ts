@@ -294,6 +294,7 @@ export const WEAPONS: WeaponData[] = [
   { name: 'Heal Staff', type: 'staff', rank: 'E', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
   { name: 'Bloom Festal', type: 'staff', rank: 'E', mt: 2, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal', defBonus: 4 },
   { name: 'Mend Staff', type: 'staff', rank: 'D', mt: 20, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal' },
+  { name: 'Poison Staff', type: 'staff', rank: 'D', mt: 0, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'poison' },
   { name: 'Physic Staff', type: 'staff', rank: 'C', mt: 10, hit: 100, wt: 0, crit: 0, staff: true, magic: true, effect: 'heal', defBonus: 4 },
   { name: 'Sleep Staff', type: 'staff', rank: 'C', mt: 0, hit: 75, wt: 0, crit: 0, staff: true, magic: true, effect: 'sleep' },
   { name: 'Berserk Staff', type: 'staff', rank: 'B', mt: 0, hit: 65, wt: 0, crit: 0, staff: true, magic: true, effect: 'berserk' },
@@ -451,8 +452,8 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'salvage_blow', name: 'Salvage Blow', desc: '10% chance after the user defeats an enemy to add a weapon reward option.', source: 'Fates Blacksmith', classes: SKILL_CLASS_GROUPS.any, family: 'reward', trigger: 'kill', effect: 'weaponRewardChance', chance: 10 },
   // { rarity: 'normal', id: 'potent_potion', name: 'Potent Potion', desc: 'Healing consumables used by the user restore +5 HP.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'consumableHealBonus', amount: 5 },
   // { rarity: 'uncommon', id: 'quick_salve', name: 'Quick Salve', desc: 'User can use self-targeted consumables without ending their action.', source: 'Fates Apothecary', classes: SKILL_CLASS_GROUPS.any, family: 'consumable', effect: 'freeConsumableSelf' },
-  { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +30 and Crit +15 for both the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 30, crit: 15, incomingHit: 30, incomingCrit: 15 },
   { rarity: 'uncommon', id: 'ignis', name: 'Ignis', desc: 'Skl% chance to add Res to damage.', source: 'Awakening Grandmaster', classes: SKILL_CLASS_GROUPS.any, family: 'proc', trigger: 'attack', effect: 'addResToDamageChance', chanceStat: 'skl' },
+  { rarity: 'rare', id: 'quixotic', name: 'Quixotic', desc: 'Hit +30 and Crit +15 for the user and its attackers.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.any, family: 'combat', hit: 30, crit: 15, incomingHit: 30, incomingCrit: 15 },
 
   // Lord and royal-flavored skills
   { rarity: 'normal', id: 'charm', name: 'Charm', desc: 'Allies have Hit +5 and Avoid +5 while the user is alive.', source: 'Awakening Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', teamAura: { hit: 5, avoid: 5 } },
@@ -462,12 +463,12 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'uncommon', id: 'inspiration', name: 'Inspiration', desc: 'Allies deal +2 damage and take -2 damage while the user is alive.', source: 'Fates Strategist', classes: SKILL_CLASS_GROUPS.any, family: 'aura', teamAura: { damageDealt: 2, damageTakenFlat: -2 } },
   { rarity: 'uncommon', id: 'dragon_fang', name: 'Dragon Fang', desc: 'Skl% chance to deal 1.5x damage.', source: 'Fates Nohr Prince/Princess', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', trigger: 'attack', effect: 'damageMultiplierChance', chanceStat: 'skl', multiplier: 1.5 },
   { rarity: 'rare', id: 'aether', name: 'Aether', desc: 'Skl% chance to ignore half of Def/Res and heal for damage dealt.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', trigger: 'attack', effect: 'aetherChance', chanceStat: 'skl' },
-  // { rarity: 'rare', id: 'rightful_king', name: 'Rightful King', desc: 'User skill activation chances +10%.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', procBonus: 10 },
-  // { rarity: 'rare', id: 'draconic_hex', name: 'Draconic Hex', desc: 'After user combat, target suffers Str/Mag, Skl, Spd, Lck, Def, and Res -2 for one turn.', source: 'Fates Nohr Noble', classes: SKILL_CLASS_GROUPS.lord, family: 'debuff', trigger: 'afterCombat', stats: { str: -2, skl: -2, spd: -2, lck: -2, def: -2, res: -2 } },
+  // { rarity: 'rare', id: 'rightful_king', name: 'Rightful King', desc: 'Team\'s skill activation chances +10%.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', procBonus: 10 },
+  // { rarity: 'rare', id: 'draconic_hex', name: 'Draconic Hex', desc: 'After user combat, target suffers -2 all stats for one turn.', source: 'Fates Nohr Noble', classes: SKILL_CLASS_GROUPS.lord, family: 'debuff', trigger: 'afterCombat', stats: { str: -2, skl: -2, spd: -2, lck: -2, def: -2, res: -2 } },
   { rarity: 'rare', id: 'rally_spectrum', name: 'Rally Spectrum', desc: 'Allies gain all stats +2 on their first turn.', source: 'Awakening Grandmaster', classes: SKILL_CLASS_GROUPS.any, family: 'rally', trigger: 'battleStart', stats: { str: 2, skl: 2, spd: 2, lck: 2, def: 2, res: 2 } },
 
   // Mercenary and hero skills
-  // { rarity: 'normal', id: 'armsthrift', name: 'Armsthrift', desc: 'Lck% chance for forge upgrades to add an extra Hit +5.', source: 'Awakening Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'weapon', effect: 'forgePreserveChance', chanceStat: 'lck' },
+  // { rarity: 'normal', id: 'armsthrift', name: 'Armsthrift', desc: 'Forging cost -200G.', source: 'Awakening Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'weapon', effect: 'forgePreserveChance', chanceStat: 'lck' },
   // { rarity: 'normal', id: 'patience', name: 'Patience', desc: 'Hit +10 and Avoid +10 while counterattacking.', source: 'Awakening Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'enemyPhase', hit: 10, avoid: 10 },
   // { rarity: 'normal', id: 'strong_riposte', name: 'Strong Riposte', desc: 'Deals +3 damage while counterattacking.', source: 'Fates Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'enemyPhase', damageDealt: 3 },
   { rarity: 'normal', id: 'good_fortune', name: 'Good Fortune', desc: 'Lck% chance to heal 5 HP each turn.', source: 'Fates Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'survival', trigger: 'turnStart', effect: 'luckHealChance', chanceStat: 'lck', amount: 5 },
@@ -484,7 +485,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'uncommon', id: 'life_and_death', name: 'Life and Death', desc: '+6 damage dealt and +6 damage taken.', source: 'Fates Master of Arms', classes: SKILL_CLASS_GROUPS.myrmidon, family: 'combat', damageDealt: 6, damageTakenFlat: 6 },
 
   // Thief, ninja, and assassin skills
-  // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +100 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 100 },
+  // { rarity: 'normal', id: 'locktouch', name: 'Locktouch', desc: 'Skip reward gold +200 G.', source: 'Awakening/Fates Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'reward', effect: 'extraGoldOnSkip', amount: 200 },
   { rarity: 'normal', id: 'movement_plus_1', name: 'Movement', desc: "Spd +8 during user's first turn each battle.", source: 'Awakening Thief', classes: SKILL_CLASS_GROUPS.thief, family: 'tempo', stats: { spd: 8 } },
   // { rarity: 'uncommon', id: 'pass', name: 'Pass', desc: 'User ignores enemy held-item damage reduction.', source: 'Awakening Assassin', classes: SKILL_CLASS_GROUPS.thief, family: 'combat', effect: 'ignoreGuardAuras' },
   // { rarity: 'uncommon', id: 'poison_strike', name: 'Poison Strike', desc: 'The user\'s attacks inflict poison.', source: 'Fates Ninja', classes: SKILL_CLASS_GROUPS.thief, family: 'debuff', trigger: 'afterCombat', effect: 'poisonStrike', amountPercent: 20 },
@@ -497,7 +498,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'wary_fighter', name: 'Wary Fighter', desc: 'Neither combatant can double during user combat.', source: 'Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'combat', effect: 'preventDoubles' },
   { rarity: 'rare', id: 'pavise', name: 'Pavise', desc: 'Skl% chance to halve incoming physical damage.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'proc', trigger: 'physicalHitTaken', effect: 'halveDamageChance', chanceStat: 'skl' },
   // Left disabled: a "when attacking" Def bonus is inert here (no counterattacks, so the attacker never takes damage during its own combat).
-  // { rarity: 'uncommon', id: 'armored_blow', name: 'Armored Blow', desc: 'Def +6 when initiating combat.', source: 'Fates Great Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'playerPhase', stats: { def: 6 } },
+  // { rarity: 'uncommon', id: 'armored_blow', name: 'Armored Blow', desc: 'Gain Def +6 for one turn when defeating an enemy.', source: 'Fates Great Knight', classes: SKILL_CLASS_GROUPS.knight, family: 'playerPhase', stats: { def: 6 } },
   { rarity: 'uncommon', id: 'rally_defense', name: 'Rally Defense', desc: 'Allies gain Def +4 on their first turn.', source: 'Awakening/Fates General', classes: SKILL_CLASS_GROUPS.knight, family: 'rally', trigger: 'battleStart', stats: { def: 4 } },
 
   // Cavalier and paladin skills

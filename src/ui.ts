@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../constants'
 import { makeBiomePlan, renderBiomeMap } from './biomes'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
@@ -129,7 +130,7 @@ export function showHelpRules() {
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
     <p>Score is calculated as wins × 1000 + remaining gold.</p>
-    <p>(You are playing version 1.4.0-stat-names)</p>
+    <p>(You are playing version ${APP_VERSION})</p>
     <button data-close class="primary">Back</button>`
   )
 }

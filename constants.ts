@@ -1,5 +1,7 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 
+export const APP_VERSION = '1.5.0-gameplay-fixes'
+
 type RewardPoolKind = 'normal' | 'good'
 type TierWeight = [Rarity, number]
 type BoostPriceKey = StatKey | 'level'
@@ -155,7 +157,7 @@ export const DEFAULT_WEAPON_MAX_CRIT = 13
 // When true, a DEFAULT-pool enemy that rolls a COMMON (normal-rarity) weapon always gets
 // the first/basic weapon of its type (Iron Sword, Fire, Heal Staff, ...) rather than a
 // random common, so enemies are predictable and the game reads cleanly. Set false to allow
-// variety among commons (e.g. once stat-boost weapons like slim/javelin join the default pool).
+// variety among commons (e.g. stat-boost weapons like slim/javelin join the default pool).
 export const DEFAULT_COMMON_FORCES_FIRST_WEAPON = true
 
 // Per arena x role: rarity weights {normal, uncommon, rare} for each weapon pool. A

@@ -152,7 +152,7 @@ export function canEquipAsNewWeapon(u: Unit, w: Weapon) {
 // beyond a known-plain set, so any new keyword (e.g. pierceDef) auto-falls into 'good'.
 const PLAIN_WEAPON_KEYS = new Set(['name', 'type', 'rank', 'tier', 'mt', 'hit', 'wt', 'crit', 'magic'])
 const MAGIC_WEAPON_TYPES = new Set(['anima', 'light', 'dark'])
-const STATUS_STAFF_EFFECTS = new Set(['sleep', 'berserk', 'silence'])
+const STATUS_STAFF_EFFECTS = new Set(['sleep', 'berserk', 'silence', 'poison'])
 const onlyFlying = (eff?: string[]) => Array.isArray(eff) && eff.length === 1 && eff[0] === 'flying'
 export function isDefaultWeapon(w: Weapon): boolean {
   if (w.type === 'staff') return !w.effect || !STATUS_STAFF_EFFECTS.has(w.effect) // heal staves = default
@@ -225,4 +225,15 @@ export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
   const chosen = cloneWeapon(picked)
   if (tier === BOSS_TIER_BIOME) forgeWeapon(chosen)
   return chosen
+}
+// When 2+ clerics roll on an enemy team, every cleric but the last gets a status staff
+// (sleep/berserk/poison) 75% of the time, else a heal staff. Falls back to the unit's
+// existing weapon if the relevant staff pool is somehow empty.
+const STATUS_STAFF_FX = new Set(['sleep', 'berserk', 'poison'])
+export function clericStatusOrHealStaff(u: Unit) {
+  const staves = WEAPONS.filter((w) => w.type === 'staff' && allowedWeapons(u).includes(w.type))
+  const wantStatus = rnd() < 0.75
+  const filtered = staves.filter((w) => (wantStatus ? STATUS_STAFF_FX.has(w.effect || 'heal') : (w.effect || 'heal') === 'heal'))
+  const pool = filtered.length ? filtered : staves
+  return pool.length ? cloneWeapon(pick(pool)) : u.weapon
 }

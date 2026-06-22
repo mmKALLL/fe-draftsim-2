@@ -112,7 +112,8 @@ export function arenaTitleHTML() {
   const biome = activeBiomeEntry()?.biome
   if (!biome) return '<span class="arenaTitleName">Arena</span>'
   const effects = biomeEffectLabels(biome).join(', ')
-  return `<span class="arenaTitleName">${biome.name} Arena</span>${effects ? ` <span class="arenaTitleEffects">(${effects})</span>` : ''}`
+  const arenaBattle = ((Math.max(1, state.battle || 1) - 1) % BIOME_CYCLE_LENGTH) + 1
+  return `<span class="arenaTitleName">${biome.name} Arena ${arenaBattle}</span>${effects ? ` <span class="arenaTitleEffects">(${effects})</span>` : ''}`
 }
 export function updateMainModeTitle() {
   const title = $('mainModeTitle')

@@ -248,7 +248,7 @@ export function weaponSummary(w: Weapon, forForge = false) {
   const effectText = effects.length ? `, ${effects.join(', ')}` : ''
   if (fx === 'heal') return `Staff, Rank ${w.rank}, Heal ${w.mt}+Mag${effectText}`
   if (fx === 'fortify') return `Staff, Rank ${w.rank}, heals all allies by Mag${effectText}`
-  if (fx === 'sleep' || fx === 'berserk') return `Staff, Rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
+  if (fx === 'sleep' || fx === 'berserk' || fx === 'poison') return `Staff, Rank ${w.rank}, ${statusName(fx)}, Hit ${w.hit}${effectText}`
   if (forForge) return `Mt ${w.mt}, Hit ${w.hit}`
   return `Mt ${w.mt}, Hit ${w.hit}, Wt ${w.wt}, Crit ${w.crit}, Rank ${w.rank}${effectText}`
 }
@@ -287,7 +287,7 @@ export function weaponOfferDescription(item: any, unit: Unit | null = null, opts
   return `${lead} (${weaponSummary(item)}).${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
 }
 export function heldItemReplacementText(unit: Unit) {
-  return unit.heldItem ? `Replaces ${unit.heldItem.name}` : 'Currently no item'
+  return unit.heldItem ? `Replaces ${unit.heldItem.name}${unit.heldItem.desc ? ` — ${unit.heldItem.desc}` : ''}` : 'Currently no item'
 }
 export function heldItemOfferTitle(item: any, unit: Unit | null = null) {
   return unit ? `${item.name} to ${unit.name}` : item.name
@@ -322,6 +322,6 @@ export function skillOfferDescription(skill: any, unit: Unit | null = null, opts
   // separated from the rarity by a center-dot like the unit card's stat list.
   const eligible = unit ? '' : skillEligibleUnitsLabel(skill)
   const meta = [eligible ? `${rarity} · ${eligible}` : rarity]
-  if (unit) meta.push(unit.skill ? `Replaces ${unit.skill.name}` : 'No current skill')
+  if (unit) meta.push(unit.skill ? `Replaces ${unit.skill.name}${unit.skill.desc ? ` — ${unit.skill.desc}` : ''}` : 'No current skill')
   return `${lead}: ${skill.desc}<div class="small rewardMeta">${meta.join(' · ')}</div>`
 }
