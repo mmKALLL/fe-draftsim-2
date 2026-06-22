@@ -501,6 +501,17 @@ button:disabled {
     border-color 0.3s ease,
     opacity 0.3s ease;
 }
+.combatant.hasBonus::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border-top-right-radius: 8px;
+  background: linear-gradient(45deg, transparent 0 56%, #facc15 56% 70%, transparent 70% 100%);
+}
 .combatant.active {
   transform: translateY(-10px);
   border-color: #fde68a;
@@ -577,10 +588,10 @@ button:disabled {
   visibility: hidden;
 }
 .combatPreview .hitAdv {
-  color: #86efac;
+  color: #22e06b;
 }
 .combatPreview .hitDis {
-  color: #fca5a5;
+  color: #ff3b3b;
 }
 .combatPreview .hitNeu {
   color: #e2e8f0;

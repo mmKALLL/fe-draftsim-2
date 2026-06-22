@@ -4,6 +4,8 @@ import { startRandomGame, startDraftGame, showHelpRules, openMusic, showMenu, re
 import { renderDraft, randomDraftOptions, emptyRosterChoices } from './render'
 import { setAutoFight } from './biomes'
 import { startRun, debugWinBattle, debugAddGeosphere } from './game'
+import { goldReward } from './rewards'
+import { applyReward, leaveShop } from './shop'
 
 $('menuRandomBtn').onclick = startRandomGame
 $('menuDraftBtn').onclick = startDraftGame
@@ -29,7 +31,13 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.shiftKey && e.key.toLowerCase() === 'w') {
     e.preventDefault()
-    debugWinBattle()
+    if (state.combat.running) {
+      debugWinBattle()
+    } else if (state.shop.open) {
+      leaveShop()
+    } else if (state.ui.awaitingReward) {
+      applyReward(goldReward())
+    }
   }
   if (e.shiftKey && e.key.toLowerCase() === 'g') {
     e.preventDefault()

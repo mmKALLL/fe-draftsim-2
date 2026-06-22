@@ -1236,7 +1236,14 @@ export async function consumeTurnStatus(actor: Unit, allies: Unit[], foes: Unit[
     return true
   }
   if (fx === 'berserk') {
-    const targets = [...allies, ...foes].filter((x) => x.hp > 0 && x !== actor)
+    // 73mcsHTS: single 1RN roll — 75% attack a random own-team ally, 25% a random opposing enemy.
+    // `allies` is always the actor's own team and `foes` the opposing team (see consumeTurnStatus call sites).
+    const ownTargets = allies.filter((x) => x.hp > 0 && x !== actor)
+    const enemyTargets = foes.filter((x) => x.hp > 0 && x !== actor)
+    const preferOwn = rnd() < 0.75
+    // Fall back to the other side if the preferred side has no living target.
+    let targets = preferOwn ? ownTargets : enemyTargets
+    if (!targets.length) targets = preferOwn ? enemyTargets : ownTargets
     if (actor.weapon.staff || !targets.length) {
       await animateWait(actor, `${actor.name} is berserk, but cannot attack.`)
       return true

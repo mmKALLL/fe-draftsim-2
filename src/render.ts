@@ -221,7 +221,8 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
   const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
   const st = statusLabel(u)
-  const status = st ? ` ${st}` : ''
+  const status = st ? `<br>${st}` : ''
+  const bonus = isEnemy && (u.skill || u.heldItem) ? ' hasBonus' : ''
   const next =
     isEnemy && u.id === state.combat.nextEnemyMarkerId && u.hp > 0
       ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'
@@ -229,7 +230,7 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
   const weaponDanger = isEnemy && u.weapon && enemyWeaponDangerous(u) ? ' weaponDanger' : ''
   const weaponLine = u.weapon ? `<div class="small weaponLine${weaponDanger}" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
-  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')
