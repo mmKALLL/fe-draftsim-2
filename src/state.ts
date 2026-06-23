@@ -33,6 +33,12 @@ export const state = {
     open: false,
     offers: [] as ShopOffer[],
   },
+  // Per-run statistics tracking (see src/stats.ts). Reset on each new run.
+  run: {
+    strongBaseAtStart: 0,
+    consumablesAcquired: 0,
+    cheated: false,
+  },
   ui: {
     awaitingReward: false,
     pendingShopAfterReward: false,

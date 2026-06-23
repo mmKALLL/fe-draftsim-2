@@ -5,6 +5,7 @@ import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatu
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
+import { countStrongBaseFromNames } from './stats'
 import { addGold, formatGold } from './state'
 import { levelLabel, showGameOver, showWin } from './ui'
 import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
@@ -27,6 +28,9 @@ export function startRun() {
     return u
   })
   state.consumables = startingConsumables()
+  state.run.strongBaseAtStart = countStrongBaseFromNames(state.draft.chosen)
+  state.run.consumablesAcquired = state.consumables.filter(Boolean).length // seed with the starting count
+  state.run.cheated = false
   $('menuScreen').classList.add('hidden')
   $('draftScreen').classList.add('hidden')
   $('gameScreen').classList.remove('hidden')

@@ -1,6 +1,6 @@
 import { $, pick } from './utils'
 import { state } from './state'
-import { startRandomGame, startDraftGame, showHelpRules, openMusic, showMenu, resetRun } from './ui'
+import { startRandomGame, startDraftGame, showHelpRules, showStatistics, openMusic, showMenu, resetRun } from './ui'
 import { renderDraft, randomDraftOptions, emptyRosterChoices } from './render'
 import { setAutoFight } from './biomes'
 import { startRun, debugWinBattle, debugAddGeosphere } from './game'
@@ -10,6 +10,7 @@ import { applyReward, leaveShop } from './shop'
 $('menuRandomBtn').onclick = startRandomGame
 $('menuDraftBtn').onclick = startDraftGame
 $('menuHelpBtn').onclick = showHelpRules
+$('menuStatsBtn').onclick = showStatistics
 $('menuMusicBtn').onclick = openMusic
 $('randomPickBtn').onclick = () => {
   state.draft.chosen = state.draft.options.map((slot) => pick(slot))
@@ -31,6 +32,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.shiftKey && e.key.toLowerCase() === 'w') {
     e.preventDefault()
+    state.run.cheated = true // exclude this run from statistics
     if (state.combat.running) {
       debugWinBattle()
     } else if (state.shop.open) {
@@ -41,6 +43,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.shiftKey && e.key.toLowerCase() === 'g') {
     e.preventDefault()
+    state.run.cheated = true // exclude this run from statistics
     debugAddGeosphere()
   }
 })

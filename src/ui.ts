@@ -5,6 +5,7 @@ import { beginNextBattle, startRun } from './game'
 import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { startShop } from './shop'
+import { recordRunStat, statisticsHTML } from './stats'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
 import { state } from './state'
@@ -74,11 +75,13 @@ export function scoreHTML(finalScore = false) {
   return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore(finalScore)}</b> (${winCount(finalScore)} wins × 1000 + ${goldHTML(state.gold)})</p>`
 }
 export function showWin() {
+  recordRunStat('win', null)
   showModal(
     `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
+  recordRunStat('loss', state.battle)
   showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button data-reset class="good">Try again</button>`)
 }
 // Reset to a fresh run in-place (no page reload, so the game stays playable offline).
@@ -106,6 +109,7 @@ export function resetRun() {
     pendingDefaultLabel: '',
   })
   Object.assign(state.shop, { open: false, offers: [] })
+  Object.assign(state.run, { strongBaseAtStart: 0, consumablesAcquired: 0, cheated: false })
   Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null })
   closeModal()
   showMenu()
@@ -133,6 +137,9 @@ export function showHelpRules() {
     <p>(You are playing version ${APP_VERSION})</p>
     <button data-close class="primary">Back</button>`
   )
+}
+export function showStatistics() {
+  showModal(`<h2>Statistics</h2>${statisticsHTML()}<button data-close class="primary">Back</button>`)
 }
 // Delegated handler so modal close buttons need no global (replaces inline onclick="closeModal()")
 document.addEventListener('click', (e) => {

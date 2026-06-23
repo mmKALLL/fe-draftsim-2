@@ -5,6 +5,7 @@ import { consumableSummary, refreshMaxHp, statLabel } from './combat'
 import { beginNextBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity, skillTargets } from './rewards'
+import { noteConsumablesGained } from './stats'
 import { addGold, formatGold, goldHTML, spendGold } from './state'
 import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon, isBasicWeapon } from './units'
@@ -462,6 +463,9 @@ export function chooseShopBoostTarget(i: number) {
 export function storeConsumable(item: any, slot = firstEmptyConsumableSlot()) {
   const targetSlot = slot >= 0 ? slot : 0
   state.consumables[targetSlot] = cloneConsumable(item)
+  // Every mid-run acquisition (shop buy + reward grant, empty slot or replacement) routes through here;
+  // count it for run stats. The initial roster seed is assigned directly in startRun(), not via this.
+  noteConsumablesGained()
   renderTeams()
   return targetSlot
 }

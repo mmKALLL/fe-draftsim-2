@@ -1061,3 +1061,55 @@ h4 {
   font-weight: normal;
   vertical-align: -1px
 }
+
+/* Statistics screen: compact summary list + recent-runs table, dark-theme consistent. */
+.statsSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 4px;
+}
+.statsSummary .statsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+}
+.statsSummary .statsRow span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+.statsSummary .statsRow b {
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+}
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.statsTable th,
+.statsTable td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #1e293b;
+  text-align: left;
+}
+.statsTable th {
+  color: #94a3b8;
+  font-weight: 600;
+}
+.statsTable td {
+  color: #e2e8f0;
+}
+.statsTable .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.statsTable tbody tr:last-child td {
+  border-bottom: none;
+}
