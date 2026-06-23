@@ -5,7 +5,7 @@ import { consumableSummary, refreshMaxHp, statLabel } from './combat'
 import { beginNextBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity, skillTargets } from './rewards'
-import { noteConsumablesGained } from './stats'
+import { noteConsumablesGained, noteRewardChoice } from './stats'
 import { addGold, formatGold, goldHTML, spendGold } from './state'
 import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon, isBasicWeapon } from './units'
@@ -214,6 +214,14 @@ export function leaveShop() {
   renderTeams()
   beginNextBattle()
 }
+const GOLD_TYPE_LABEL: Record<string, string> = { item: 'Weapon', heldItem: 'Held item', skill: 'Skill', forge: 'Forge', consumable: 'Consumable', boost: 'Booster' }
+// Single pay choke-point: deduct gold and, on success, tally the spend by item-type label for run stats.
+function payForOffer(offer: ShopOffer): boolean {
+  if (!spendGold(offer.price)) return false
+  const label = GOLD_TYPE_LABEL[offer.type] || offer.type
+  state.run.goldByType[label] = (state.run.goldByType[label] || 0) + offer.price
+  return true
+}
 export function buyShopOffer(i: number) {
   const offer = state.shop.offers[i]
   if (!offer || offer.sold) return
@@ -242,7 +250,7 @@ export function buyShopOffer(i: number) {
       chooseShopConsumableReplacement(i)
       return
     }
-    spendGold(offer.price)
+    payForOffer(offer)
     storeConsumable(offer.item)
     offer.sold = true
     renderShop(`Stored ${offer.item.name}.`)
@@ -283,7 +291,7 @@ export function chooseShopForgeTarget(i: number) {
           renderShop('That weapon cannot be forged.')
           return
         }
-        if (!spendGold(offer.price)) {
+        if (!payForOffer(offer)) {
           closeModal()
           renderShop('Not enough gold for the weapon forge.')
           return
@@ -315,7 +323,7 @@ export function chooseShopHeldItemTarget(i: number) {
     (btn) =>
       (btn.onclick = () => {
         const u = eligible[+btn.dataset.shopHeldTarget!]
-        if (!spendGold(offer.price)) {
+        if (!payForOffer(offer)) {
           closeModal()
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
@@ -347,7 +355,7 @@ export function chooseShopSkillTarget(i: number) {
     (btn) =>
       (btn.onclick = () => {
         const u = eligible[+btn.dataset.shopSkillTarget!]
-        if (!spendGold(offer.price)) {
+        if (!payForOffer(offer)) {
           closeModal()
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
@@ -380,7 +388,7 @@ export function chooseShopWeaponTarget(i: number) {
     (btn) =>
       (btn.onclick = () => {
         const u = eligible[+btn.dataset.shopWeaponTarget!]
-        if (!spendGold(offer.price)) {
+        if (!payForOffer(offer)) {
           closeModal()
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
@@ -405,7 +413,7 @@ export function chooseShopConsumableReplacement(i: number) {
   document.querySelectorAll<HTMLElement>('[data-shop-replace-consumable]').forEach(
     (btn) =>
       (btn.onclick = () => {
-        if (!spendGold(offer.price)) {
+        if (!payForOffer(offer)) {
           closeModal()
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
@@ -446,7 +454,7 @@ export function chooseShopBoostTarget(i: number) {
           renderShop(`${u.name} cannot use ${boosterName(offer.stat)}.`)
           return
         }
-        if (!spendGold(offer.price)) {
+        if (!payForOffer(offer)) {
           closeModal()
           renderShop(`Not enough gold for ${boosterName(offer.stat)}.`)
           return
@@ -480,6 +488,7 @@ export function chooseConsumableReplacement(r: any, backToRewards: (() => void) 
     (btn) =>
       (btn.onclick = () => {
         storeConsumable(r.item, +btn.dataset.replaceConsumable!)
+        noteRewardChoice(r)
         closeModal()
         afterReward(`Stored ${r.item.name}.`)
       })
@@ -493,6 +502,7 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
   if (r.type === 'item') {
     r.unit.weapon = r.item
     recordRewardCooldown(r.unit.id, 'item')
+    noteRewardChoice(r)
     closeModal()
     afterReward(`${r.unit.name} equipped ${r.item.name}.`)
   }
@@ -500,6 +510,7 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
     r.unit.heldItem = r.item
     refreshMaxHp(r.unit) // keep maxHp in sync if a held item ever grants HP
     recordRewardCooldown(r.unit.id, 'heldItem')
+    noteRewardChoice(r)
     closeModal()
     afterReward(`${r.unit.name} received ${r.item.name}.`)
   }
@@ -507,20 +518,24 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
     r.unit.skill = r.item
     refreshMaxHp(r.unit) // HP +5 etc. raises maxHp (and current HP) immediately on learning
     recordRewardCooldown(r.unit.id, 'skill')
+    noteRewardChoice(r)
     closeModal()
     afterReward(`${r.unit.name} learned ${r.item.name}.`)
   }
   if (r.type === 'consumable') {
     if (consumableInventoryFull()) {
+      // Deferred: the replacement chooser tallies at its success point (cancelling must not count).
       chooseConsumableReplacement(r, backToRewards)
       return
     }
     storeConsumable(r.item)
+    noteRewardChoice(r)
     closeModal()
     afterReward(`Stored ${r.item.name}.`)
   }
   if (r.type === 'gold') {
     addGold(r.gold)
+    noteRewardChoice(r)
     closeModal()
     afterReward(`Took ${formatGold(r.gold)}.`, 'goldLog')
   }
@@ -532,10 +547,12 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
       }
       const msg = applyBoostToUnit(r, r.unit)
       recordRewardCooldown(r.unit.id, 'boost')
+      noteRewardChoice(r)
       closeModal()
       afterReward(msg)
       return
     }
+    // Deferred: the boost target chooser tallies at its success point (cancelling must not count).
     chooseBoostTarget(r, backToRewards)
   }
 }

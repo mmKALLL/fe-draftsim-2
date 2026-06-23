@@ -22,7 +22,7 @@ $('rerollBtn').onclick = () => {
   renderDraft()
 }
 $('autoFightBtn').onclick = () => setAutoFight(!state.combat.autoFight)
-$('startBtn').onclick = startRun
+$('startBtn').onclick = () => startRun('draft')
 $('resetBtn').onclick = resetRun
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && state.combat.pendingTargetCancel) {

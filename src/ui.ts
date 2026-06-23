@@ -5,7 +5,7 @@ import { beginNextBattle, startRun } from './game'
 import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { startShop } from './shop'
-import { recordRunStat, statisticsHTML } from './stats'
+import { clearRunStats, loadRunStats, noteRewardChoice, recordRunStat, statisticsDetailHTML, statisticsHTML } from './stats'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
 import { state } from './state'
@@ -45,6 +45,7 @@ export function chooseBoostTarget(r: any, backToRewards: (() => void) | null = n
         }
         const msg = applyBoostToUnit(r, u)
         recordRewardCooldown(u.id, 'boost')
+        noteRewardChoice(r)
         closeModal()
         afterReward(msg)
       })
@@ -75,17 +76,19 @@ export function scoreHTML(finalScore = false) {
   return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore(finalScore)}</b> (${winCount(finalScore)} wins × 1000 + ${goldHTML(state.gold)})</p>`
 }
 export function showWin() {
-  recordRunStat('win', null)
+  recordRunStat('win')
   showModal(
     `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
-  recordRunStat('loss', state.battle)
+  recordRunStat('loss')
   showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button data-reset class="good">Try again</button>`)
 }
 // Reset to a fresh run in-place (no page reload, so the game stays playable offline).
 export function resetRun() {
+  // A started-but-unrecorded run (player pressed New Run / reset mid-run) is logged as abandoned.
+  if (!state.run.recorded && state.player.length > 0) recordRunStat('abandoned')
   state.runToken++
   if (state.combat.pendingTargetCancel) state.combat.pendingTargetCancel()
   state.player = []
@@ -109,7 +112,7 @@ export function resetRun() {
     pendingDefaultLabel: '',
   })
   Object.assign(state.shop, { open: false, offers: [] })
-  Object.assign(state.run, { strongBaseAtStart: 0, consumablesAcquired: 0, cheated: false })
+  Object.assign(state.run, { mode: 'draft', consumablesAcquired: 0, cheated: false, recorded: false, rewardsByRarity: {}, rewardsByType: {}, goldByType: {} })
   Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null })
   closeModal()
   showMenu()
@@ -135,11 +138,56 @@ export function showHelpRules() {
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
     <p>Score is calculated as wins × 1000 + remaining gold.</p>
     <p>(You are playing version ${APP_VERSION})</p>
-    <button data-close class="primary">Back</button>`
+    <button data-close class="good">Back</button>`
   )
 }
 export function showStatistics() {
-  showModal(`<h2>Statistics</h2>${statisticsHTML()}<button data-close class="primary">Back</button>`)
+  showModal(
+    `<h2>Statistics</h2>${statisticsHTML()}` +
+      `<div id="statsDetail" class="hidden">${statisticsDetailHTML()}<textarea id="statsDump" class="statsDump" readonly rows="5" spellcheck="false"></textarea></div>` +
+      `<div class="row" style="justify-content: space-between; margin-top: 16px">` +
+      `<button data-close class="good">Back</button>` +
+      `<div class="row">` +
+      `<button id="statsClearBtn" class="danger hidden" type="button">Clear all data</button>` +
+      `<button id="statsDumpBtn" type="button">Show full data</button>` +
+      `</div></div>`
+  )
+  const dumpBtn = $('statsDumpBtn') as HTMLButtonElement | null
+  const clearBtn = $('statsClearBtn') as HTMLButtonElement | null
+  const detail = $('statsDetail')
+  const dump = $('statsDump') as HTMLTextAreaElement | null
+  let clearArmed = false
+  const disarmClear = () => {
+    clearArmed = false
+    if (clearBtn) clearBtn.textContent = 'Clear all data'
+  }
+  if (dumpBtn && detail && dump) {
+    dumpBtn.onclick = () => {
+      const showing = !detail.classList.contains('hidden')
+      disarmClear() // either toggle action resets the clear-arm
+      if (showing) {
+        detail.classList.add('hidden')
+        clearBtn?.classList.add('hidden')
+        dumpBtn.textContent = 'Show full data'
+      } else {
+        detail.classList.remove('hidden')
+        dump.value = JSON.stringify(loadRunStats(), null, 2)
+        dumpBtn.textContent = 'Hide full data'
+        clearBtn?.classList.remove('hidden')
+      }
+    }
+  }
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      if (!clearArmed) {
+        clearArmed = true
+        clearBtn.textContent = 'Click again to confirm'
+        return
+      }
+      clearRunStats()
+      showStatistics() // re-render fresh/empty
+    }
+  }
 }
 // Delegated handler so modal close buttons need no global (replaces inline onclick="closeModal()")
 document.addEventListener('click', (e) => {
@@ -167,7 +215,7 @@ export function startDraftGame() {
 export function startRandomGame() {
   state.draft.options = randomDraftOptions()
   state.draft.chosen = state.draft.options.map((slot) => pick(slot))
-  startRun()
+  startRun('random')
 }
 
 state.biomePlan = makeBiomePlan()

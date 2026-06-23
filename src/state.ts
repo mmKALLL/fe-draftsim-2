@@ -35,9 +35,13 @@ export const state = {
   },
   // Per-run statistics tracking (see src/stats.ts). Reset on each new run.
   run: {
-    strongBaseAtStart: 0,
+    mode: 'draft' as 'draft' | 'random',
     consumablesAcquired: 0,
     cheated: false,
+    recorded: false,
+    rewardsByRarity: {} as Record<string, number>, // chosen rewards counted by rarity (normal/uncommon/rare)
+    rewardsByType: {} as Record<string, number>, // chosen rewards counted by type label
+    goldByType: {} as Record<string, number>, // gold SPENT in shop, by item-type label
   },
   ui: {
     awaitingReward: false,

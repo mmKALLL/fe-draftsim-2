@@ -1,20 +1,53 @@
 // All cross-run statistics logic lives here. Other modules call the thin entry points only:
 //   - noteConsumablesGained()  (consumable acquisition sites)
-//   - recordRunStat()          (win/loss screens)
-//   - countStrongBaseFromNames() / statisticsHTML()  (run start / stats screen)
-// One-way data flow: gameplay seeds/notes into state.run, then recordRunStat() snapshots it.
+//   - recordRunStat()          (win / loss / abandon)
+//   - statisticsHTML()         (stats screen)
+// One-way data flow: gameplay seeds/notes into state.run, then recordRunStat() snapshots it into a
+// localStorage-backed run-history array. The full raw history is kept (every run, including cheated
+// and abandoned) so stats can be recomputed or filtered later; display-time filtering decides what
+// counts — cheated runs are excluded entirely, abandoned runs are excluded from averages but counted.
+// Roster strength is stored as raw distributions (prepromote count + base-stat / growth brackets)
+// rather than a single hardcoded "strong" threshold, so finer-grained stats stay computable.
 import { BASES } from '../data'
 import { state } from './state'
+import { APP_VERSION } from '../constants'
 import type { UnitBase } from '../types'
 
-const STATS_KEY = 'firerogue.stats.v1'
-const MAX_STORED = 200
+const STATS_KEY = 'firerogue.stats.v5'
+const MAX_STORED = 500
+
+// Roster-composition brackets. Contiguous so every unit lands in exactly one bracket of each kind.
+type Bracket = { label: string; min: number; max: number }
+const BASE_STAT_BRACKETS: Bracket[] = [
+  { label: '0-29', min: 0, max: 29 },
+  { label: '30-39', min: 30, max: 39 },
+  { label: '40-69', min: 40, max: 69 },
+]
+const GROWTH_BRACKETS: Bracket[] = [
+  { label: '200-260', min: 200, max: 260 },
+  { label: '261-299', min: 261, max: 299 },
+  { label: '300-319', min: 300, max: 319 },
+  { label: '320-399', min: 320, max: 399 },
+]
+
+export type RunOutcome = 'win' | 'loss' | 'abandoned'
 
 export type RunStat = {
-  outcome: 'win' | 'loss'
-  lossBattle: number | null
-  strongBase: number
-  consumables: number
+  ts: number // Date.now() at record time
+  version: string // APP_VERSION the run was played on
+  start_mode: 'draft' | 'random' // how the starting roster was chosen
+  outcome: RunOutcome
+  battleReached: number // final battle won, lost at, or abandoned at
+  prepromotes: number // starting units that begin already experienced (startOffset > 0)
+  baseStatBrackets: Record<string, number> // starting units counted by base-stat total (bTotal)
+  growthBrackets: Record<string, number> // starting units counted by growth total (gTotal)
+  consumables: number // total consumables acquired over the run (cumulative)
+  goldAtEnd: number
+  roster: string[] // starting unit names
+  cheated: boolean // a debug cheat (shift+W / shift+G) was used during the run
+  rewardsByRarity: Record<string, number> // chosen rewards counted by rarity (normal/uncommon/rare)
+  rewardsByType: Record<string, number> // chosen rewards counted by type label
+  goldByType: Record<string, number> // gold spent in shop, by item-type label
 }
 
 export function loadRunStats(): RunStat[] {
@@ -34,17 +67,32 @@ export function saveRunStats(arr: RunStat[]) {
   }
 }
 
-// Pure predicate: a base is "strong" if it's a prepromote (positive start offset) or has a high base total.
-export function isStrongBase(base: UnitBase): boolean {
-  return base.startOffset > 0 || base.stats.bTotal >= 40
+// Tally values into contiguous brackets; out-of-range values clamp to the nearest end bracket.
+function bracketCounts(values: number[], brackets: Bracket[]): Record<string, number> {
+  const counts: Record<string, number> = {}
+  brackets.forEach((b) => (counts[b.label] = 0))
+  values.forEach((v) => {
+    const hit = brackets.find((b) => v >= b.min && v <= b.max)
+    const bracket = hit ?? (v < brackets[0].min ? brackets[0] : brackets[brackets.length - 1])
+    counts[bracket.label]++
+  })
+  return counts
 }
 
-// Count strong bases from chosen names by looking up the BASE (not the in-game Unit).
-export function countStrongBaseFromNames(names: string[]): number {
-  return names.reduce((n, name) => {
-    const base = BASES.find((b) => b.name === name)
-    return n + (base && isStrongBase(base) ? 1 : 0)
-  }, 0)
+// Raw roster-strength distributions for the starting roster, looked up from BASES (not the in-game Unit).
+export function rosterComposition(names: string[]) {
+  const bases = names.map((name) => BASES.find((b) => b.name === name)).filter((b): b is UnitBase => !!b)
+  return {
+    prepromotes: bases.filter((b) => b.startOffset > 0).length,
+    baseStatBrackets: bracketCounts(
+      bases.map((b) => b.stats.bTotal),
+      BASE_STAT_BRACKETS
+    ),
+    growthBrackets: bracketCounts(
+      bases.map((b) => b.growths.gTotal),
+      GROWTH_BRACKETS
+    ),
+  }
 }
 
 // The "note" half of seed+note: call sites stay one-liners.
@@ -52,63 +100,171 @@ export function noteConsumablesGained(n = 1) {
   state.run.consumablesAcquired += n
 }
 
-export function recordRunStat(outcome: 'win' | 'loss', lossBattle: number | null) {
-  if (state.run.cheated) return // cheated runs are never recorded
+const REWARD_TYPE_LABEL: Record<string, string> = { item: 'Weapon', heldItem: 'Held item', skill: 'Skill', consumable: 'Consumable', gold: 'Gold', boost: 'Booster' }
+// Tally a reward the player ACTUALLY received (call exactly once at each apply site, never on mere click).
+export function noteRewardChoice(r: any) {
+  const rarity = r?.item?.tier ?? r?.item?.rarity
+  if (rarity === 'normal' || rarity === 'uncommon' || rarity === 'rare') state.run.rewardsByRarity[rarity] = (state.run.rewardsByRarity[rarity] || 0) + 1
+  const label = REWARD_TYPE_LABEL[r?.type] || r?.type || 'Other'
+  state.run.rewardsByType[label] = (state.run.rewardsByType[label] || 0) + 1
+}
+
+// Snapshot the current run into the history. Every run is stored (including cheated and abandoned)
+// so the raw array stays complete; filtering at display time decides what counts.
+export function recordRunStat(outcome: RunOutcome) {
+  state.run.recorded = true // so a later resetRun() doesn't re-record this run as abandoned
+  const roster = state.draft.chosen.slice()
+  const comp = rosterComposition(roster)
   const arr = loadRunStats()
   arr.push({
+    ts: Date.now(),
+    version: APP_VERSION,
+    start_mode: state.run.mode,
     outcome,
-    lossBattle,
-    strongBase: state.run.strongBaseAtStart,
+    battleReached: state.battle,
+    prepromotes: comp.prepromotes,
+    baseStatBrackets: comp.baseStatBrackets,
+    growthBrackets: comp.growthBrackets,
     consumables: state.run.consumablesAcquired,
+    goldAtEnd: state.gold,
+    roster,
+    cheated: state.run.cheated,
+    rewardsByRarity: { ...state.run.rewardsByRarity },
+    rewardsByType: { ...state.run.rewardsByType },
+    goldByType: { ...state.run.goldByType },
   })
   saveRunStats(arr)
 }
 
 const fmt1 = (n: number) => n.toFixed(1)
 
+function longestWinStreak(runs: RunStat[]): number {
+  let best = 0
+  let cur = 0
+  for (const r of runs) {
+    if (r.outcome === 'win') {
+      cur++
+      if (cur > best) best = cur
+    } else {
+      cur = 0
+    }
+  }
+  return best
+}
+
 export function statisticsHTML(): string {
-  const runs = loadRunStats()
-  if (runs.length === 0) {
-    return `<p class="small">No completed runs yet — finish a run without using cheats to populate this.</p>`
+  const all = loadRunStats()
+  if (all.length === 0) {
+    return `<p class="small">No runs recorded yet — finish (or abandon) a run without using cheats to populate this.</p>`
   }
 
-  const total = runs.length
-  const wins = runs.filter((r) => r.outcome === 'win').length
+  const valid = all.filter((r) => !r.cheated) // cheated runs are excluded from everything shown
+  const completed = valid.filter((r) => r.outcome !== 'abandoned') // win/loss only — drives the averages
+  const abandoned = valid.filter((r) => r.outcome === 'abandoned').length
+
+  const total = completed.length
+  const wins = completed.filter((r) => r.outcome === 'win').length
   const losses = total - wins
-  const winRate = Math.round((wins / total) * 100)
+  const winRate = total ? Math.round((wins / total) * 100) : 0
 
-  const lossBattles = runs.filter((r) => r.outcome === 'loss' && r.lossBattle != null).map((r) => r.lossBattle as number)
+  const lossBattles = completed.filter((r) => r.outcome === 'loss').map((r) => r.battleReached)
   const avgLossBattle = lossBattles.length ? fmt1(lossBattles.reduce((a, b) => a + b, 0) / lossBattles.length) : '—'
+  const furthest = completed.length ? Math.max(...completed.map((r) => r.battleReached)) : 0
+  const bestStreak = longestWinStreak(completed)
+  const avg = (sel: (r: RunStat) => number) => (total ? fmt1(completed.reduce((a, r) => a + sel(r), 0) / total) : '0.0')
+  const avgConsumables = avg((r) => r.consumables)
+  const avgGold = avg((r) => r.goldAtEnd)
 
-  const avgStrongBase = fmt1(runs.reduce((a, r) => a + r.strongBase, 0) / total)
-  const avgConsumables = fmt1(runs.reduce((a, r) => a + r.consumables, 0) / total)
-
+  const row = (label: string, value: string | number) => `<div class="statsRow"><span>${label}</span><b>${value}</b></div>`
   const summary = `<div class="statsSummary">
-    <div class="statsRow"><span>Total runs</span><b>${total}</b></div>
-    <div class="statsRow"><span>Wins</span><b>${wins}</b></div>
-    <div class="statsRow"><span>Losses</span><b>${losses}</b></div>
-    <div class="statsRow"><span>Win rate</span><b>${winRate}%</b></div>
-    <div class="statsRow"><span>Avg. loss battle</span><b>${avgLossBattle}</b></div>
-    <div class="statsRow"><span>Avg. strong-base units</span><b>${avgStrongBase}</b></div>
-    <div class="statsRow"><span>Avg. consumables acquired</span><b>${avgConsumables}</b></div>
+    ${row('Completed runs', total)}
+    ${row('Furthest battle', furthest)}
+    ${row('Wins', wins)}
+    ${row('Losses', losses)}
+    ${row('Best win streak', bestStreak)}
+    ${row('Win rate', `${winRate}%`)}
+    ${row('Avg. lost battle', avgLossBattle)}
+    ${row('Avg. consumables acquired', avgConsumables)}
+    ${row('Avg. gold at run end', avgGold)}
+    ${row('Abandoned runs', abandoned)}
   </div>`
 
-  // Recent runs: last ~12, most recent first. Run number is the overall 1-based index.
-  const recent = runs
+  // Recent completed runs: last ~12, most recent first.
+  const recent = completed
     .map((r, i) => ({ r, num: i + 1 }))
     .slice(-12)
     .reverse()
   const rows = recent
     .map(({ r, num }) => {
-      const outcome = r.outcome === 'win' ? 'Win' : `Lost at battle ${r.lossBattle ?? '?'}`
-      return `<tr><td class="num">${num}</td><td>${outcome}</td><td class="num">${r.strongBase}</td><td class="num">${r.consumables}</td></tr>`
+      const outcome = r.outcome === 'win' ? 'Win' : `Lost at battle ${r.battleReached}`
+      const mode = r.start_mode === 'random' ? 'Random' : 'Draft'
+      return `<tr><td class="num">${num}</td><td>${mode}</td><td>${outcome}</td><td class="num">${r.prepromotes}</td><td class="num">${r.consumables}</td><td class="num">${r.goldAtEnd}</td></tr>`
     })
     .join('')
-
   const table = `<table class="statsTable">
-    <thead><tr><th class="num">#</th><th>Outcome</th><th class="num">Strong-base</th><th class="num">Consumables</th></tr></thead>
+    <thead><tr><th class="num">#</th><th>Mode</th><th>Outcome</th><th class="num">Prepromotes</th><th class="num">Consumables</th><th class="num">Gold</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`
 
   return `${summary}<h3>Recent runs</h3>${table}`
+}
+
+// Detail (hidden by default in the stats screen): cheated count + roster composition +
+// reward-choice / gold-spent breakdowns, all as average per completed run.
+export function statisticsDetailHTML(): string {
+  const all = loadRunStats()
+  if (all.length === 0) return ''
+
+  const valid = all.filter((r) => !r.cheated)
+  const completed = valid.filter((r) => r.outcome !== 'abandoned') // win/loss only — drives the averages
+  const cheated = all.length - valid.length
+  const total = completed.length
+
+  const avg = (sel: (r: RunStat) => number) => (total ? fmt1(completed.reduce((a, r) => a + sel(r), 0) / total) : '0.0')
+  const row = (label: string, value: string | number) => `<div class="statsRow"><span>${label}</span><b>${value}</b></div>`
+
+  // Cheated runs (moved here from the default summary).
+  const cheatedRow = `<div class="statsSummary">${row('Cheated runs (excluded)', cheated)}</div>`
+
+  // Avg. roster composition per run: prepromotes + raw base-stat / growth bracket distributions.
+  const compRows = [
+    row('Prepromote units', avg((r) => r.prepromotes)),
+    ...BASE_STAT_BRACKETS.map((b) => row(`Base total ${b.label}`, avg((r) => r.baseStatBrackets?.[b.label] ?? 0))),
+    ...GROWTH_BRACKETS.map((b) => row(`Growth total ${b.label}`, avg((r) => r.growthBrackets?.[b.label] ?? 0))),
+  ].join('')
+  const composition = `<div class="statsSummary">${compRows}</div>`
+
+  // Reward choices by rarity: a row per rarity that appears across completed runs.
+  const RARITY_ORDER: { key: string; label: string }[] = [
+    { key: 'normal', label: 'Normal' },
+    { key: 'uncommon', label: 'Uncommon' },
+    { key: 'rare', label: 'Rare' },
+  ]
+  const rarityRows = RARITY_ORDER.filter(({ key }) => completed.some((r) => (r.rewardsByRarity?.[key] ?? 0) > 0))
+    .map(({ key, label }) => row(label, avg((r) => r.rewardsByRarity?.[key] ?? 0)))
+    .join('')
+
+  // Collect the union of labels seen across completed runs so any label with data always shows.
+  const unionKeys = (sel: (r: RunStat) => Record<string, number> | undefined): string[] => {
+    const set = new Set<string>()
+    completed.forEach((r) => Object.keys(sel(r) || {}).forEach((k) => set.add(k)))
+    return [...set].sort()
+  }
+  const typeKeys = unionKeys((r) => r.rewardsByType)
+  const typeRows = typeKeys.map((label) => row(label, avg((r) => r.rewardsByType?.[label] ?? 0))).join('')
+  const goldKeys = unionKeys((r) => r.goldByType)
+  const goldRows = goldKeys.map((label) => row(label, avg((r) => r.goldByType?.[label] ?? 0))).join('')
+
+  let html = cheatedRow
+  html += `<h3>Roster composition</h3>${composition}`
+  if (rarityRows) html += `<h3>Reward choices by rarity</h3><div class="statsSummary">${rarityRows}</div>`
+  if (typeRows) html += `<h3>Reward choices by type</h3><div class="statsSummary">${typeRows}</div>`
+  if (goldRows) html += `<h3>Gold spent by type (avg/run)</h3><div class="statsSummary">${goldRows}</div>`
+  return html
+}
+
+export function clearRunStats() {
+  try {
+    localStorage.removeItem(STATS_KEY)
+  } catch {}
 }

@@ -7,7 +7,6 @@ import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
-
 export function unitTags(u: Unit) {
   return CLASS_TAGS[u.displayCls] || CLASS_TAGS[u.cls] || []
 }
@@ -27,10 +26,8 @@ export function enemyWeaponDangerous(u: Unit) {
   if (!w) return false
   if ((w.crit || 0) >= 25) return true
   if (w.rank === 'S') return true
-  // Dangerous tomes (the anima/light/dark group): ignore the target's Res entirely
-  // (Bolting/Purge/Luna) or hit hard enough to threaten squishy units. mt >= 12 catches
-  // Bolting-tier and up while sparing basic tomes (Fire 5 / Elfire 10 / Flux 7).
-  if (weaponTypeMatches('tome', w.type) && (w.pierceRes || (w.mt || 0) >= 12)) return true
+  // Dangerous tomes (the anima/light/dark group): ignore the target's Res entirely (Bolting/Purge/Luna)
+  if (weaponTypeMatches('tome', w.type) && w.pierceRes) return true
   const fx = staffEffect(w)
   if (fx === 'berserk' || fx === 'fortify') return true
   return state.player.some((p) => p.hp > 0 && isWeaponEffective(w, p))
@@ -81,8 +78,7 @@ export function combatStat(u: Unit, stat: StatKey) {
   // 'rally'/'tempo' (like 'playerPhase'/'biome') deliver their stats via the
   // battle-start turnBuff (applyBattleStartRallies), so the skill's own `stats`
   // must NOT also count as a passive self-bonus — that double-buffed the holder.
-  const deliveredViaBuff =
-    u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
+  const deliveredViaBuff = u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
   const skillStat = deliveredViaBuff ? 0 : u.skill?.stats?.[stat] || 0
   const heldItemStat = heldItemConditionMet(u) ? u.heldItem?.stats?.[stat] || 0 : 0
   let value = (u.stats[stat] || 0) + heldItemStat + skillStat
@@ -254,7 +250,18 @@ export function hitRate(a: Unit, d: Unit) {
   // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
   // downside that mirrors the holder's own +hit when it attacks.
   return floor(
-    a.weapon.hit + 2 * combatStat(a, 'skl') + combatStat(a, 'lck') / 2 + t + (a.heldItem?.hit || 0) + attackerHit + (d.skill?.incomingHit || 0) + skillBreakerBonus(a, d, 'hit') + skillBiomeBonus(a, 'hit') - (a.skill?.enemyAvoid || 0) + teamAuraBonus(a, 'hit') + skillSoloBonus(a, 'hit')
+    a.weapon.hit +
+      2 * combatStat(a, 'skl') +
+      combatStat(a, 'lck') / 2 +
+      t +
+      (a.heldItem?.hit || 0) +
+      attackerHit +
+      (d.skill?.incomingHit || 0) +
+      skillBreakerBonus(a, d, 'hit') +
+      skillBiomeBonus(a, 'hit') -
+      (a.skill?.enemyAvoid || 0) +
+      teamAuraBonus(a, 'hit') +
+      skillSoloBonus(a, 'hit')
   )
 }
 export function avoid(d: Unit, opponent: Unit | null = null) {
@@ -263,7 +270,17 @@ export function avoid(d: Unit, opponent: Unit | null = null) {
   const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'biome' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
   // Breaker avoid is conditional on the opponent's weapon type, so it only applies
   // when an opponent is supplied (i.e. during an actual matchup, not card displays).
-  return floor(2 * attackSpeed(d) + combatStat(d, 'lck') + biomeAvoidDelta() + (d.heldItem?.avoid || 0) + skillAvoid + skillBreakerBonus(d, opponent, 'avoid') + skillBiomeBonus(d, 'avoid') + teamAuraBonus(d, 'avoid') + skillSoloBonus(d, 'avoid'))
+  return floor(
+    2 * attackSpeed(d) +
+      combatStat(d, 'lck') +
+      biomeAvoidDelta() +
+      (d.heldItem?.avoid || 0) +
+      skillAvoid +
+      skillBreakerBonus(d, opponent, 'avoid') +
+      skillBiomeBonus(d, 'avoid') +
+      teamAuraBonus(d, 'avoid') +
+      skillSoloBonus(d, 'avoid')
+  )
 }
 export function displayedHit(a: Unit, d: Unit) {
   return clamp(hitRate(a, d) - avoid(d, a), 0, 100)
@@ -279,7 +296,23 @@ export function critRate(a: Unit, d: Unit) {
   // Quixotic: the defender feeds its attacker extra crit (incomingCrit) — the
   // downside mirroring the holder's own +crit when it attacks.
   const heldItemCrit = heldItemConditionMet(a) ? a.heldItem?.crit || 0 : 0
-  return clamp(floor((a.weapon.crit || 0) + combatStat(a, 'skl') / 2 + combatStat(a, 'lck') / 2 + bonus - combatStat(d, 'lck') + heldItemCrit + (a.skill?.crit || 0) + teamAuraBonus(a, 'crit') + (d.skill?.incomingCrit || 0) - (a.skill?.enemyCritAvoid || 0) - teamAuraBonus(d, 'critAvoid')), 0, 100)
+  return clamp(
+    floor(
+      (a.weapon.crit || 0) +
+        combatStat(a, 'skl') / 2 +
+        combatStat(a, 'lck') / 2 +
+        bonus -
+        combatStat(d, 'lck') +
+        heldItemCrit +
+        (a.skill?.crit || 0) +
+        teamAuraBonus(a, 'crit') +
+        (d.skill?.incomingCrit || 0) -
+        (a.skill?.enemyCritAvoid || 0) -
+        teamAuraBonus(d, 'critAvoid')
+    ),
+    0,
+    100
+  )
 }
 export function triangleClass(a: Unit, d: Unit) {
   if (!a?.weapon || !d?.weapon) return 'hitNeu'
@@ -404,7 +437,7 @@ export function weaponEffectLabels(w: Weapon) {
   if (w.poison) labels.push('Poison')
   if (w.halveHp) labels.push('Halves HP')
   if (w.effective?.length) {
-    const names = w.effective.map((e: any) => ({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' } as Record<string, string>)[e] || e)
+    const names = w.effective.map((e: any) => (({ armored: 'armor', mounted: 'mount', flying: 'flying', swordUser: 'swords' }) as Record<string, string>)[e] || e)
     labels.push(`Eff: ${names.join(' / ')}`)
   }
   if (w.pierceRes) labels.push('Ignores Res')
@@ -412,12 +445,8 @@ export function weaponEffectLabels(w: Weapon) {
   return labels
 }
 export function temporaryBuffLabel(u: Unit) {
-  const battleBuffs = (Object.entries(u.tempBuffs || {}) as [string, number][])
-    .filter(([, amt]) => amt > 0)
-    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)} +${amt}`)
-  const turnBuffs = (Object.entries(u.turnBuffs || {}) as [string, number][])
-    .filter(([, amt]) => amt > 0)
-    .map(([stat, amt]) => `${statLabel(u, stat as StatKey)} +${amt} turn`)
+  const battleBuffs = (Object.entries(u.tempBuffs || {}) as [string, number][]).filter(([, amt]) => amt > 0).map(([stat, amt]) => `${statLabel(u, stat as StatKey)} +${amt}`)
+  const turnBuffs = (Object.entries(u.turnBuffs || {}) as [string, number][]).filter(([, amt]) => amt > 0).map(([stat, amt]) => `${statLabel(u, stat as StatKey)} +${amt} turn`)
   const buffs = [...battleBuffs, ...turnBuffs]
   if (!buffs.length) return ''
   return buffs.join(', ')
@@ -440,7 +469,7 @@ export function refreshMaxHp(u: Unit) {
   else u.hp = Math.min(u.hp, u.maxHp)
 }
 export function clearBuffBucket(u: Unit, bucketName: any) {
-  for (const [stat, amt] of (Object.entries(u[bucketName] || {}) as [string, number][])) {
+  for (const [stat, amt] of Object.entries(u[bucketName] || {}) as [string, number][]) {
     u.stats[stat] = Math.max(0, u.stats[stat] - amt)
     if (stat === 'hp') {
       u.maxHp = computeMaxHp(u)
@@ -550,9 +579,7 @@ export function applyBattleStartRallies() {
     // Rally Strength/Magic are scoped by attack type so they don't double as a
     // universal +4 attack (str is the single attack stat): 'physical' targets
     // non-magic allies, 'magic' targets mages; otherwise all allies.
-    const targets = living.filter((ally) =>
-      s.rallyTarget === 'physical' ? !ally.weapon?.magic : s.rallyTarget === 'magic' ? !!ally.weapon?.magic : true
-    )
+    const targets = living.filter((ally) => (s.rallyTarget === 'physical' ? !ally.weapon?.magic : s.rallyTarget === 'magic' ? !!ally.weapon?.magic : true))
     for (const ally of targets) {
       for (const [stat, amt] of entries) applyStatBuff(ally, stat, amt, 'turnBuffs')
     }
@@ -733,14 +760,16 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   // the Pierce Badge below must NOT recompute (which would re-ignore from full dmg).
   let defenseHalved = false
   if (proc) {
-    if (proc.effect === 'damageMultiplierChance') dmg = floor(dmg * (proc.multiplier || 1)) // Dragon Fang
+    if (proc.effect === 'damageMultiplierChance')
+      dmg = floor(dmg * (proc.multiplier || 1)) // Dragon Fang
     else if (proc.effect === 'halveDefenseChance' || proc.effect === 'aetherChance') {
       // Luna / Aether: ignore half of the target's defense. This branch rebuilds the
       // damage from scratch, so re-apply the defender's flat damage-taken (Life and Death).
       const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
       dmg = Math.max(1, attackPower(a, d) - floor(def / 2) + damageTakenFlat(d))
       defenseHalved = true
-    } else if (proc.effect === 'addResToDamageChance') dmg += combatResistance(a) // Ignis
+    } else if (proc.effect === 'addResToDamageChance')
+      dmg += combatResistance(a) // Ignis
     else if (proc.effect === 'addMissingHpChance') dmg += floor(((a.maxHp - a.hp) * (proc.amountPercent || 50)) / 100) // Vengeance
   }
   // Pierce Badge: an independent held-item proc (its own chance roll) to ignore half
@@ -1148,11 +1177,7 @@ export async function useConsumableFromSlot(slot: any, actor: Unit) {
     return false
   }
   if (item.effect === 'aoeDamage') {
-    const confirmed = await confirmConsumableUse(
-      actor,
-      item,
-      `${item.name} will affect ${targets.length} enem${targets.length === 1 ? 'y' : 'ies'}. ${consumableSummary(item)}`
-    )
+    const confirmed = await confirmConsumableUse(actor, item, `${item.name} will affect ${targets.length} enem${targets.length === 1 ? 'y' : 'ies'}. ${consumableSummary(item)}`)
     if (!confirmed) {
       setStatus(`${actor.name} holds onto ${item.name}.`)
       return false
@@ -1315,8 +1340,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
         await sleep(650)
       }
       // Drain: weapon drain (×1.0) and the Drain Badge (×amount/100) STACK additively.
-      const drainMult =
-        (actor.weapon?.drain ? 1 : 0) + (actor.heldItem?.effect === 'weaponDrainPercent' ? ((actor.heldItem.amount as number) || 0) / 100 : 0)
+      const drainMult = (actor.weapon?.drain ? 1 : 0) + (actor.heldItem?.effect === 'weaponDrainPercent' ? ((actor.heldItem.amount as number) || 0) / 100 : 0)
       if (r.hit && r.damage > 0 && drainMult > 0) {
         const before = actor.hp
         const gain = Math.min(actor.maxHp - actor.hp, floor(r.damage * drainMult))

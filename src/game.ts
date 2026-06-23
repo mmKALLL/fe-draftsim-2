@@ -5,7 +5,6 @@ import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatu
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
-import { countStrongBaseFromNames } from './stats'
 import { addGold, formatGold } from './state'
 import { levelLabel, showGameOver, showWin } from './ui'
 import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
@@ -14,7 +13,7 @@ import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
 
 
-export function startRun() {
+export function startRun(mode: 'draft' | 'random' = 'draft') {
   if (selectedRosterCount() !== ROSTER_SIZE) return
   state.rewardCooldowns = {}
   state.player = state.draft.chosen.map((n, i) => {
@@ -28,9 +27,13 @@ export function startRun() {
     return u
   })
   state.consumables = startingConsumables()
-  state.run.strongBaseAtStart = countStrongBaseFromNames(state.draft.chosen)
+  state.run.mode = mode
   state.run.consumablesAcquired = state.consumables.filter(Boolean).length // seed with the starting count
   state.run.cheated = false
+  state.run.recorded = false
+  state.run.rewardsByRarity = {}
+  state.run.rewardsByType = {}
+  state.run.goldByType = {}
   $('menuScreen').classList.add('hidden')
   $('draftScreen').classList.add('hidden')
   $('gameScreen').classList.remove('hidden')

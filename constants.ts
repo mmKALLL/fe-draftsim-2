@@ -1,6 +1,6 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 
-export const APP_VERSION = '1.5.0-gameplay-fixes'
+export const APP_VERSION = '1.6.2-play-stats'
 
 type RewardPoolKind = 'normal' | 'good'
 type TierWeight = [Rarity, number]
@@ -206,7 +206,7 @@ export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'biome', [
   { standard: [0, 1], regular: [0, 1], biome: [1, 2] }, // Arena 1
   { standard: [0, 2], regular: [1, 1], biome: [1, 2] }, // Arena 2
   { standard: [1, 3], regular: [1, 2], biome: [2, 3] }, // Arena 3
-  { standard: [1, 3], regular: [1, 3], biome: [3, 4] }, // Arena 4
+  { standard: [2, 3], regular: [1, 3], biome: [3, 4] }, // Arena 4
 ]
 
 // Expected number of bonus skills / held items an enemy carries, by arena and role,
@@ -219,8 +219,8 @@ type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
 export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
-  { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
-  { boss: { skill: 1, held: 1 }, minion: { skill: 0.2, held: 0 } }, // Arena 4
+  { boss: { skill: 1, held: 0 }, minion: { skill: 0.1, held: 0 } }, // Arena 3
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0 } }, // Arena 4
 ]
 // "Hard mode": bosses always carry a skill from arena 2+ and a held item from arena 3+;
 // later arenas sprinkle a chance of them onto minions. Uncomment + assign to ENEMY_BONUS_COUNTS.
@@ -243,5 +243,5 @@ export const ENEMY_BONUS_RARITY: Record<'boss' | 'minion', EnemyWeaponRarityWeig
   // Arena 3
   { boss: { normal: 20, uncommon: 45, rare: 35 }, minion: { normal: 50, uncommon: 40, rare: 10 } },
   // Arena 4
-  { boss: { normal: 5, uncommon: 35, rare: 60 }, minion: { normal: 10, uncommon: 45, rare: 25 } },
+  { boss: { normal: 0, uncommon: 30, rare: 60 }, minion: { normal: 10, uncommon: 45, rare: 25 } },
 ]

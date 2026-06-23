@@ -129,7 +129,7 @@ export function consumableById(id: any) {
   return CONSUMABLES.find((item) => item.id === id)
 }
 export function startingConsumables() {
-  return [cloneConsumable(consumableById('vulnerary')), cloneConsumable(consumableById('speed_tonic')), null]
+  return [cloneConsumable(consumableById('power_tonic')), cloneConsumable(consumableById('speed_tonic')), null]
 }
 export function allowedWeapons(u: Unit) {
   const c = CLASSES[u.cls] || {}
