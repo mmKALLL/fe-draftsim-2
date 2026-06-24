@@ -26,7 +26,7 @@ export type WeaponData = {
   name: string
   type: WeaponType
   rank: WeaponRank
-  tier?: Rarity
+  rarity?: Rarity
   mt: number
   hit: number
   wt: number
@@ -50,7 +50,7 @@ export type WeaponData = {
 export type ConsumableData = {
   id: string
   name: string
-  tier: Rarity
+  rarity: Rarity
   effect: string
   desc: string
   amount?: number
@@ -60,7 +60,7 @@ export type ConsumableData = {
 export type CandidateItemData = {
   id: string
   name: string
-  tier: Rarity
+  rarity: Rarity
   price: number
   family: string
   desc: string
@@ -92,18 +92,18 @@ export type UnitBase = {
   startOffset: number
 }
 
-export type BiomeFocus = {
+export type ArenaFocus = {
   cls: string
   weaponType?: WeaponType
   label?: string
 }
 
-export type BiomeData = {
+export type ArenaData = {
   id: string
   name: string
   tile: string
   effects: string[]
-  focus: BiomeFocus[]
+  focus: ArenaFocus[]
 }
 
 // --- Runtime domain types (interim: well-known fields typed, permissive index
@@ -150,7 +150,7 @@ export type ShopOffer = {
   [key: string]: any
 }
 
-export type BiomeEntry = {
-  biome: BiomeData
+export type ArenaEntry = {
+  arena: ArenaData
   [key: string]: any
 }

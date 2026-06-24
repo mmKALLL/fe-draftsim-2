@@ -1,11 +1,11 @@
-import { BOSS_TIER_BIOME, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, ENEMY_WEAPON_TYPE_SPLIT, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
+import { BOSS_TIER_ARENA, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, ENEMY_WEAPON_TYPE_SPLIT, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer, Rarity } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer, Rarity } from '../types'
 
 
 export function promote(u: Unit, showLog = true) {
@@ -150,14 +150,14 @@ export function canEquipAsNewWeapon(u: Unit, w: Weapon) {
 // "default" pool = predictable, plain weapons; "good" pool = everything else (the
 // exceptions). Allowlist by design: a weapon is default only if it carries nothing
 // beyond a known-plain set, so any new keyword (e.g. pierceDef) auto-falls into 'good'.
-const PLAIN_WEAPON_KEYS = new Set(['name', 'type', 'rank', 'tier', 'mt', 'hit', 'wt', 'crit', 'magic'])
+const PLAIN_WEAPON_KEYS = new Set(['name', 'type', 'rank', 'rarity', 'mt', 'hit', 'wt', 'crit', 'magic'])
 const MAGIC_WEAPON_TYPES = new Set(['anima', 'light', 'dark'])
 const STATUS_STAFF_EFFECTS = new Set(['sleep', 'berserk', 'silence', 'poison'])
 const onlyFlying = (eff?: string[]) => Array.isArray(eff) && eff.length === 1 && eff[0] === 'flying'
 export function isDefaultWeapon(w: Weapon): boolean {
   if (w.type === 'staff') return !w.effect || !STATUS_STAFF_EFFECTS.has(w.effect) // heal staves = default
   if (w.magic !== MAGIC_WEAPON_TYPES.has(w.type)) return false // off-type magic => good
-  if ((w.crit || 0) >= DEFAULT_WEAPON_MAX_CRIT) return false // killer-tier crit => good
+  if ((w.crit || 0) >= DEFAULT_WEAPON_MAX_CRIT) return false // killer-rarity crit => good
   for (const k of Object.keys(w)) {
     if (PLAIN_WEAPON_KEYS.has(k)) continue
     if (w.type === 'bow' && k === 'effective' && onlyFlying(w.effective)) continue // innate flier-eff
@@ -223,7 +223,7 @@ function pickWeaponType(types: string[]): string {
   }
   return types[types.length - 1]
 }
-export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
+export function enemyWeaponFor(u: Unit, rarity: any, forceGood: boolean) {
   const allowedTypes = allowedWeapons(u) // ordered, PRIMARY first; promotion types are SECONDARY
   // Pick the weapon TYPE first (favoring the primary), then restrict the pool to it before
   // the existing rarity selection runs. Falls back to the full pool if the chosen type has none.
@@ -233,7 +233,7 @@ export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
   const classWeapons = typeWeapons.length ? typeWeapons : allClassWeapons
   if (!classWeapons.length) return u.weapon
   const arena = clamp(Math.floor((state.battle - 1) / 5) + 1, 1, 4)
-  const role = tier ? 'boss' : 'minion'
+  const role = rarity ? 'boss' : 'minion'
   const profile = ENEMY_WEAPON_PROFILE[arena - 1][role]
   let pool = classWeapons.filter((w) => (forceGood ? !isBasicWeapon(w) : isDefaultWeapon(w)))
   if (!pool.length) pool = classWeapons
@@ -244,7 +244,7 @@ export function enemyWeaponFor(u: Unit, tier: any, forceGood: boolean) {
     picked = classWeapons.find((w) => isBasicWeapon(w) && w.type === picked.type) || picked
   }
   const chosen = cloneWeapon(picked)
-  if (tier === BOSS_TIER_BIOME) forgeWeapon(chosen)
+  if (rarity === BOSS_TIER_ARENA) forgeWeapon(chosen)
   return chosen
 }
 // When 2+ clerics roll on an enemy team, every cleric but the last gets a status staff

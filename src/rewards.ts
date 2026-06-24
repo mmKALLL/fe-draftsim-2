@@ -1,5 +1,5 @@
-import { BIOME_CYCLES_PER_RUN, BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, ENEMY_BONUS_RARITY, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
-import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
+import { ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, ENEMY_BONUS_RARITY, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
+import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponRarityLabel } from '../data'
 import { attackSpeed, computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags, weaponResultingAS } from './combat'
 import { bossTierForBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, SPD_ARROW, weaponOfferDescription, weaponOfferTitle } from './render'
@@ -24,7 +24,7 @@ export function renderRewardSelection(title: string, rewards: any) {
   const choiceRewards = rewards.filter((r: any) => r.type !== 'gold')
   let html = `<h2>${title}</h2><div class="rewardGrid">`
   choiceRewards.forEach((r: any, i: number) => {
-    const rarity = r.item?.tier ?? r.item?.rarity
+    const rarity = r.item?.rarity ?? r.item?.rarity
     const rewardClass = rarity ? ` reward-${rarity}` : ''
     html += selectionChoiceHTML(r.title, r.desc, `data-i="${i}"`, 'Choose', rewardClass)
   })
@@ -36,37 +36,37 @@ export function renderRewardSelection(title: string, rewards: any) {
   if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
 }
 
-export function weightedTier(weights: any) {
+export function weightedRarity(weights: any) {
   const total = weights.reduce((sum: any, [, weight]: [string, number]) => sum + weight, 0)
   let roll = rnd() * total
-  for (const [tier, weight] of weights) {
+  for (const [rarity, weight] of weights) {
     roll -= weight
-    if (roll <= 0) return tier
+    if (roll <= 0) return rarity
   }
   return weights[weights.length - 1][0]
 }
 // Pick an item of the requested rarity, falling back to any rarity if none exist.
-export function pickByRarity<T extends { tier?: Rarity }>(pool: T[], rarity: Rarity): T | null {
+export function pickByRarity<T extends { rarity?: Rarity }>(pool: T[], rarity: Rarity): T | null {
   if (!pool.length) return null
-  const tierPool = pool.filter((x) => x.tier === rarity)
-  return pick(tierPool.length ? tierPool : pool)
+  const rarityPool = pool.filter((x) => x.rarity === rarity)
+  return pick(rarityPool.length ? rarityPool : pool)
 }
-// Skill equivalent of pickByRarity: skills carry their rarity on `.rarity` (not `.tier`).
+// Skill equivalent of pickByRarity: skills carry their rarity on `.rarity` (not `.rarity`).
 export function pickSkillByRarity<T extends { rarity?: Rarity }>(pool: T[], rarity: Rarity): T | null {
   if (!pool.length) return null
-  const tierPool = pool.filter((x) => x.rarity === rarity)
-  return pick(tierPool.length ? tierPool : pool)
+  const rarityPool = pool.filter((x) => x.rarity === rarity)
+  return pick(rarityPool.length ? rarityPool : pool)
 }
-// Arena index (1..BIOME_CYCLES_PER_RUN) for a given battle number.
+// Arena index (1..ARENA_CYCLES_PER_RUN) for a given battle number.
 export function rewardArena(battle: number): number {
-  return Math.min(BIOME_CYCLES_PER_RUN, Math.floor((Math.max(1, battle) - 1) / BIOME_CYCLE_LENGTH) + 1)
+  return Math.min(ARENA_CYCLES_PER_RUN, Math.floor((Math.max(1, battle) - 1) / ARENA_CYCLE_LENGTH) + 1)
 }
 // Single source of truth for reward rarity: a weighted spread read from the
 // active arena's table for the given boss type. The rare lock keeps the very
 // first battles rare-free.
 export function rewardRarityProfile(bossTier: string | null, battle: number): { spread: [Rarity, number][] } {
   const arenaTable = REWARD_RARITY_WEIGHTS[rewardArena(battle) - 1] || REWARD_RARITY_WEIGHTS[REWARD_RARITY_WEIGHTS.length - 1]
-  const bossKind = bossTier === BOSS_TIER_BIOME ? 'biome' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
+  const bossKind = bossTier === BOSS_TIER_ARENA ? 'arena' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
   const base = arenaTable[bossKind]
   const rareLocked = battle < REWARD_RARE_LOCKED_UNTIL_BATTLE
   const weights: Record<Rarity, number> = { normal: base.normal, uncommon: base.uncommon, rare: rareLocked ? 0 : base.rare }
@@ -74,10 +74,10 @@ export function rewardRarityProfile(bossTier: string | null, battle: number): { 
   return { spread }
 }
 export function rollRewardRarity(profile: { spread: [Rarity, number][] }): Rarity {
-  return weightedTier(profile.spread) as Rarity
+  return weightedRarity(profile.spread) as Rarity
 }
 export function rollShopRarity(): Rarity {
-  return weightedTier(rewardRarityProfile(null, state.battle).spread) as Rarity
+  return weightedRarity(rewardRarityProfile(null, state.battle).spread) as Rarity
 }
 // Per-unit, per-reward-type cooldown: a unit that received a reward type can't
 // be offered that type again until REWARD_TYPE_UNIT_COOLDOWN battles have passed.
@@ -123,7 +123,7 @@ export function pickRewardConsumable(rarity: Rarity) {
 export function consumableReward(rarity: Rarity = 'normal') {
   const item = pickRewardConsumable(rarity)
   const slotText = consumableInventoryFull() ? 'Inventory full: choose a slot to replace.' : 'Stored in the first empty consumable slot.'
-  const meta = `<div class="small rewardMeta">${weaponTierLabel(item.tier)} · ${slotText}</div>`
+  const meta = `<div class="small rewardMeta">${weaponRarityLabel(item.rarity)} · ${slotText}</div>`
   return { type: 'consumable', title: `${item.name}`, desc: `Usable: ${consumableSummary(item)}${meta}`, item }
 }
 export function heldItemReward(rarity: Rarity = 'normal') {
@@ -150,12 +150,12 @@ export function skillReward(rarity: Rarity = 'normal') {
   // pool to only the flagged skills (ignoring the rolled rarity), forcing them to
   // appear so a specific skill can be tested. Pair with DEBUG_SKILLS for frequent rolls.
   const forced = offerable.filter((s) => s.debugAlways)
-  const tierPool = forced.length ? forced : offerable.filter((s) => s.rarity === rarity)
-  const pool = tierPool.length ? tierPool : offerable
+  const rarityPool = forced.length ? forced : offerable.filter((s) => s.rarity === rarity)
+  const pool = rarityPool.length ? rarityPool : offerable
   // Universal ('Any'-class) skills are eligible for every unit, so weight them down
   // (UNIVERSAL_SKILL_WEIGHT) relative to class-specific skills (weight 1) when choosing.
   const weighted = pool.map((s) => [s, s.classes.includes('Any') ? UNIVERSAL_SKILL_WEIGHT : 1] as [any, number])
-  const skill = weightedTier(weighted)
+  const skill = weightedRarity(weighted)
   const unit = pick(skillTargets(skill))
   return { type: 'skill', title: skillOfferTitle(skill, unit), desc: skillOfferDescription(skill, unit), unit, item: skill }
 }
@@ -174,7 +174,7 @@ export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
   const rarityWeights = ENEMY_BONUS_RARITY[arena - 1]?.[role]
   if (rollFractionalCount(cfg.skill) >= 1) {
     const pool = TEACHABLE_SKILLS.filter((s) => skillClassMatches(s, unit))
-    // Roll a rarity, then pick a skill of that tier (steps down to any rarity if empty).
+    // Roll a rarity, then pick a skill of that rarity (steps down to any rarity if empty).
     const skill = rarityWeights ? pickSkillByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
     if (skill) {
       unit.skill = skill
@@ -183,7 +183,7 @@ export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
   }
   if (rollFractionalCount(cfg.held) >= 1) {
     const pool = HELD_ITEMS.filter((i: any) => heldItemRelevantToUnit(i, unit))
-    // Same rarity-weighted roll for held items, keyed on `.tier` via pickByRarity.
+    // Same rarity-weighted roll for held items, keyed on `.rarity` via pickByRarity.
     const item = rarityWeights ? pickByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
     if (item) {
       unit.heldItem = item
@@ -234,7 +234,7 @@ export function makeRewards(bossTier: string | null = null, opening = false) {
     let next: any = null,
       guard = 0
     do {
-      const type = weightedTier(eligible) as RewardType
+      const type = weightedRarity(eligible) as RewardType
       next = REWARD_GENERATORS[type]!(rarity)
     } while ((!next || rewards.some((r) => sameReward(r, next))) && guard++ < 30)
     if (next) rewards.push(next)

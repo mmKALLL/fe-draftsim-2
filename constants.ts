@@ -3,7 +3,7 @@ import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 export const APP_VERSION = '1.6.2-play-stats'
 
 type RewardPoolKind = 'normal' | 'good'
-type TierWeight = [Rarity, number]
+type RarityWeight = [Rarity, number]
 type BoostPriceKey = StatKey | 'level'
 
 export const FEMP_ASSET_ROOT = './assets/femp'
@@ -14,7 +14,7 @@ export const MAP_SPRITE_SLOT_H = 20 * MAP_SPRITE_SCALE
 export const STAFF_EXHAUST_ROUND_LIMIT = 40
 
 export const WEAPON_RANKS: WeaponRank[] = ['E', 'D', 'C', 'B', 'A', 'S']
-export const WEAPON_TIER_WEIGHTS: Record<RewardPoolKind, TierWeight[]> = {
+export const WEAPON_RARITY_WEIGHTS: Record<RewardPoolKind, RarityWeight[]> = {
   normal: [
     ['normal', 60],
     ['uncommon', 30],
@@ -26,7 +26,7 @@ export const WEAPON_TIER_WEIGHTS: Record<RewardPoolKind, TierWeight[]> = {
   ],
 }
 
-export const CONSUMABLE_TIER_WEIGHTS: Record<RewardPoolKind, TierWeight[]> = {
+export const CONSUMABLE_RARITY_WEIGHTS: Record<RewardPoolKind, RarityWeight[]> = {
   normal: [
     ['normal', 60],
     ['uncommon', 30],
@@ -44,21 +44,21 @@ export const ROSTER_SIZE = 5,
   CONSUMABLE_SLOTS = 3,
   REWARD_RARE_LOCKED_UNTIL_BATTLE = 3,
   REWARD_SKIP_GOLD = 200,
-  SHOP_BIOME_BOSS_GOLD = 2000,
+  SHOP_ARENA_BOSS_GOLD = 2000,
   SHOP_WEAPON_OFFERS = 5,
   SHOP_CONSUMABLE_OFFERS = 3,
   SHOP_BOOST_OFFERS = 3,
   SHOP_HELD_ITEM_OFFERS = 3,
   SHOP_SKILL_OFFERS = 3,
   BOSS_TIER_REGULAR = 'regular',
-  BOSS_TIER_BIOME = 'biome',
-  BIOME_CYCLE_LENGTH = 5,
-  PROMOTION_UNLOCK_AFTER_BATTLE = BIOME_CYCLE_LENGTH * 2,
-  BIOME_CYCLES_PER_RUN = 4,
-  BIOME_FOCUS_CHANCE = 0.3,
-  BIOME_AVOID_DELTA = 15,
-  BIOME_STAT_DELTA = 4,
-  BIOME_SPEED_MULTIPLIER = 0.6
+  BOSS_TIER_ARENA = 'arena',
+  ARENA_CYCLE_LENGTH = 5,
+  PROMOTION_UNLOCK_AFTER_BATTLE = ARENA_CYCLE_LENGTH * 2,
+  ARENA_CYCLES_PER_RUN = 4,
+  ARENA_FOCUS_CHANCE = 0.3,
+  ARENA_AVOID_DELTA = 15,
+  ARENA_STAT_DELTA = 4,
+  ARENA_SPEED_MULTIPLIER = 0.6
 
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   E: 300,
@@ -91,8 +91,8 @@ export const SHOP_BOOST_PRICES: Record<BoostPriceKey, number> = {
   level: 1400,
 }
 
-// Per-arena tuning (index 0 = arena 1). A run has BIOME_CYCLES_PER_RUN arenas of
-// BIOME_CYCLE_LENGTH battles each; tune each arena's reward mix independently.
+// Per-arena tuning (index 0 = arena 1). A run has ARENA_CYCLES_PER_RUN arenas of
+// ARENA_CYCLE_LENGTH battles each; tune each arena's reward mix independently.
 // Relative ratio of reward types per arena. Tune freely; <= 0 disables a type.
 // Only the always-on self-passive skills are wired (see TEACHABLE_SKILLS);
 // support is reserved until implemented.
@@ -114,17 +114,17 @@ export const ENEMY_LUCK_PENALTY = 3
 export const ENEMY_LUCK_GROWTH_PENALTY = 10
 
 // Rarity spread (weights) per arena, split by boss type: 'standard' (normal
-// battle), 'regular' boss, 'biome'/arena boss. rewardRarityProfile() reads the
+// battle), 'regular' boss, 'arena'/arena boss. rewardRarityProfile() reads the
 // active arena + boss type. Tune any cell; <= 0 drops a rarity from that pool.
-export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'biome', Record<Rarity, number>>[] = [
+export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'arena', Record<Rarity, number>>[] = [
   // Arena 1
-  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 40, uncommon: 55, rare: 5 }, biome: { normal: 0, uncommon: 90, rare: 10 } },
+  { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 40, uncommon: 55, rare: 5 }, arena: { normal: 0, uncommon: 90, rare: 10 } },
   // Arena 2
-  { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 30, uncommon: 40, rare: 20 }, biome: { normal: 0, uncommon: 60, rare: 40 } },
+  { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 30, uncommon: 40, rare: 20 }, arena: { normal: 0, uncommon: 60, rare: 40 } },
   // Arena 3
-  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 10, uncommon: 45, rare: 45 }, biome: { normal: 0, uncommon: 20, rare: 80 } },
+  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 10, uncommon: 45, rare: 45 }, arena: { normal: 0, uncommon: 20, rare: 80 } },
   // Arena 4
-  { standard: { normal: 10, uncommon: 70, rare: 20 }, regular: { normal: 0, uncommon: 30, rare: 70 }, biome: { normal: 0, uncommon: 10, rare: 90 } },
+  { standard: { normal: 10, uncommon: 70, rare: 20 }, regular: { normal: 0, uncommon: 30, rare: 70 }, arena: { normal: 0, uncommon: 10, rare: 90 } },
 ]
 
 // Gentle early ramp: enemies in the first EARLY_ENEMY_NERF_BATTLES fights are
@@ -150,7 +150,7 @@ export const WEAPON_RANK_RARITY: Record<WeaponRank, Rarity> = {
   A: 'rare',
   S: 'rare',
 }
-// crit >= this marks a weapon as a 'good' (killer-tier) exception; innate light-tome
+// crit >= this marks a weapon as a 'good' (killer-rarity) exception; innate light-tome
 // crit (5-8) stays in the 'default' pool.
 export const DEFAULT_WEAPON_MAX_CRIT = 13
 
@@ -202,11 +202,11 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
 // fight as [min, max] by arena and battle type. Bosses are always 'good' (and pinned to
 // slot 1); chosen good minions take random slots. Clamped to minions present (5 in a
 // standard fight, 4 alongside a boss).
-export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'biome', [number, number]>[] = [
-  { standard: [0, 1], regular: [0, 1], biome: [1, 2] }, // Arena 1
-  { standard: [0, 2], regular: [1, 1], biome: [1, 2] }, // Arena 2
-  { standard: [1, 3], regular: [1, 2], biome: [2, 3] }, // Arena 3
-  { standard: [2, 3], regular: [1, 3], biome: [3, 4] }, // Arena 4
+export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'arena', [number, number]>[] = [
+  { standard: [0, 1], regular: [0, 1], arena: [1, 2] }, // Arena 1
+  { standard: [0, 2], regular: [1, 1], arena: [1, 2] }, // Arena 2
+  { standard: [1, 3], regular: [1, 2], arena: [2, 3] }, // Arena 3
+  { standard: [2, 3], regular: [1, 3], arena: [3, 4] }, // Arena 4
 ]
 
 // Expected number of bonus skills / held items an enemy carries, by arena and role,
@@ -233,7 +233,7 @@ export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
 
 // Rarity weights {normal, uncommon, rare} for an enemy's BONUS skill / held item, by arena
 // and role (same length/shape as ENEMY_WEAPON_PROFILE). assignEnemyBonuses rolls a rarity
-// with pickWeightedRarity, then picks from the pool filtered to that tier (stepping down to
+// with pickWeightedRarity, then picks from the pool filtered to that rarity (stepping down to
 // any rarity if empty). Later arenas + bosses skew rarer, mirroring REWARD_RARITY_WEIGHTS.
 export const ENEMY_BONUS_RARITY: Record<'boss' | 'minion', EnemyWeaponRarityWeights>[] = [
   // Arena 1

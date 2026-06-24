@@ -1,6 +1,6 @@
 import { CONSUMABLE_SLOTS, SHOP_BOOST_OFFERS, SHOP_BOOST_PRICES, SHOP_CONSUMABLE_OFFERS, SHOP_CONSUMABLE_PRICES, SHOP_FORGE_PRICE, SHOP_HELD_ITEM_OFFERS, SHOP_SKILL_OFFERS, SHOP_SKILL_PRICES, SHOP_WEAPON_OFFERS, SHOP_WEAPON_PRICES } from '../constants'
-import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponTierLabel } from '../data'
-import { setShopOpen } from './biomes'
+import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponRarityLabel } from '../data'
+import { setShopOpen } from './arenas'
 import { consumableSummary, refreshMaxHp, statLabel } from './combat'
 import { beginNextBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
@@ -11,7 +11,7 @@ import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } fro
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon, isBasicWeapon } from './units'
 import { $, capStat, rint } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 
 export function shopWeaponPrice(w: Weapon) {
@@ -19,7 +19,7 @@ export function shopWeaponPrice(w: Weapon) {
   return SHOP_WEAPON_PRICES[rank as keyof typeof SHOP_WEAPON_PRICES] || SHOP_WEAPON_PRICES.E
 }
 export function shopConsumablePrice(item: any) {
-  return SHOP_CONSUMABLE_PRICES[(item.tier || 'normal') as keyof typeof SHOP_CONSUMABLE_PRICES] || SHOP_CONSUMABLE_PRICES.normal
+  return SHOP_CONSUMABLE_PRICES[(item.rarity || 'normal') as keyof typeof SHOP_CONSUMABLE_PRICES] || SHOP_CONSUMABLE_PRICES.normal
 }
 export function shopBoostPrice(r: any) {
   return SHOP_BOOST_PRICES[r.stat as keyof typeof SHOP_BOOST_PRICES] || 800
@@ -69,7 +69,7 @@ export function shopConsumableOffer() {
   }
 }
 export function shopHeldItemPrice(item: any) {
-  return item.price || SHOP_CONSUMABLE_PRICES[(item.tier || 'normal') as keyof typeof SHOP_CONSUMABLE_PRICES] || 800
+  return item.price || SHOP_CONSUMABLE_PRICES[(item.rarity || 'normal') as keyof typeof SHOP_CONSUMABLE_PRICES] || 800
 }
 export function shopHeldItemPool() {
   return HELD_ITEMS.filter((item) => state.player.some((u) => u.heldItem?.id !== item.id && heldItemRelevantToUnit(item, u)))
@@ -82,7 +82,7 @@ export function shopHeldItemOffer() {
     type: 'heldItem',
     shopKind: 'heldItem',
     title: item.name,
-    desc: heldItemOfferDescription(item, null, { action: 'Buy', includeTier: false }),
+    desc: heldItemOfferDescription(item, null, { action: 'Buy', includeRarity: false }),
     item,
     price: shopHeldItemPrice(item),
   }
@@ -102,7 +102,7 @@ export function shopSkillPool() {
 }
 export function shopSkillOffer() {
   const chosen = pickByRarity(
-    shopSkillPool().map((skill) => ({ ...skill, tier: skill.rarity })),
+    shopSkillPool().map((skill) => ({ ...skill, rarity: skill.rarity })),
     rollShopRarity()
   )
   if (!chosen) return null
@@ -143,7 +143,7 @@ export function makeShopOffers() {
 }
 export function shopOfferClass(offer: ShopOffer) {
   if (offer.type === 'gold') return ' reward-gold'
-  return offer.item?.tier ? ` reward-${offer.item.tier}` : ''
+  return offer.item?.rarity ? ` reward-${offer.item.rarity}` : ''
 }
 export function shopOfferHTML(offer: ShopOffer, i: number) {
   const sold = !!offer.sold
@@ -173,7 +173,7 @@ export function renderShop(message = '') {
   const consumableSlotsHtml = Array.from({ length: CONSUMABLE_SLOTS }, (_, i) => state.consumables[i] || null)
     .map((item, i) =>
       item
-        ? `<div class="consumableSlot"><div class="small">${weaponTierLabel(item.tier)}</div><div class="name">${item.name}</div><div class="small">${consumableSummary(item)}</div></div>`
+        ? `<div class="consumableSlot"><div class="small">${weaponRarityLabel(item.rarity)}</div><div class="name">${item.name}</div><div class="small">${consumableSummary(item)}</div></div>`
         : `<div class="consumableSlot empty"><div class="small">Slot ${i + 1}</div><div>Empty</div></div>`
     )
     .join('')
@@ -315,7 +315,7 @@ export function chooseShopHeldItemTarget(i: number) {
   }
   let html = `<h2>${offer.item.name}: choose holder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${offer.item.desc}</div>`
   eligible.forEach((u, idx) => {
-    html += selectionChoiceHTML(heldItemOfferTitle(offer.item, u), heldItemOfferDescription(offer.item, u, { includeTier: false }), `data-shop-held-target="${idx}"`, 'Give')
+    html += selectionChoiceHTML(heldItemOfferTitle(offer.item, u), heldItemOfferDescription(offer.item, u, { includeRarity: false }), `data-shop-held-target="${idx}"`, 'Give')
   })
   html += '<button id="cancelShopHeldBtn">Cancel</button>'
   showModal(html)
@@ -378,9 +378,9 @@ export function chooseShopWeaponTarget(i: number) {
     renderShop(`No eligible wielder for ${offer.item.name}.`)
     return
   }
-  let html = `<h2>${offer.item.name}: choose wielder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${weaponOfferDescription(offer.item, null, { action: 'Buy', includeTier: false })}</div>`
+  let html = `<h2>${offer.item.name}: choose wielder</h2><div class="small">Cost ${goldHTML(offer.price)}. ${weaponOfferDescription(offer.item, null, { action: 'Buy', includeRarity: false })}</div>`
   eligible.forEach((u, idx) => {
-    html += selectionChoiceHTML(weaponOfferTitle(offer.item, u), weaponOfferDescription(offer.item, u, { includeTier: false }), `data-shop-weapon-target="${idx}"`, 'Equip')
+    html += selectionChoiceHTML(weaponOfferTitle(offer.item, u), weaponOfferDescription(offer.item, u, { includeRarity: false }), `data-shop-weapon-target="${idx}"`, 'Equip')
   })
   html += '<button id="cancelShopWeaponBtn">Cancel</button>'
   showModal(html)

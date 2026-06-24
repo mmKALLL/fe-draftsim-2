@@ -1,14 +1,14 @@
-import { BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, LEADER_BONUS_LEVELS, ROSTER_SIZE } from '../constants'
-import { BASES, CLASSES, HELD_ITEMS, TEACHABLE_SKILLS, weaponTierLabel } from '../data'
+import { BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, LEADER_BONUS_LEVELS, ROSTER_SIZE } from '../constants'
+import { BASES, CLASSES, HELD_ITEMS, TEACHABLE_SKILLS, weaponRarityLabel } from '../data'
 import { battleImgForUnit, htmlAttr, portraitImgForBase, portraitImgForUnit } from './assets'
-import { renderBiomeMap, updateAutoFightButton, updateMainModeTitle } from './biomes'
+import { renderArenaMap, updateAutoFightButton, updateMainModeTitle } from './arenas'
 import { attackSpeed, avoid, combatPreviewHTML, consumableSummary, consumableTargets, displayAttackPower, enemyWeaponDangerous, hitRate, nextLivingIndex, sleep, staffEffect, statLabel, statusLabel, statusName, temporaryBuffLabel, weaponEffectLabels } from './combat'
 import { updateGoldUI } from './state'
 import { levelLabel } from './ui'
 import { startingWeapon } from './units'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 
 export function selectedRosterCount() {
@@ -55,7 +55,7 @@ export function growthCompareHTML(b: any) {
 ${growLine}</div>`
 }
 export function renderDraft() {
-  renderBiomeMap()
+  renderArenaMap()
   const selectedCount = selectedRosterCount()
   $('rosterCount').textContent = String(selectedCount)
   $('draftHint').textContent =
@@ -180,7 +180,7 @@ export function renderConsumables() {
       const targets = actor ? consumableTargets(item) : []
       const canUse = !!(actor && state.combat.pendingConsumableAction && targets.length)
       const title = canUse ? `Use ${item.name}` : actor ? 'No valid target right now' : 'Usable on player turns'
-      return `<div class="consumableSlot"><div class="small">${weaponTierLabel(item.tier)}</div><div class="name">${item.name}</div><div class="small">${consumableSummary(item)}</div><button data-use-consumable="${i}" title="${htmlAttr(title)}"${canUse ? '' : ' disabled'}>Use</button></div>`
+      return `<div class="consumableSlot"><div class="small">${weaponRarityLabel(item.rarity)}</div><div class="name">${item.name}</div><div class="small">${consumableSummary(item)}</div><button data-use-consumable="${i}" title="${htmlAttr(title)}"${canUse ? '' : ' disabled'}>Use</button></div>`
     })
     .join('')
   const defaultButton = state.combat.pendingDefaultAction ? `<button class="turnAction" data-default-action>${state.combat.pendingDefaultLabel}</button>` : ''
@@ -208,7 +208,7 @@ export function renderTeams() {
   $('battleNo').textContent = String(state.battle)
   $('rosterCount').textContent = String(state.player.length || selectedRosterCount())
   updateGoldUI()
-  renderBiomeMap()
+  renderArenaMap()
   updateMainModeTitle()
   updateCombatLogTitle()
   renderSideCards()
@@ -219,7 +219,7 @@ export function renderTeams() {
 export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const preview = isEnemy ? combatPreviewHTML(state.ui.activePreviewActor as Unit, u) : ''
   const previewClass = preview ? 'combatPreview' : 'combatPreview empty'
-  const boss = u.bossTier === BOSS_TIER_BIOME ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
+  const boss = u.bossTier === BOSS_TIER_ARENA ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
   const st = statusLabel(u)
   const status = st ? `<br>${st}` : ''
   const bonus = isEnemy && (u.skill || u.heldItem) ? (u.skill && u.heldItem ? ' hasBonus hasBonusBoth' : ' hasBonus') : ''
@@ -280,10 +280,10 @@ export function weaponOfferTitle(item: any, unit: Unit | null = null) {
 }
 export function weaponOfferDescription(item: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Equip'
-  const includeTier = opts.includeTier !== false
+  const includeRarity = opts.includeRarity !== false
   const lead = unit ? `${action} ${unit.name} with ${item.name}` : `${action} ${item.name}`
   const meta = []
-  if (includeTier) meta.push(weaponTierLabel(item.tier))
+  if (includeRarity) meta.push(weaponRarityLabel(item.rarity))
   if (unit) meta.push(`Replaces ${weaponReplacementText(unit)}`)
   return `${lead} (${weaponSummary(item)}).${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
 }
@@ -295,10 +295,10 @@ export function heldItemOfferTitle(item: any, unit: Unit | null = null) {
 }
 export function heldItemOfferDescription(item: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Give'
-  const includeTier = opts.includeTier !== false
+  const includeRarity = opts.includeRarity !== false
   const lead = unit ? `${action} ${item.name} to ${unit.name}` : `${action} ${item.name}`
   const meta = []
-  if (includeTier) meta.push(weaponTierLabel(item.tier))
+  if (includeRarity) meta.push(weaponRarityLabel(item.rarity))
   if (unit) meta.push(heldItemReplacementText(unit))
   return `${lead}: ${item.desc}${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
 }
@@ -319,7 +319,7 @@ export function skillEligibleUnitsLabel(skill: any) {
 export function skillOfferDescription(skill: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Teach'
   const lead = unit ? `${action} ${skill.name} to ${unit.name}` : `${action} ${skill.name}`
-  const rarity = weaponTierLabel(skill.rarity)
+  const rarity = weaponRarityLabel(skill.rarity)
   // On the shop browse card (no chosen student yet) list who can equip the skill,
   // separated from the rarity by a center-dot like the unit card's stat list.
   const eligible = unit ? '' : skillEligibleUnitsLabel(skill)

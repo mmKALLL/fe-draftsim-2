@@ -1,5 +1,5 @@
 import { $ } from './utils'
-import type { Unit, Consumable, ShopOffer, BiomeEntry } from '../types'
+import type { Unit, Consumable, ShopOffer, ArenaEntry } from '../types'
 
 export const state = {
   // cross-cutting (read/written across many modules)
@@ -8,7 +8,7 @@ export const state = {
   consumables: [] as (Consumable | null)[],
   gold: 0,
   battle: 0,
-  biomePlan: [] as BiomeEntry[],
+  arenaPlan: [] as ArenaEntry[],
   // bumped on reset; an in-flight runBattle aborts when its captured token is stale
   runToken: 0,
   // `${unitId}|${rewardType}` -> battle number the unit last received that type

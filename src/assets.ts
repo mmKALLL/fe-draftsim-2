@@ -1,8 +1,8 @@
 import { FEMP_ASSET_ROOT, FEMP_IMAGE_EXTS, MAP_SPRITE_SLOT_H } from '../constants'
 import { CLASSES, CUSTOM_MAP_SPRITE_STEMS, FEMP_NAME_OVERRIDES } from '../data'
-import { focusLabel } from './biomes'
+import { focusLabel } from './arenas'
 import { $ } from './utils'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 
 // All game images are inlined as base64 data URIs at build time (window.__IMG).
@@ -17,7 +17,7 @@ export function resolveAssetUrl(path: string) {
 // Real default art for a missing asset (also inlined), replacing the old SVG placeholders.
 const DEFAULT_PORTRAIT = 'assets/femp/enemy-portraits/generic.png'
 const DEFAULT_MAP: Record<string, string> = { red: 'assets/femp/map/red/merc.png', blue: 'assets/femp/map/blue/merc.png' }
-const DEFAULT_BIOME = 'assets/femp/biomes/plains.jpg'
+const DEFAULT_ARENA = 'assets/femp/biomes/plains.jpg'
 
 export function assetSlug(s = '') {
   return String(s)
@@ -54,7 +54,7 @@ export function fallbackSource(fallback: any) {
   if (typeof fallback === 'string') return fallback
   if (fallback.type === 'portrait') return resolveAssetUrl(DEFAULT_PORTRAIT)
   if (fallback.type === 'battle') return resolveAssetUrl(fallback.team === 'red' ? DEFAULT_MAP.red : DEFAULT_MAP.blue)
-  if (fallback.type === 'biome') return resolveAssetUrl(DEFAULT_BIOME)
+  if (fallback.type === 'arena') return resolveAssetUrl(DEFAULT_ARENA)
   return ''
 }
 export function fallbackAttr(fallback: any) {
@@ -182,7 +182,7 @@ export function battleImgForUnit(u: Unit) {
         ]
   return assetSheet('battleSprite mapSprite', paths[0], paths.slice(1), fallbackBattle(u.kind, u.team, u.promoted), u.displayCls || u.cls || u.kind)
 }
-export function mapSpriteForFocus(focus: BiomeFocus, team = 'red', promoted = false) {
+export function mapSpriteForFocus(focus: ArenaFocus, team = 'red', promoted = false) {
   const kind = CLASSES[focus.cls]?.kind || 'lord'
   const stem = battleFileStem(kind)
   const promotedStem = promoted ? `${stem}_promoted` : stem
@@ -204,7 +204,7 @@ export function mapSpriteForFocus(focus: BiomeFocus, team = 'red', promoted = fa
         ...assetPathVariants('battle', promotedStem),
         ...assetPathVariants('battle', stem),
       ]
-  return assetSheet('biomeUnitIcon mapSprite', paths[0], paths.slice(1), fallbackBattle(kind, team, promoted), focusLabel(focus), { spriteWidth: 18, slotHeight: 22 })
+  return assetSheet('arenaUnitIcon mapSprite', paths[0], paths.slice(1), fallbackBattle(kind, team, promoted), focusLabel(focus), { spriteWidth: 18, slotHeight: 22 })
 }
 
 declare global {

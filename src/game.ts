@@ -1,6 +1,6 @@
-import { BIOME_CYCLE_LENGTH, BOSS_TIER_BIOME, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_BIOME_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
-import { activeBiomeEntry, biomeEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './biomes'
+import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
@@ -10,7 +10,7 @@ import { levelLabel, showGameOver, showWin } from './ui'
 import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 
 export function startRun(mode: 'draft' | 'random' = 'draft') {
@@ -42,8 +42,8 @@ export function startRun(mode: 'draft' | 'random' = 'draft') {
   showRewards(true)
 }
 export function bossTierForBattle(n: any) {
-  const cycle = ((n - 1) % BIOME_CYCLE_LENGTH) + 1
-  if (cycle === BIOME_CYCLE_LENGTH) return BOSS_TIER_BIOME
+  const cycle = ((n - 1) % ARENA_CYCLE_LENGTH) + 1
+  if (cycle === ARENA_CYCLE_LENGTH) return BOSS_TIER_ARENA
   if (cycle === 3) return BOSS_TIER_REGULAR
   return null
 }
@@ -56,7 +56,7 @@ export function generateEnemy() {
   const pool = [...BASES]
   // Decide up front which minion slots carry a 'good' weapon: a bounded count per fight
   // (by arena + battle type), placed in random slots. The boss (slot 0) is always good.
-  const battleType = bossTier === BOSS_TIER_BIOME ? 'biome' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
+  const battleType = bossTier === BOSS_TIER_ARENA ? 'arena' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
   const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
   const minionSlots = [0, 1, 2, 3, 4].filter((i) => !(i === 0 && bossTier))
   const [gMin, gMax] = ENEMY_GOOD_MINION_COUNT[arena - 1][battleType]
@@ -68,7 +68,7 @@ export function generateEnemy() {
     const isBossSlot = i === 0 && bossTier
     const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
     // Bosses have extra levels; normal units have slight variance
-    const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_BIOME ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
+    const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
     const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
     const lvl = promoted ? internal - 20 : internal
     const e = freshFromBase(b, true, lvl, promoted)
@@ -98,15 +98,15 @@ export function generateEnemy() {
   state.combat.turn = 0
   $('log').innerHTML = ''
   setStatus('')
-  const biome = activeBiomeEntry()?.biome
-  const biomePrefix = biome ? `${biome.name} (${biomeEffectLabels(biome).join(', ')}): ` : ''
+  const arenaData = activeArenaEntry()?.arena
+  const arenaPrefix = arenaData ? `${arenaData.name} (${arenaEffectLabels(arenaData).join(', ')}): ` : ''
   const msg =
-    bossTier === BOSS_TIER_BIOME
+    bossTier === BOSS_TIER_ARENA
       ? 'Arena boss fight: +6 level leader with stronger weapons.'
       : bossTier === BOSS_TIER_REGULAR
         ? 'Regular boss fight: +4 level leader.'
         : 'Standard enemy team.'
-  logLine(null, `Battle ${state.battle}: ${biomePrefix}${msg}`, bossTier ? 'crit' : 'hit')
+  logLine(null, `Battle ${state.battle}: ${arenaPrefix}${msg}`, bossTier ? 'crit' : 'hit')
   renderTeams()
 }
 export function beginNextBattle() {
@@ -280,10 +280,10 @@ export async function runBattle() {
     renderTeams()
     if (state.battle >= 20) {
       showWin()
-    } else if (bossTierForBattle(state.battle) === BOSS_TIER_BIOME) {
-      addGold(SHOP_BIOME_BOSS_GOLD)
+    } else if (bossTierForBattle(state.battle) === BOSS_TIER_ARENA) {
+      addGold(SHOP_ARENA_BOSS_GOLD)
       state.ui.pendingShopAfterReward = true
-      logLine(null, `Arena boss bounty: ${formatGold(SHOP_BIOME_BOSS_GOLD)}.`, 'goldLog')
+      logLine(null, `Arena boss bounty: ${formatGold(SHOP_ARENA_BOSS_GOLD)}.`, 'goldLog')
       renderTeams()
       showRewards()
     } else showRewards()

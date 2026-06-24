@@ -1,5 +1,5 @@
 import { APP_VERSION } from '../constants'
-import { makeBiomePlan, renderBiomeMap } from './biomes'
+import { makeArenaPlan, renderArenaMap } from './arenas'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
 import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
@@ -9,7 +9,7 @@ import { clearRunStats, loadRunStats, noteRewardChoice, recordRunStat, statistic
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 export function levelLabel(u: Unit) {
   return `L${u.lvl}`
@@ -96,7 +96,7 @@ export function resetRun() {
   state.consumables = []
   state.gold = 0
   state.battle = 0
-  state.biomePlan = makeBiomePlan()
+  state.arenaPlan = makeArenaPlan()
   state.rewardCooldowns = {}
   state.draft.options = randomDraftOptions()
   state.draft.chosen = emptyRosterChoices()
@@ -202,7 +202,7 @@ export function showMenu() {
   $('battleNo').textContent = String(state.battle)
   $('rosterCount').textContent = String(selectedRosterCount())
   updateGoldUI()
-  renderBiomeMap()
+  renderArenaMap()
 }
 export function startDraftGame() {
   if (!state.draft.options.length) state.draft.options = randomDraftOptions()
@@ -218,6 +218,6 @@ export function startRandomGame() {
   startRun('random')
 }
 
-state.biomePlan = makeBiomePlan()
+state.arenaPlan = makeArenaPlan()
 state.draft.options = randomDraftOptions()
 state.draft.chosen = emptyRosterChoices()

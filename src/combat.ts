@@ -1,11 +1,11 @@
-import { BIOME_AVOID_DELTA, BIOME_SPEED_MULTIPLIER, BIOME_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { ARENA_AVOID_DELTA, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
-import { activeBiomeEffects, activeBiomeEntry, hasBiomeEffect } from './biomes'
+import { activeArenaEffects, activeArenaEntry, hasArenaEffect } from './arenas'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
 import { closeModal, showModal } from './ui'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, BiomeFocus, BiomeEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 export function unitTags(u: Unit) {
   return CLASS_TAGS[u.displayCls] || CLASS_TAGS[u.cls] || []
@@ -47,43 +47,43 @@ export function triangle(a: string, b: string, aw: Weapon | null = null, bw: Wea
   const mult = (aRev || bRev) && !(aRev && bRev) ? 2 : 1
   return { atk: sign * mult, hit: sign * 15 * mult }
 }
-export function biomeStatDelta(stat: StatKey) {
-  const effects = activeBiomeEffects()
+export function arenaStatDelta(stat: StatKey) {
+  const effects = activeArenaEffects()
   let delta = 0
   if (stat === 'def') {
-    if (effects.includes('defUp')) delta += BIOME_STAT_DELTA
-    if (effects.includes('defDown')) delta -= BIOME_STAT_DELTA
+    if (effects.includes('defUp')) delta += ARENA_STAT_DELTA
+    if (effects.includes('defDown')) delta -= ARENA_STAT_DELTA
   }
   if (stat === 'res') {
-    if (effects.includes('resUp')) delta += BIOME_STAT_DELTA
-    if (effects.includes('resDown')) delta -= BIOME_STAT_DELTA
+    if (effects.includes('resUp')) delta += ARENA_STAT_DELTA
+    if (effects.includes('resDown')) delta -= ARENA_STAT_DELTA
   }
   if (stat === 'lck') {
-    if (effects.includes('luckUp')) delta += BIOME_STAT_DELTA
-    if (effects.includes('luckDown')) delta -= BIOME_STAT_DELTA
+    if (effects.includes('luckUp')) delta += ARENA_STAT_DELTA
+    if (effects.includes('luckDown')) delta -= ARENA_STAT_DELTA
   }
   return delta
 }
-// 'playerPhase' and 'biome' skills grant their `stats` only under a condition
-// (when attacking / while in a matching biome), so they are EXCLUDED from this
+// 'playerPhase' and 'arena' skills grant their `stats` only under a condition
+// (when attacking / while in a matching arena), so they are EXCLUDED from this
 // shared, condition-free combatStat (used by both phases and passive/display
 // contexts) and added back in the right context: 'playerPhase' via playerPhaseStat
-// (attacker only), 'biome' via skillBiomeBonus inside combatDefense/combatResistance.
+// (attacker only), 'arena' via skillArenaBonus inside combatDefense/combatResistance.
 // A held item with an 'hpBelowHalf' trigger (Wrath/Resolve Scroll) only grants its
 // bonus while the holder is below half HP. Always-on items (no such trigger) pass.
 export function heldItemConditionMet(u: Unit) {
   return u.heldItem?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
 }
 export function combatStat(u: Unit, stat: StatKey) {
-  // 'rally'/'tempo' (like 'playerPhase'/'biome') deliver their stats via the
+  // 'rally'/'tempo' (like 'playerPhase'/'arena') deliver their stats via the
   // battle-start turnBuff (applyBattleStartRallies), so the skill's own `stats`
   // must NOT also count as a passive self-bonus — that double-buffed the holder.
-  const deliveredViaBuff = u.skill?.family === 'playerPhase' || u.skill?.family === 'biome' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
+  const deliveredViaBuff = u.skill?.family === 'playerPhase' || u.skill?.family === 'arena' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
   const skillStat = deliveredViaBuff ? 0 : u.skill?.stats?.[stat] || 0
   const heldItemStat = heldItemConditionMet(u) ? u.heldItem?.stats?.[stat] || 0 : 0
   let value = (u.stats[stat] || 0) + heldItemStat + skillStat
-  if (stat === 'spd' && hasBiomeEffect('speedDown')) value = floor(value * BIOME_SPEED_MULTIPLIER)
-  return Math.max(0, value + biomeStatDelta(stat))
+  if (stat === 'spd' && hasArenaEffect('speedDown')) value = floor(value * ARENA_SPEED_MULTIPLIER)
+  return Math.max(0, value + arenaStatDelta(stat))
 }
 // Attacker-only stat bonus from a 'playerPhase' skill (e.g. Darting Blow's Spd +5).
 // Add this to the attacker's effective stat in attacker-only contexts; never to a
@@ -92,13 +92,13 @@ export function combatStat(u: Unit, stat: StatKey) {
 export function playerPhaseStat(u: Unit, stat: StatKey) {
   return u.skill?.family === 'playerPhase' ? u.skill?.stats?.[stat] || 0 : 0
 }
-export function biomePhysicalPowerDelta(weapon: Weapon) {
-  return hasBiomeEffect('strUp') && !weapon?.magic ? BIOME_STAT_DELTA : 0
+export function arenaPhysicalPowerDelta(weapon: Weapon) {
+  return hasArenaEffect('strUp') && !weapon?.magic ? ARENA_STAT_DELTA : 0
 }
-export function biomeAvoidDelta() {
+export function arenaAvoidDelta() {
   let delta = 0
-  if (hasBiomeEffect('avoidUp')) delta += BIOME_AVOID_DELTA
-  if (hasBiomeEffect('avoidDown')) delta -= BIOME_AVOID_DELTA
+  if (hasArenaEffect('avoidUp')) delta += ARENA_AVOID_DELTA
+  if (hasArenaEffect('avoidDown')) delta -= ARENA_AVOID_DELTA
   return delta
 }
 export function attackSpeed(u: Unit) {
@@ -112,10 +112,10 @@ export function weaponResultingAS(u: Unit, conDelta = 0) {
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
 export function combatDefense(u: Unit) {
-  return combatStat(u, 'def') + (u.weapon?.defBonus || 0) + skillBiomeBonus(u, 'def')
+  return combatStat(u, 'def') + (u.weapon?.defBonus || 0) + skillArenaBonus(u, 'def')
 }
 export function combatResistance(u: Unit) {
-  return combatStat(u, 'res') + (u.weapon?.resBonus || 0) + skillBiomeBonus(u, 'res')
+  return combatStat(u, 'res') + (u.weapon?.resBonus || 0) + skillArenaBonus(u, 'res')
 }
 export function effectiveMt(a: Unit, d: Unit) {
   const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
@@ -144,17 +144,17 @@ export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | '
   if (!s || s.family !== 'breaker' || !opponent) return 0
   return weaponTypeMatches(s.breaker, opponent.weapon?.type) ? s[key] || 0 : 0
 }
-// 'biome'-family skills grant a CONDITIONAL bonus that only applies while the team
-// is in one of the skill's listed biomes (skill.biomes is a list of biome ids — the
-// canonical key from BIOMES, also used for asset paths). The active biome is read
-// from activeBiomeEntry().biome.id. `key` selects which value to read: a top-level
+// 'arena'-family skills grant a CONDITIONAL bonus that only applies while the team
+// is in one of the skill's listed arenas (skill.arenas is a list of arena ids — the
+// canonical key from ARENAS, also used for asset paths). The active arena is read
+// from activeArenaEntry().arena.id. `key` selects which value to read: a top-level
 // numeric field (e.g. 'hit'/'avoid'/'damageDealt') or a stat under skill.stats
-// (e.g. 'def'/'res' for Natural Cover). Returns 0 when the family/biome doesn't match.
-export function skillBiomeBonus(u: Unit, key: string) {
+// (e.g. 'def'/'res' for Natural Cover). Returns 0 when the family/arena doesn't match.
+export function skillArenaBonus(u: Unit, key: string) {
   const s = u.skill
-  if (!s || s.family !== 'biome' || !Array.isArray(s.biomes)) return 0
-  const biomeId = activeBiomeEntry()?.biome.id
-  if (!biomeId || !s.biomes.includes(biomeId)) return 0
+  if (!s || s.family !== 'arena' || !Array.isArray(s.arenas)) return 0
+  const arenaId = activeArenaEntry()?.arena.id
+  if (!arenaId || !s.arenas.includes(arenaId)) return 0
   return s.stats?.[key] ?? s[key] ?? 0
 }
 // Team-aura skills (Solidarity, Charm, Inspiration, Malefic Aura) buff the holder's
@@ -211,7 +211,7 @@ export function attackPower(a: Unit, d: Unit) {
   // Team auras: Inspiration's +damageDealt always; Malefic Aura's +magicDamageDealt
   // only when the attacker wields a magic weapon. Summed over living team holders.
   const teamDamage = teamAuraBonus(a, 'damageDealt') + (a.weapon?.magic ? teamAuraBonus(a, 'magicDamageDealt') : 0)
-  return stat + effectiveMt(a, d) + t + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a) + skillBiomeBonus(a, 'damageDealt') + teamDamage
+  return stat + effectiveMt(a, d) + t + arenaPhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a) + skillArenaBonus(a, 'damageDealt') + teamDamage
 }
 // Target-independent attack power for card displays: weapon Might + the unit's
 // attack stat (str doubles as Mag here) plus its non-target-dependent bonuses.
@@ -220,7 +220,7 @@ export function attackPower(a: Unit, d: Unit) {
 export function displayAttackPower(a: Unit) {
   if (a.weapon?.staff) return 0
   const stat = combatStat(a, 'str')
-  return stat + (a.weapon?.mt || 0) + biomePhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a)
+  return stat + (a.weapon?.mt || 0) + arenaPhysicalPowerDelta(a.weapon) + skillFaireBonus(a) + skillAttackDamage(a)
 }
 export function defenseAgainst(d: Unit, weapon: Weapon) {
   return weapon.magic ? combatResistance(d) : combatDefense(d)
@@ -243,10 +243,10 @@ export function rawDamage(a: Unit, d: Unit) {
 }
 export function hitRate(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).hit
-  // 'biome' and 'breaker' skills carry their Hit conditionally (applied via
-  // skillBiomeBonus / skillBreakerBonus), so their top-level `hit` is excluded
+  // 'arena' and 'breaker' skills carry their Hit conditionally (applied via
+  // skillArenaBonus / skillBreakerBonus), so their top-level `hit` is excluded
   // from the condition-free attacker term below (avoids double-counting).
-  const attackerHit = a.skill?.family === 'biome' || a.skill?.family === 'breaker' ? 0 : a.skill?.hit || 0
+  const attackerHit = a.skill?.family === 'arena' || a.skill?.family === 'breaker' ? 0 : a.skill?.hit || 0
   // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
   // downside that mirrors the holder's own +hit when it attacks.
   return floor(
@@ -258,26 +258,26 @@ export function hitRate(a: Unit, d: Unit) {
       attackerHit +
       (d.skill?.incomingHit || 0) +
       skillBreakerBonus(a, d, 'hit') +
-      skillBiomeBonus(a, 'hit') -
+      skillArenaBonus(a, 'hit') -
       (a.skill?.enemyAvoid || 0) +
       teamAuraBonus(a, 'hit') +
       skillSoloBonus(a, 'hit')
   )
 }
 export function avoid(d: Unit, opponent: Unit | null = null) {
-  // playerPhase avoid ("when initiating") is inert on defense, and 'biome' avoid is
-  // conditional (applied via skillBiomeBonus) — exclude both from this flat term.
-  const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'biome' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
+  // playerPhase avoid ("when initiating") is inert on defense, and 'arena' avoid is
+  // conditional (applied via skillArenaBonus) — exclude both from this flat term.
+  const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'arena' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
   // Breaker avoid is conditional on the opponent's weapon type, so it only applies
   // when an opponent is supplied (i.e. during an actual matchup, not card displays).
   return floor(
     2 * attackSpeed(d) +
       combatStat(d, 'lck') +
-      biomeAvoidDelta() +
+      arenaAvoidDelta() +
       (d.heldItem?.avoid || 0) +
       skillAvoid +
       skillBreakerBonus(d, opponent, 'avoid') +
-      skillBiomeBonus(d, 'avoid') +
+      skillArenaBonus(d, 'avoid') +
       teamAuraBonus(d, 'avoid') +
       skillSoloBonus(d, 'avoid')
   )

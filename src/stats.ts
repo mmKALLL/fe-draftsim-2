@@ -103,7 +103,7 @@ export function noteConsumablesGained(n = 1) {
 const REWARD_TYPE_LABEL: Record<string, string> = { item: 'Weapon', heldItem: 'Held item', skill: 'Skill', consumable: 'Consumable', gold: 'Gold', boost: 'Booster' }
 // Tally a reward the player ACTUALLY received (call exactly once at each apply site, never on mere click).
 export function noteRewardChoice(r: any) {
-  const rarity = r?.item?.tier ?? r?.item?.rarity
+  const rarity = r?.item?.rarity ?? r?.item?.rarity
   if (rarity === 'normal' || rarity === 'uncommon' || rarity === 'rare') state.run.rewardsByRarity[rarity] = (state.run.rewardsByRarity[rarity] || 0) + 1
   const label = REWARD_TYPE_LABEL[r?.type] || r?.type || 'Other'
   state.run.rewardsByType[label] = (state.run.rewardsByType[label] || 0) + 1
