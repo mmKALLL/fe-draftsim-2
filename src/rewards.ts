@@ -205,6 +205,7 @@ export function sameReward(a: any, b: any) {
   if (a.type === 'consumable') return a.item.id === b.item.id
   if (a.type === 'heldItem') return a.unit === b.unit && a.item.id === b.item.id
   if (a.type === 'skill') return a.unit === b.unit && a.item.id === b.item.id
+  if (a.type === 'boost') return a.stat === b.stat && a.unit === b.unit
   return false
 }
 // type -> generator (each takes a target rarity; boost ignores it)
@@ -243,7 +244,7 @@ export function boostReward(targeted = true) {
     const eligibleStats = boostStats.filter((stat) => boostTargetOptions({ stat }).length)
     const stat = pick(eligibleStats.length ? eligibleStats : boostStats)
     const amt = stat === 'hp' ? 7 : stat === 'lck' ? 4 : 2
-    const label = stat === 'str' ? 'Str/Mag' : stat.toUpperCase()
+    const label = stat === 'str' ? 'Str/Mag' : statLabel(null, stat)
     reward = { type: 'boost', title: `${boosterName(stat)}`, desc: `Permanently grants ${label} +${amt} to a chosen unit.`, stat, amt }
   }
   return targeted ? targetedBoostReward(reward) : reward

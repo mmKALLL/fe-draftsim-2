@@ -136,7 +136,10 @@ export function recordRunStat(outcome: RunOutcome) {
   saveRunStats(arr)
 }
 
-const fmt1 = (n: number) => n.toFixed(1)
+const fmt1 = (n: number) => {
+  const s = n.toFixed(1)
+  return s.endsWith('.0') ? s.slice(0, -2) : s
+}
 
 function longestWinStreak(runs: RunStat[]): number {
   let best = 0

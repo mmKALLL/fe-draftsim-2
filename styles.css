@@ -571,6 +571,12 @@ button:disabled {
   background: rgba(180, 140, 0, 0.45);
   color: #b0bccc; /* halfway from muted (--muted #94a3b8) toward regular text #cbd5e1 */
 }
+/* Tint a player unit's weapon name gold when it is S-rank, so it reads as a
+   strong asset of yours rather than a threat. */
+.weaponLine.weaponSrank {
+  background: rgba(56, 130, 246, 0.4); /* azure — distinct, positive "your strong weapon" */
+  color: #d4e2f7;
+}
 .combatant .hpbar {
   height: 7px;
   margin: 3px 0 2px;
@@ -838,6 +844,15 @@ h4 {
   border: 1px solid #fbbf24;
   border-radius: 12px;
   padding: 14px;
+}
+/* Floating "Show results" button shown after the player hides the victory/game-over
+   modal to screenshot their final board; reopens the same results modal. */
+#showResultsFloater {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9;
+  box-shadow: 0 4px 14px rgba(2, 6, 23, 0.6);
 }
 .choice {
   display: grid;

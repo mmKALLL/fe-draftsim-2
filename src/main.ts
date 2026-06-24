@@ -13,7 +13,10 @@ $('menuHelpBtn').onclick = showHelpRules
 $('menuStatsBtn').onclick = showStatistics
 $('menuMusicBtn').onclick = openMusic
 $('randomPickBtn').onclick = () => {
-  state.draft.chosen = state.draft.options.map((slot) => pick(slot))
+  // Fill only the unselected slots at random, keeping existing picks; but if every
+  // slot is already filled, re-pick all of them.
+  const allFilled = state.draft.chosen.every(Boolean)
+  state.draft.chosen = state.draft.options.map((slot, i) => (allFilled || !state.draft.chosen[i] ? pick(slot) : state.draft.chosen[i]))
   renderDraft()
 }
 $('rerollBtn').onclick = () => {

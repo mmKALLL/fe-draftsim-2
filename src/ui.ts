@@ -77,13 +77,45 @@ export function scoreHTML(finalScore = false) {
 }
 export function showWin() {
   recordRunStat('win')
-  showModal(
+  showResultsModal(
     `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
   recordRunStat('loss')
-  showModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button data-reset class="good">Try again</button>`)
+  showResultsModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button data-reset class="good">Try again</button>`)
+}
+// Shows a victory/game-over results modal with an extra "Show team" button. Pressing it
+// hides the modal (revealing the final board for a screenshot) and exposes a fixed-position
+// floating "Show results" button that reopens the very same modal.
+export function showResultsModal(html: any) {
+  showModal(`${html}<button id="showTeamBtn" type="button">Show team</button>`)
+  hideShowResultsFloater()
+  const showTeam = $('showTeamBtn')
+  if (showTeam)
+    showTeam.onclick = () => {
+      closeModal()
+      showShowResultsFloater(html)
+    }
+}
+function showShowResultsFloater(html: any) {
+  let btn = document.getElementById('showResultsFloater') as HTMLButtonElement | null
+  if (!btn) {
+    btn = document.createElement('button')
+    btn.id = 'showResultsFloater'
+    btn.type = 'button'
+    btn.className = 'good'
+    btn.textContent = 'Show results'
+    document.body.appendChild(btn)
+  }
+  btn.onclick = () => {
+    hideShowResultsFloater()
+    showResultsModal(html)
+  }
+  btn.classList.remove('hidden')
+}
+function hideShowResultsFloater() {
+  document.getElementById('showResultsFloater')?.classList.add('hidden')
 }
 // Reset to a fresh run in-place (no page reload, so the game stays playable offline).
 export function resetRun() {
@@ -115,6 +147,7 @@ export function resetRun() {
   Object.assign(state.run, { mode: 'draft', consumablesAcquired: 0, cheated: false, recorded: false, rewardsByRarity: {}, rewardsByType: {}, goldByType: {} })
   Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null })
   closeModal()
+  hideShowResultsFloater()
   showMenu()
 }
 export function showModal(html: any) {
@@ -137,7 +170,6 @@ export function showHelpRules() {
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
     <p>Score is calculated as wins × 1000 + remaining gold.</p>
-    <p>(You are playing version ${APP_VERSION})</p>
     <button data-close class="good">Back</button>`
   )
 }
@@ -197,6 +229,7 @@ document.addEventListener('click', (e) => {
 })
 export function showMenu() {
   $('menuScreen').classList.remove('hidden')
+  $('menuVersion').textContent = `Version ${APP_VERSION}`
   $('draftScreen').classList.add('hidden')
   $('gameScreen').classList.add('hidden')
   $('battleNo').textContent = String(state.battle)
