@@ -34,6 +34,9 @@ export function renderRewardSelection(title: string, rewards: any) {
   document.querySelectorAll<HTMLElement>('[data-i]').forEach((btn) => (btn.onclick = () => applyReward(choiceRewards[+btn.dataset.i!], () => renderRewardSelection(title, rewards))))
   const skipBtn = document.querySelector<HTMLElement>('[data-skip-reward]')
   if (skipBtn) skipBtn.onclick = () => applyReward(skipReward)
+  // Arm the 1-5 hotkeys only after 0.5s so a held/carried-over keypress can't instantly pick a
+  // reward; mouse clicks stay immediate (no visual change).
+  state.ui.rewardArmAt = performance.now() + 500
 }
 
 export function weightedRarity(weights: any) {

@@ -49,6 +49,7 @@ export const state = {
     filter: 'all',
     activePreviewActor: null as Unit | null,
     activeConsumableActor: null as Unit | null,
+    rewardArmAt: 0, // timestamp before which reward 1-5 hotkeys are ignored (mouse stays immediate)
   },
 }
 

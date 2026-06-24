@@ -41,6 +41,14 @@ document.addEventListener('keydown', (e) => {
     // 1) An open modal with numbered choices (reward selection / boost-target chooser).
     const modal = $('modal')
     if (modal && !modal.classList.contains('hidden')) {
+      if (performance.now() < state.ui.rewardArmAt) return // reward hotkeys arm after a 0.5s delay
+      // 5 skips the reward when a skip button is present.
+      const skip = n === 5 ? modal.querySelector<HTMLElement>('[data-skip-reward]') : null
+      if (skip) {
+        e.preventDefault()
+        skip.click()
+        return
+      }
       const choices = modal.querySelectorAll<HTMLElement>('[data-i], [data-t]')
       if (choices[n - 1]) {
         e.preventDefault()
@@ -48,12 +56,15 @@ document.addEventListener('keydown', (e) => {
       }
       return
     }
-    // 2) Combat target selection: click the Nth highlighted (selectable) target.
+    // 2) Combat target selection: target the unit in the Nth SLOT (positional), if it's a valid target.
     const selectable = document.querySelectorAll<HTMLElement>('.combatant.selectable')
     if (selectable.length) {
-      if (selectable[n - 1]) {
+      const ids = new Set(Array.from(selectable).map((el) => el.dataset.id))
+      const team = state.enemy.some((u) => ids.has(u.id)) ? state.enemy : state.player
+      const unit = team[n - 1]
+      if (unit && ids.has(unit.id)) {
         e.preventDefault()
-        selectable[n - 1].click()
+        document.querySelector<HTMLElement>(`.combatant.selectable[data-id="${unit.id}"]`)?.click()
       }
       return
     }
