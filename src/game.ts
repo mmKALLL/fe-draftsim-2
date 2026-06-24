@@ -1,4 +1,4 @@
-import { ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
@@ -53,11 +53,13 @@ export function generateEnemy() {
   const baseInternal = clamp(1 + state.battle * 2 - earlyNerf, 1, 40)
   const bossTier = bossTierForBattle(state.battle)
   state.enemy = []
-  const pool = [...BASES]
   // Decide up front which minion slots carry a 'good' weapon: a bounded count per fight
   // (by arena + battle type), placed in random slots. The boss (slot 0) is always good.
   const battleType = bossTier === BOSS_TIER_ARENA ? 'arena' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
   const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
+  // Exclude bases banned from this arena's enemy pool (e.g. high-stat prepromotes early on).
+  const banned = ENEMY_ARENA_BANS[arena] || []
+  const pool = BASES.filter((b) => !banned.includes(b.name))
   const minionSlots = [0, 1, 2, 3, 4].filter((i) => !(i === 0 && bossTier))
   const [gMin, gMax] = ENEMY_GOOD_MINION_COUNT[arena - 1][battleType]
   let goodCount = clamp(gMin + rint(gMax - gMin + 1), 0, minionSlots.length)

@@ -234,7 +234,7 @@ export function makeRewards(bossTier: string | null = null, opening = false) {
     } while ((!next || rewards.some((r) => sameReward(r, next))) && guard++ < 30)
     if (next) rewards.push(next)
   }
-  return opening ? rewards : [...rewards, goldReward()]
+  return [...rewards, goldReward()]
 }
 export function boostReward(targeted = true) {
   const boostStats = ALL_STAT_KEYS

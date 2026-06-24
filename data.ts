@@ -577,6 +577,7 @@ U('Hector','Lord','axe',        {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,r
 
 U('Raven','Mercenary','sword',  {bTotal:37,hp:25,str:7,skl:10,spd:12,lck:2,def:5,res:1,con:8},  {hp:85,str:55,skl:40,spd:45,lck:35,def:25,res:15,gTotal:300},'purple'),
 U('Harken','Mercenary','sword', {bTotal:39,hp:24,str:9,skl:9,spd:8,lck:4,def:7,res:2,con:11},   {hp:80,str:35,skl:40,spd:40,lck:35,def:30,res:25,gTotal:275},'blue'),
+U('Gerik','Mercenary','sword',  {bTotal:37,hp:26,str:8,skl:9,spd:7,lck:4,def:8,res:1,con:10},   {hp:80,str:50,skl:45,spd:40,lck:35,def:35,res:15,gTotal:300},'green'),
 
 U('Guy','Myrmidon','sword',     {bTotal:38,hp:21,str:6,skl:11,spd:11,lck:5,def:5,res:0,con:5},  {hp:75,str:30,skl:50,spd:70,lck:45,def:15,res:25,gTotal:310},'gold'),
 U('Karel','Myrmidon','sword',   {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4,res:1,con:7},  {hp:70,str:35,skl:55,spd:55,lck:30,def:15,res:20,gTotal:280},'red'),

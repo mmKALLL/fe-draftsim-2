@@ -187,6 +187,13 @@ export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'arena', [
   { standard: [2, 3], regular: [1, 3], arena: [3, 4] }, // Arena 4
 ]
 
+// Base names that cannot appear as enemies in a given arena (keyed by 1-based arena index).
+// Used to keep high-stat prepromotes out of the early game. e.g. Wallace is a high-Def Knight
+// prepromote whose appearance in Arena 1 makes early fights unfair; he stays eligible in 2-4.
+export const ENEMY_ARENA_BANS: Record<number, string[]> = {
+  1: ['Wallace'],
+}
+
 // Expected number of bonus skills / held items an enemy carries, by arena and role,
 // read as a FRACTIONAL count: the integer part is guaranteed, the fractional part is the
 // chance of one extra (0.3 = 30% of one; 1 = always one; 2.5 = two guaranteed + 50% of a

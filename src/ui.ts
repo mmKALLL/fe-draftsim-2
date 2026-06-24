@@ -4,7 +4,7 @@ import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
 import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
-import { startShop } from './shop'
+import { shopConsumablePrice, startShop } from './shop'
 import { clearRunStats, loadRunStats, noteRewardChoice, recordRunStat, statisticsDetailHTML, statisticsHTML } from './stats'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
@@ -68,12 +68,19 @@ export function winCount(currentBattleWon = false) {
   // shows 0 wins. After winning the current battle (e.g. the final 20th), that battle counts too.
   return Math.max(0, state.battle - (currentBattleWon ? 0 : 1))
 }
+// Leftover consumables held at run end (or right now mid-run) are worth 50% of their
+// shop buy-price each, rounded down. Reflects that unused consumables still have value.
+export function leftoverConsumableValue() {
+  return state.consumables.reduce((sum, item) => (item ? sum + Math.floor(0.5 * shopConsumablePrice(item)) : sum), 0)
+}
 export function currentScore(currentBattleWon = false) {
-  return winCount(currentBattleWon) * 1000 + state.gold
+  return winCount(currentBattleWon) * 1000 + state.gold + leftoverConsumableValue()
 }
 export function scoreHTML(finalScore = false) {
   // finalScore is only shown on the victory screen, where the current (20th) battle was just won.
-  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore(finalScore)}</b> (${winCount(finalScore)} wins × 1000 + ${goldHTML(state.gold)})</p>`
+  const consumableValue = leftoverConsumableValue()
+  const consumablePart = consumableValue > 0 ? ` + ${consumableValue} consumable value` : ''
+  return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore(finalScore)}</b> (${winCount(finalScore)} wins × 1000 + ${goldHTML(state.gold)}${consumablePart})</p>`
 }
 export function showWin() {
   recordRunStat('win')
