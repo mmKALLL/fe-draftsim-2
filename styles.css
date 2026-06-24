@@ -198,6 +198,10 @@ h3 {
   color: #cbd5e1;
   text-align: center;
 }
+#menuVersion {
+  margin: 0 2px 0px;
+  text-align: right;
+}
 .menuActions {
   display: grid;
   gap: 8px;

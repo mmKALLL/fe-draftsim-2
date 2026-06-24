@@ -1,6 +1,6 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 
-export const APP_VERSION = '1.6.2-play-stats'
+export const APP_VERSION = '1.7.0-feedback-fixes'
 
 type BoostPriceKey = StatKey | 'level'
 

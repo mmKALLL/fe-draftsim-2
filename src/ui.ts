@@ -89,7 +89,7 @@ export function showGameOver() {
 // hides the modal (revealing the final board for a screenshot) and exposes a fixed-position
 // floating "Show results" button that reopens the very same modal.
 export function showResultsModal(html: any) {
-  showModal(`${html}<button id="showTeamBtn" type="button">Show team</button>`)
+  showModal(`${html}<button id="showTeamBtn" type="button" style="margin-left: 16px">Show team</button>`)
   hideShowResultsFloater()
   const showTeam = $('showTeamBtn')
   if (showTeam)
