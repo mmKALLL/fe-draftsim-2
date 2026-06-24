@@ -33,6 +33,43 @@ document.addEventListener('keydown', (e) => {
     state.combat.pendingTargetCancel()
     return
   }
+  // Number keys 1-5: quick-select the Nth reward/boost choice, combat target, or draft option.
+  if (/^[1-5]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const tag = (e.target as HTMLElement | null)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+    const n = +e.key
+    // 1) An open modal with numbered choices (reward selection / boost-target chooser).
+    const modal = $('modal')
+    if (modal && !modal.classList.contains('hidden')) {
+      const choices = modal.querySelectorAll<HTMLElement>('[data-i], [data-t]')
+      if (choices[n - 1]) {
+        e.preventDefault()
+        choices[n - 1].click()
+      }
+      return
+    }
+    // 2) Combat target selection: click the Nth highlighted (selectable) target.
+    const selectable = document.querySelectorAll<HTMLElement>('.combatant.selectable')
+    if (selectable.length) {
+      if (selectable[n - 1]) {
+        e.preventDefault()
+        selectable[n - 1].click()
+      }
+      return
+    }
+    // 3) Draft: fill the first unfilled slot with its Nth offered unit.
+    const draftScreen = $('draftScreen')
+    if (draftScreen && !draftScreen.classList.contains('hidden')) {
+      const slot = state.draft.chosen.findIndex((c) => !c)
+      const option = slot !== -1 ? state.draft.options[slot]?.[n - 1] : undefined
+      if (option) {
+        e.preventDefault()
+        state.draft.chosen[slot] = option
+        renderDraft()
+      }
+    }
+    return
+  }
   if (e.shiftKey && e.key.toLowerCase() === 'w') {
     e.preventDefault()
     state.run.cheated = true // exclude this run from statistics
