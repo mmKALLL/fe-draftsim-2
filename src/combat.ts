@@ -808,18 +808,6 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const procHeal = proc?.effect === 'drainChance' ? floor((hpRemoved * (proc.healPercent || 50)) / 100) : proc?.effect === 'aetherChance' ? hpRemoved : 0
   return { hit: true, crit, damage, dh, cr, suffix, proc, procHeal, lethal: false, miracle, defenseProc }
 }
-export function performStrike(a: Unit, d: Unit, log: any, suffix = '') {
-  const r = strikeResult(a, d, suffix)
-  if (!r.hit) {
-    logLine(log, `${a.name}${suffix} attacks ${d.name}: miss (${r.dh}% displayed).`, 'miss')
-    return r
-  }
-  logLine(log, `${a.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${d.name} for ${r.damage}. ${d.name} HP ${d.hp}/${d.maxHp}.`, r.crit ? 'crit' : 'hit')
-  if (r.defenseProc) logLine(log, `${d.name}'s ${r.defenseProc.name} halves the blow.`, 'crit')
-  if (r.miracle) logLine(log, `${d.name}'s Miracle activates — survives at 1 HP!`, 'crit')
-  if (d.hp <= 0) logLine(log, `${d.name} falls.`, 'death')
-  return r
-}
 export function expectedDamage(a: Unit, d: Unit) {
   if (!a || !d || a.hp <= 0 || d.hp <= 0 || a.weapon.staff) return 0
   const hit = displayedHit(a, d) / 100,

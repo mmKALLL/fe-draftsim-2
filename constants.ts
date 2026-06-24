@@ -2,8 +2,6 @@ import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 
 export const APP_VERSION = '1.6.2-play-stats'
 
-type RewardPoolKind = 'normal' | 'good'
-type RarityWeight = [Rarity, number]
 type BoostPriceKey = StatKey | 'level'
 
 export const FEMP_ASSET_ROOT = './assets/femp'
@@ -13,30 +11,10 @@ export const MAP_SPRITE_SLOT_H = 20 * MAP_SPRITE_SCALE
 
 export const STAFF_EXHAUST_ROUND_LIMIT = 40
 
-export const WEAPON_RANKS: WeaponRank[] = ['E', 'D', 'C', 'B', 'A', 'S']
-export const WEAPON_RARITY_WEIGHTS: Record<RewardPoolKind, RarityWeight[]> = {
-  normal: [
-    ['normal', 60],
-    ['uncommon', 30],
-    ['rare', 10],
-  ],
-  good: [
-    ['uncommon', 70],
-    ['rare', 30],
-  ],
-}
-
-export const CONSUMABLE_RARITY_WEIGHTS: Record<RewardPoolKind, RarityWeight[]> = {
-  normal: [
-    ['normal', 60],
-    ['uncommon', 30],
-    ['rare', 10],
-  ],
-  good: [
-    ['uncommon', 70],
-    ['rare', 30],
-  ],
-}
+// Stat keys shared across stat loops/displays. GROWTH_STAT_KEYS excludes `con`
+// (which has no growth rate); ALL_STAT_KEYS adds it for full stat blocks.
+export const GROWTH_STAT_KEYS: StatKey[] = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res']
+export const ALL_STAT_KEYS: StatKey[] = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con']
 
 export const ROSTER_SIZE = 5,
   DRAFT_CHOICES_PER_SLOT = 3,
@@ -222,15 +200,6 @@ export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
   { boss: { skill: 1, held: 0 }, minion: { skill: 0.1, held: 0 } }, // Arena 3
   { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0 } }, // Arena 4
 ]
-// "Hard mode": bosses always carry a skill from arena 2+ and a held item from arena 3+;
-// later arenas sprinkle a chance of them onto minions. Uncomment + assign to ENEMY_BONUS_COUNTS.
-// export const ENEMY_BONUS_COUNTS_HARD: EnemyBonusArena[] = [
-//   { boss: { skill: 0, held: 0 }, minion: { skill: 0.1, held: 0 } }, // Arena 1
-//   { boss: { skill: 1, held: 0 }, minion: { skill: 0.2, held: 0.1 } }, // Arena 2
-//   { boss: { skill: 1, held: 1 }, minion: { skill: 0.4, held: 0.2 } }, // Arena 3
-//   { boss: { skill: 2, held: 1 }, minion: { skill: 0.5, held: 0.4 } }, // Arena 4
-// ]
-
 // Rarity weights {normal, uncommon, rare} for an enemy's BONUS skill / held item, by arena
 // and role (same length/shape as ENEMY_WEAPON_PROFILE). assignEnemyBonuses rolls a rarity
 // with pickWeightedRarity, then picks from the pool filtered to that rarity (stepping down to

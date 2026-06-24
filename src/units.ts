@@ -1,4 +1,4 @@
-import { BOSS_TIER_ARENA, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, ENEMY_WEAPON_TYPE_SPLIT, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
+import { ALL_STAT_KEYS, BOSS_TIER_ARENA, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, ENEMY_WEAPON_TYPE_SPLIT, GROWTH_STAT_KEYS, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'
@@ -12,7 +12,7 @@ export function promote(u: Unit, showLog = true) {
   if (u.promoted) return
   const c = CLASSES[u.cls],
     promo = c.promo || {}
-  for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[]) {
+  for (const k of ALL_STAT_KEYS) {
     u.stats[k] = Math.min(capStat(u, k), u.stats[k] + (promo[k] || 0))
   }
   u.promoted = true
@@ -36,14 +36,14 @@ export function syncDisplayLevel(u: Unit) {
 }
 export function applyGrowthLevel(u: Unit) {
   const before = { ...u.stats }
-  for (const k of ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'] as StatKey[]) {
+  for (const k of GROWTH_STAT_KEYS) {
     const skillGrowth = (u.skill?.growths?.[k] || 0) + (u.skill?.effect === 'growthBonusAll' ? u.skill.amount || 0 : 0)
     const growth = (u.growths[k] || 0) + (u.heldItem?.growths?.[k] || 0) + skillGrowth
     if (rint(100) + 1 <= growth) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
   }
   u.maxHp = computeMaxHp(u)
   u.hp = Math.min(u.hp, u.maxHp)
-  return ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'].filter((k) => u.stats[k] > before[k])
+  return GROWTH_STAT_KEYS.filter((k) => u.stats[k] > before[k])
 }
 export function advanceInternalLevel(u: Unit, allowPromotion: any, showLog = true) {
   if (u.promoted && u.lvl >= 20) return false

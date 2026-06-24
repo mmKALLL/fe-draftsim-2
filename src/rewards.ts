@@ -1,4 +1,4 @@
-import { ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, ENEMY_BONUS_RARITY, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
+import { ALL_STAT_KEYS, ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, ENEMY_BONUS_RARITY, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../constants'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponRarityLabel } from '../data'
 import { attackSpeed, computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags, weaponResultingAS } from './combat'
 import { bossTierForBattle } from './game'
@@ -47,12 +47,6 @@ export function weightedRarity(weights: any) {
 }
 // Pick an item of the requested rarity, falling back to any rarity if none exist.
 export function pickByRarity<T extends { rarity?: Rarity }>(pool: T[], rarity: Rarity): T | null {
-  if (!pool.length) return null
-  const rarityPool = pool.filter((x) => x.rarity === rarity)
-  return pick(rarityPool.length ? rarityPool : pool)
-}
-// Skill equivalent of pickByRarity: skills carry their rarity on `.rarity` (not `.rarity`).
-export function pickSkillByRarity<T extends { rarity?: Rarity }>(pool: T[], rarity: Rarity): T | null {
   if (!pool.length) return null
   const rarityPool = pool.filter((x) => x.rarity === rarity)
   return pick(rarityPool.length ? rarityPool : pool)
@@ -175,7 +169,7 @@ export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
   if (rollFractionalCount(cfg.skill) >= 1) {
     const pool = TEACHABLE_SKILLS.filter((s) => skillClassMatches(s, unit))
     // Roll a rarity, then pick a skill of that rarity (steps down to any rarity if empty).
-    const skill = rarityWeights ? pickSkillByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
+    const skill = rarityWeights ? pickByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
     if (skill) {
       unit.skill = skill
       refreshMaxHp(unit) // a rolled HP +5 raises the enemy's maxHp before its hp is set to full
@@ -242,7 +236,7 @@ export function makeRewards(bossTier: string | null = null, opening = false) {
   return opening ? rewards : [...rewards, goldReward()]
 }
 export function boostReward(targeted = true) {
-  const boostStats = ['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[]
+  const boostStats = ALL_STAT_KEYS
   let reward
   if (boostTargetOptions({ stat: 'level' }).length && rnd() < 0.22) reward = levelBoostReward()
   else {

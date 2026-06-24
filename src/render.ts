@@ -1,5 +1,5 @@
-import { BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, LEADER_BONUS_LEVELS, ROSTER_SIZE } from '../constants'
-import { BASES, CLASSES, HELD_ITEMS, TEACHABLE_SKILLS, weaponRarityLabel } from '../data'
+import { ALL_STAT_KEYS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, GROWTH_STAT_KEYS, LEADER_BONUS_LEVELS, ROSTER_SIZE } from '../constants'
+import { BASES, CLASSES, weaponRarityLabel } from '../data'
 import { battleImgForUnit, htmlAttr, portraitImgForBase, portraitImgForUnit } from './assets'
 import { renderArenaMap, updateAutoFightButton, updateMainModeTitle } from './arenas'
 import { attackSpeed, avoid, combatPreviewHTML, consumableSummary, consumableTargets, displayAttackPower, enemyWeaponDangerous, hitRate, nextLivingIndex, sleep, staffEffect, statLabel, statusLabel, statusName, temporaryBuffLabel, weaponEffectLabels } from './combat'
@@ -8,7 +8,7 @@ import { levelLabel } from './ui'
 import { startingWeapon } from './units'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
+import type { Unit, Weapon, Consumable, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 
 export function selectedRosterCount() {
@@ -120,8 +120,7 @@ export function weaponStatHTML(w: Weapon) {
   return `<div class="weaponStats">${labels.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('')}</div>`
 }
 export function statHTML(u: Unit, showGrowths = false) {
-  return (['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res', 'con'] as StatKey[])
-    .map((k) => {
+  return ALL_STAT_KEYS.map((k) => {
       const growth = u.growths[k] == null ? '--' : u.growths[k]
       // Show base/permanent stats, not temporary buffs: applyStatBuff adds rally/tonic
       // buffs into u.stats, so subtract the buff buckets here. The buff stays visible in
@@ -133,24 +132,7 @@ export function statHTML(u: Unit, showGrowths = false) {
 }
 export function growthSummaryHTML(u: Unit) {
   const g = u.growths
-  return `<span class="muted">(${(['hp', 'str', 'skl', 'spd', 'lck', 'def', 'res'] as StatKey[]).map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
-}
-export function heldItemFromRef(ref: any) {
-  if (!ref) return null
-  if (typeof ref === 'string') return HELD_ITEMS.find((item) => item.id === ref) || null
-  return ref
-}
-export function skillFromRef(ref: any) {
-  if (!ref) return null
-  if (typeof ref === 'string') return TEACHABLE_SKILLS.find((skill) => skill.id === ref) || null
-  return ref
-}
-export function rarityClass(rarity: any) {
-  return rarity ? ` reward-${rarity}` : ''
-}
-export function detailEntryHTML(title: string, value: any, desc = '', rarity = '') {
-  const descHTML = desc ? `<div class="small">${desc}</div>` : ''
-  return `<div class="unitDetailEntry${rarityClass(rarity)}"><div class="row space"><b>${title}</b><span>${value}</span></div>${descHTML}</div>`
+  return `<span class="muted">(${GROWTH_STAT_KEYS.map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
 }
 export function unitCard(u: Unit) {
   const wt = u.weapon ? ` · ${u.weapon.name}` : ''
