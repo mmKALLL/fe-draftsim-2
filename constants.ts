@@ -1,6 +1,6 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 
-export const APP_VERSION = '1.7.0-feedback-fixes'
+export const APP_VERSION = '1.7.1-keyboard-hotkeys'
 
 type BoostPriceKey = StatKey | 'level'
 
