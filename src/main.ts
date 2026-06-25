@@ -81,6 +81,14 @@ document.addEventListener('keydown', (e) => {
     }
     return
   }
+  // 'a' toggles auto-battle during a fight (it still auto-disables at each fight's end).
+  if (e.key.toLowerCase() === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey && state.combat.running) {
+    const tag = (e.target as HTMLElement | null)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+    e.preventDefault()
+    setAutoFight(!state.combat.autoFight)
+    return
+  }
   if (e.shiftKey && e.key.toLowerCase() === 'w') {
     e.preventDefault()
     state.run.cheated = true // exclude this run from statistics
