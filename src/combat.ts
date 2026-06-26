@@ -4,6 +4,7 @@ import { activeArenaEffects, activeArenaEntry, hasArenaEffect } from './arenas'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
 import { closeModal, showModal } from './ui'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
+import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
@@ -854,6 +855,10 @@ export function lowestInjured(allies: Unit[]) {
   return injured.sort((a: Unit, b: any) => a.hp - b.hp)[0] || null
 }
 export function sleep(ms: any) {
+  // Under a headless sim, skip the animation delay. Resolve via queueMicrotask (not a
+  // synchronously-resolved promise) so the autoFight setTimeout(...,0) loop above can't recurse
+  // into a deep/blowing call stack — the microtask yields the stack between awaits.
+  if (sim.active) return new Promise<void>((res) => queueMicrotask(() => res()))
   return new Promise((res) => setTimeout(res, ms))
 }
 export function spriteEl(u: Unit) {

@@ -10,6 +10,7 @@ import { addGold, formatGold, goldHTML, spendGold } from './state'
 import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon, isBasicWeapon } from './units'
 import { $, capStat, rint } from './utils'
+import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
@@ -201,6 +202,12 @@ export function renderShop(message = '') {
 }
 export function startShop() {
   state.ui.awaitingReward = true
+  // Headless sim: don't render the shop, just walk straight back out. leaveShop() clears
+  // awaitingReward, closes the (unopened) modal, and chains into beginNextBattle as normal.
+  if (sim.active) {
+    leaveShop()
+    return
+  }
   state.shop.offers = makeShopOffers()
   renderTeams()
   renderShop("You browse the store's fine selection...")

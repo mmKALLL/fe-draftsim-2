@@ -8,6 +8,7 @@ import { shopConsumablePrice, startShop } from './shop'
 import { clearRunStats, loadRunStats, noteRewardChoice, recordRunStat, statisticsDetailHTML, statisticsHTML } from './stats'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
+import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
@@ -83,13 +84,16 @@ export function scoreHTML(finalScore = false) {
   return `<p>${finalScore ? 'Final s' : 'S'}core: <b>${currentScore(finalScore)}</b> (${winCount(finalScore)} wins × 1000 + ${goldHTML(state.gold)}${consumablePart})</p>`
 }
 export function showWin() {
-  recordRunStat('win')
+  const stat = recordRunStat('win')
+  // Headless sim: signal run-end with the recorded stat instead of showing the results modal.
+  if (sim.active) return sim.onRunEnd?.(stat)
   showResultsModal(
     `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
   )
 }
 export function showGameOver() {
-  recordRunStat('loss')
+  const stat = recordRunStat('loss')
+  if (sim.active) return sim.onRunEnd?.(stat)
   showResultsModal(`<h2>Game over</h2><p>Your roster was wiped out.</p>${scoreHTML()}<button data-reset class="good">Try again</button>`)
 }
 // Shows a victory/game-over results modal with an extra "Show team" button. Pressing it

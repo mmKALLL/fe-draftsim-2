@@ -1,3 +1,4 @@
+import { sim } from './sim'
 import type { StatKey } from '../types'
 
 export const MUSIC_URL = 'https://www.youtube.com/watch?v=yIDBhuYldSk&t=19m58s'
@@ -9,6 +10,14 @@ export const $ = (id = ''): HTMLElement => document.getElementById(id)!
 let seed = Math.floor(Math.random() * 999999)
 const seedLabel = $('seedLabel')
 if (seedLabel) seedLabel.textContent = String(seed)
+
+// Reproducible-run hook for the headless sim: reseed the LCG to a known value so an identical seed
+// replays the identical run. No-op (and untouched normal play) unless a sim seed is provided; the
+// Task-3 runner calls this once per run before driving it. Returns the applied seed for logging.
+export function applySimSeed() {
+  if (sim.seed != null) seed = sim.seed >>> 0
+  return seed
+}
 
 export function rnd() {
   seed = (seed * 1664525 + 1013904223) >>> 0

@@ -111,12 +111,12 @@ export function noteRewardChoice(r: any) {
 
 // Snapshot the current run into the history. Every run is stored (including cheated and abandoned)
 // so the raw array stays complete; filtering at display time decides what counts.
-export function recordRunStat(outcome: RunOutcome) {
+export function recordRunStat(outcome: RunOutcome): RunStat {
   state.run.recorded = true // so a later resetRun() doesn't re-record this run as abandoned
   const roster = state.draft.chosen.slice()
   const comp = rosterComposition(roster)
   const arr = loadRunStats()
-  arr.push({
+  const stat: RunStat = {
     ts: Date.now(),
     version: APP_VERSION,
     start_mode: state.run.mode,
@@ -132,8 +132,12 @@ export function recordRunStat(outcome: RunOutcome) {
     rewardsByRarity: { ...state.run.rewardsByRarity },
     rewardsByType: { ...state.run.rewardsByType },
     goldByType: { ...state.run.goldByType },
-  })
+  }
+  arr.push(stat)
   saveRunStats(arr)
+  // Return the snapshot too (harmless for existing callers that ignore it); the headless sim's
+  // showWin/showGameOver hooks forward it to sim.onRunEnd.
+  return stat
 }
 
 const fmt1 = (n: number) => {

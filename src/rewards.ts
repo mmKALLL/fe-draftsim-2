@@ -8,6 +8,7 @@ import { formatGold, goldHTML } from './state'
 import { levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, isBasicWeapon, levelUp, pickWeightedRarity } from './units'
 import { $, capStat, pick, rnd } from './utils'
+import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Rarity, RewardType, StatKey } from '../types'
 
@@ -22,6 +23,17 @@ export function showRewards(opening = false) {
 export function renderRewardSelection(title: string, rewards: any) {
   const skipReward = rewards.find((r: any) => r.type === 'gold')
   const choiceRewards = rewards.filter((r: any) => r.type !== 'gold')
+  // Headless sim: don't render/await the modal. Resolve immediately per sim.rewardPolicy, then let
+  // the normal afterReward -> beginNextBattle chain advance the run (state.ui.awaitingReward stays
+  // owned by applyReward/afterReward as in normal play). 'first' applies the first non-gold choice
+  // (mirrors clicking [data-i="0"]); 'skip' takes the gold (the existing skip path). The same
+  // renderRewardSelection callback is passed as backToRewards so a sim 'first' choice that can't
+  // apply (e.g. an ineligible boost target) falls back cleanly.
+  if (sim.active) {
+    if (sim.rewardPolicy === 'first' && choiceRewards.length) applyReward(choiceRewards[0], () => renderRewardSelection(title, rewards))
+    else applyReward(skipReward ?? goldReward())
+    return
+  }
   let html = `<h2>${title}</h2><div class="rewardGrid">`
   choiceRewards.forEach((r: any, i: number) => {
     const rarity = r.item?.rarity ?? r.item?.rarity
