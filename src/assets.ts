@@ -212,6 +212,16 @@ declare global {
     assetFallback: (img: HTMLImageElement) => void
     assetSheetLoaded: (img: HTMLImageElement) => void
   }
+  // Also declared on the global scope so `globalThis.assetFallback = ...` type-checks
+  // and inline `onerror`/`onload` handlers resolve them by bare name.
+  // eslint-disable-next-line no-var
+  var assetFallback: (img: HTMLImageElement) => void
+  // eslint-disable-next-line no-var
+  var assetSheetLoaded: (img: HTMLImageElement) => void
 }
-window.assetFallback = assetFallback
-window.assetSheetLoaded = assetSheetLoaded
+// Use `globalThis` rather than `window` so this module also loads under non-browser
+// runtimes (e.g. the headless Deno sim runner), where `window` is undefined. In the
+// browser `globalThis === window`, so inline `onerror`/`onload` HTML handlers still
+// resolve `assetFallback` / `assetSheetLoaded` from the global scope as before.
+globalThis.assetFallback = assetFallback
+globalThis.assetSheetLoaded = assetSheetLoaded

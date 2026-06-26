@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5188",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
+    "simulate": "deno run --unstable-sloppy-imports scripts/simulation-runner.ts",
     "deploy": "npm run build && bash deploy.sh",
     "deploy:beta": "npm run build && bash deploy-beta.sh"
   },
