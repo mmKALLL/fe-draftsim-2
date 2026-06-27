@@ -14,4 +14,8 @@ export const sim = {
   // Optional reproducible RNG: when a number is set, utils.rnd() seeds its LCG from it for the next
   // run (applied via applySimSeed); leave null to keep the Math.random()-seeded behaviour.
   seed: null as number | null,
+  // Monotonic counter for deterministic unit ids under sim. Normal play uses Math.random() ids, but
+  // those would make seeded batches non-reproducible (id strings leak into otherwise-deterministic
+  // state); a plain counter keeps ids deterministic without consuming any LCG draws. Reset per batch.
+  idCounter: 0,
 }

@@ -348,7 +348,7 @@ export const HELD_ITEMS: CandidateItemData[] = [
 
   // Shields and guards
   { id: 'iron_shield', name: 'Iron Shield', rarity: 'normal', price: 300, family: 'shield', stats: { def: 2 }, speedPenalty: 2, desc: 'Def +2, Spd -2.' },
-  { id: 'steel_shield', name: 'Steel Shield', rarity: 'uncommon', price: 500, family: 'shield', stats: { def: 4 }, speedPenalty: 4, desc: 'Def +4, Spd -4.' },
+  { id: 'steel_shield', name: 'Steel Shield', rarity: 'normal', price: 500, family: 'shield', stats: { def: 4 }, speedPenalty: 4, desc: 'Def +4, Spd -4.' },
   { id: 'tower_shield', name: 'Tower Shield', rarity: 'uncommon', price: 750, family: 'shield', stats: { def: 6 }, speedPenalty: 8, desc: 'Def +6, Spd -8.' },
   { id: 'silver_shield', name: 'Silver Shield', rarity: 'rare', price: 1100, family: 'shield', stats: { def: 5 }, speedPenalty: 2, desc: 'Def +5, Spd -2.' },
   { id: 'hexlock_shield', name: 'Hexlock Shield', rarity: 'uncommon', price: 800, family: 'shield', stats: { res: 4 }, speedPenalty: 2, desc: 'Res +4, Spd -2.' },
@@ -387,7 +387,7 @@ export const HELD_ITEMS: CandidateItemData[] = [
   // {  name: 'Executioner\'s Scroll', rarity: 'rare', price: 1800, desc: 'Hit +20 and Crit +20 against enemies with below 50% HP.' },
   
   // Weapon-style modifiers
-  { id: 'poison_badge', name: 'Poison Badge', rarity: 'uncommon', price: 950, family: 'charm', effect: 'weaponPoison', desc: 'Holder poisons enemies on weapon hit.' },
+  { id: 'poison_badge', name: 'Poison Badge', rarity: 'rare', price: 1600, family: 'charm', effect: 'weaponPoison', desc: 'Holder poisons enemies on weapon hit.' },
   { id: 'drain_badge', name: 'Drain Badge', rarity: 'rare', price: 1800, family: 'charm', effect: 'weaponDrainPercent', amount: 25, desc: 'Holder heals for 25% of damage dealt.' },
   { id: 'pierce_badge', name: 'Pierce Badge', rarity: 'rare', price: 1600, family: 'badge', trigger: 'attack', effect: 'defPierceChance', chance: 20, desc: '20% chance for attacks to ignore half Def or Res.' },
   // { id: 'breaker_badge', name: 'Breaker Badge', rarity: 'uncommon', price: 900, family: 'badge', trigger: 'weaponTriangleAdvantage', hit: 15, avoid: 15, desc: 'Hit +15 and Avoid +15 when holder has weapon triangle advantage.' },

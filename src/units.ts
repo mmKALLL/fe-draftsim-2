@@ -4,6 +4,7 @@ import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
+import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer, Rarity } from '../types'
 
@@ -73,7 +74,8 @@ export function advanceTwoLevels(units: Unit[]) {
 export function freshFromBase(base: any, enemy = false, targetLevel = 1, promoted = false) {
   const c = CLASSES[base.cls],
     u: any = {
-      id: Math.random().toString(36).slice(2),
+      // Deterministic ids under sim keep seeded batches reproducible; normal play keeps random ids.
+      id: sim.active ? `u${sim.idCounter++}` : Math.random().toString(36).slice(2),
       name: base.name,
       baseName: base.name,
       cls: base.cls,

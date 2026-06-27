@@ -2,6 +2,7 @@ import { ARENA_AVOID_DELTA, ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, ARENA_FOCU
 import { ARENAS } from '../data'
 import { assetImg, htmlAttr, mapSpriteForFocus } from './assets'
 import { setStatus } from './combat'
+import { sim } from './sim'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
@@ -141,6 +142,9 @@ export function updateAutoFightButton() {
   btn.textContent = state.combat.autoFight ? 'Auto-fight: On' : 'Auto-fight: Off'
 }
 export function setAutoFight(enabled: any, silent = false) {
+  // Headless sim drives every battle on auto: keep auto-fight latched on for the whole batch so the
+  // end-of-battle setAutoFight(false) (runBattle) can't leave battle 2+ waiting on a manual click.
+  if (sim.active && !enabled) return
   if (!state.combat.running && enabled) return
   state.combat.autoFight = enabled
   updateAutoFightButton()
