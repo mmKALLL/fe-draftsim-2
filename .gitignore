@@ -5,3 +5,5 @@ fe-assets-db
 node_modules
 dist
 .env
+saves/
+out*.json

@@ -179,8 +179,8 @@ export function showHelpRules() {
     <p>Your goal is to survive four arenas with 5 battles each. Battles #3 and #5 in each arena are bosses.</p>
     <p>Your party fully heals after each battle. Improve your equipment, manage consumables, and build a well-balanced team capable of overcoming any obstacle.</p>
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
-    <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, and consumables don't end the unit's turn.</p>
-    <p>Score is calculated as wins × 1000 + remaining gold.</p>
+    <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, consumables don't end the unit's turn, and FE13/14 skills are included.</p>
+    <p>Score is calculated as wins × 1000 + remaining gold + half of remaining consumables price.</p>
     <button data-close class="good">Back</button>`
   )
 }
