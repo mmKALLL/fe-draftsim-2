@@ -150,11 +150,32 @@ async function main() {
 
 // Deno needs `--allow-write` to write the file; the `simulate` npm script grants it, so `--json`
 // works out of the box. (If run without it, Deno throws a clear NotCapable permission error.)
+// Robust against the two ways a target path fails: a missing parent directory (Deno.writeTextFile
+// does not mkdir -p -> ENOENT) and a pre-existing read-only file (-> EACCES). We create the parent
+// dir up front, and if the write is blocked by an existing file we remove it and retry once so
+// --json can always overwrite its target; anything still failing surfaces as a clean message.
 async function writeJson(path: string, results: RunStat[]) {
   const text = JSON.stringify(results, null, 2)
   const D = (globalThis as any).Deno
   if (!D?.writeTextFile) fail('--json requires Deno (Deno.writeTextFile is unavailable in this runtime)')
-  await D.writeTextFile(path, text)
+  const dir = path.replace(/[/\\][^/\\]*$/, '')
+  if (dir && dir !== path) {
+    try {
+      await D.mkdir(dir, { recursive: true })
+    } catch {
+      /* already exists (or not a dir — the write below will report it) */
+    }
+  }
+  try {
+    await D.writeTextFile(path, text)
+  } catch (e: any) {
+    try {
+      await D.remove(path)
+      await D.writeTextFile(path, text)
+    } catch {
+      fail(`could not write --json to "${path}": ${e?.message ?? e}`)
+    }
+  }
 }
 
 /* ----------------------------------------------------------------- summary */
