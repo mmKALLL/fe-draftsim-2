@@ -3,6 +3,15 @@
 // Runs the real game loop N times with no browser, no rendering, instant sleeps and auto-fight,
 // then prints an aggregate balance summary (and optionally dumps per-run RunStats as JSON).
 //
+// Options: --runs=N (default 100) | --reward=skip|first (default skip) | --seed=N (reproducible batch)
+//          | --roster=random | --roster=Name1,Name2,Name3,Name4,Name5 (default random) | --json=<path>
+// Examples:
+//   npm run simulate -- --runs=100                                  # 100 random runs, skip all rewards
+//   npm run simulate -- --runs=200 --reward=first                   # take the first reward each screen
+//   npm run simulate -- --runs=50 --roster=Lyn,Hector,Eliwood,Florina,Dorcas --json=out.json
+//   npm run simulate -- --runs=500 --reward=first --roster=random --seed=42 --json=results/batch.json
+//                                                                    # ^ every option; --seed => reproducible
+//
 // Run under Deno (`npm run simulate`), which executes TypeScript natively and resolves the
 // project's extensionless relative imports via `--unstable-sloppy-imports`.
 //
