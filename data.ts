@@ -24,10 +24,6 @@ export const FEMP_NAME_OVERRIDES: Record<string, string> = {
   Canas: 'canas',
   Niime: 'niime',
   Athos: 'athos',
-  // Placeholder: no Gerik portrait asset exists on disk. Raven is an FE7
-  // Mercenary (sword) — closest thematic match. Replace 'raven' with 'gerik'
-  // and drop assets/femp/portraits/gerik.png in if a real portrait is added.
-  Gerik: 'raven',
 }
 export const CUSTOM_MAP_SPRITE_STEMS: Record<string, string> = {
   Lyn: 'lyn',
