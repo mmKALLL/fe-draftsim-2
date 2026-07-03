@@ -181,6 +181,7 @@ export function showHelpRules() {
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
     <p>Main differences to vanilla FE7: all units only have one weapon slot, weapons with extended range provide a defense bonus, consumables don't end the unit's turn, and FE13/14 skills are included.</p>
     <p>Score is calculated as wins × 1000 + remaining gold + half of remaining consumables price.</p>
+    <p>Hotkeys: press <b>1</b>–<b>5</b> to pick the Nth reward, boost, or draft option — or, while choosing a combat target, the unit in that on-screen slot; <b>5</b> also skips a reward screen. During a fight, <b>a</b> toggles auto-battle, and <b>Esc</b> cancels target selection.</p>
     <button data-close class="good">Back</button>`
   )
 }

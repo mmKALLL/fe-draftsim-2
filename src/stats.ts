@@ -234,12 +234,21 @@ export function statisticsDetailHTML(): string {
   const cheatedRow = `<div class="statsSummary">${row('Cheated runs (excluded)', cheated)}</div>`
 
   // Avg. roster composition per run: prepromotes + raw base-stat / growth bracket distributions.
-  const compRows = [
-    row('Prepromote units', avg((r) => r.prepromotes)),
-    ...BASE_STAT_BRACKETS.map((b) => row(`Base total ${b.label}`, avg((r) => r.baseStatBrackets?.[b.label] ?? 0))),
-    ...GROWTH_BRACKETS.map((b) => row(`Growth total ${b.label}`, avg((r) => r.growthBrackets?.[b.label] ?? 0))),
-  ].join('')
-  const composition = `<div class="statsSummary">${compRows}</div>`
+  // Restricted to DRAFT runs only — in random mode the roster is assigned, not picked, so its
+  // composition isn't a player choice and would skew these averages.
+  const draftRuns = completed.filter((r) => r.start_mode === 'draft')
+  const draftAvg = (sel: (r: RunStat) => number) =>
+    draftRuns.length ? fmt1(draftRuns.reduce((a, r) => a + sel(r), 0) / draftRuns.length) : '0.0'
+  const composition = draftRuns.length
+    ? (() => {
+        const compRows = [
+          row('Prepromote units', draftAvg((r) => r.prepromotes)),
+          ...BASE_STAT_BRACKETS.map((b) => row(`Base total ${b.label}`, draftAvg((r) => r.baseStatBrackets?.[b.label] ?? 0))),
+          ...GROWTH_BRACKETS.map((b) => row(`Growth total ${b.label}`, draftAvg((r) => r.growthBrackets?.[b.label] ?? 0))),
+        ].join('')
+        return `<div class="statsSummary">${compRows}</div>`
+      })()
+    : `<p class="small">No draft runs yet.</p>`
 
   // Reward choices by rarity: a row per rarity that appears across completed runs.
   const RARITY_ORDER: { key: string; label: string }[] = [
@@ -263,7 +272,7 @@ export function statisticsDetailHTML(): string {
   const goldRows = goldKeys.map((label) => row(label, avg((r) => r.goldByType?.[label] ?? 0))).join('')
 
   let html = cheatedRow
-  html += `<h3>Roster composition</h3>${composition}`
+  html += `<h3>Avg. roster composition (draft runs only)</h3>${composition}`
   if (rarityRows) html += `<h3>Reward choices by rarity</h3><div class="statsSummary">${rarityRows}</div>`
   if (typeRows) html += `<h3>Reward choices by type</h3><div class="statsSummary">${typeRows}</div>`
   if (goldRows) html += `<h3>Gold spent by type (avg/run)</h3><div class="statsSummary">${goldRows}</div>`
