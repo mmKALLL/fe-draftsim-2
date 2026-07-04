@@ -184,8 +184,8 @@ export const BOSS_NAMES_BY_CLASS: Record<string, string[]> = {
   Paladin: ['Eagler', 'Pascal', 'Orson'],
   Pegasus: ['Ursula', 'Farina'],
   'Falcon Knight': ['Ursula', 'Farina'],
-  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter'],
-  'Wyvern Lord': ['Vaida', 'Glen', 'Valter'],
+  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter', 'Memnus'],
+  'Wyvern Lord': ['Vaida', 'Glen', 'Valter', 'Memnus'],
   Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
   Warrior: ['Oleg', 'Brendan'],
   Archer: ['Uhai'],
@@ -458,6 +458,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'rare', id: 'rightful_king', name: 'Rightful King', desc: 'Team\'s skill activation chances +10%.', source: 'Awakening Great Lord', classes: SKILL_CLASS_GROUPS.lord, family: 'proc', procBonus: 10 },
   // { rarity: 'rare', id: 'draconic_hex', name: 'Draconic Hex', desc: 'After user combat, target suffers -2 all stats for one turn.', source: 'Fates Nohr Noble', classes: SKILL_CLASS_GROUPS.lord, family: 'debuff', trigger: 'afterCombat', stats: { str: -2, skl: -2, spd: -2, lck: -2, def: -2, res: -2 } },
   { rarity: 'rare', id: 'rally_spectrum', name: 'Rally Spectrum', desc: 'Allies gain all stats +2 on their first turn.', source: 'Awakening Grandmaster', classes: SKILL_CLASS_GROUPS.any, family: 'rally', trigger: 'battleStart', stats: { str: 2, skl: 2, spd: 2, lck: 2, def: 2, res: 2 } },
+  { rarity: 'rare', id: 'oath_of_pylum', name: 'Oath of Pylum', desc: 'Allies take -3 damage while the user is alive.', source: 'Midnight Sun Ornieres', classes: SKILL_CLASS_GROUPS.lord, family: 'aura', teamAura: { damageTakenFlat: -3 } },
 
   // Mercenary and hero skills
   // { rarity: 'normal', id: 'armsthrift', name: 'Armsthrift', desc: 'Forging cost -200G.', source: 'Awakening Mercenary', classes: SKILL_CLASS_GROUPS.mercenary, family: 'weapon', effect: 'forgePreserveChance', chanceStat: 'lck' },
@@ -557,6 +558,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'normal', id: 'rally_luck', name: 'Rally Luck', desc: 'Allies gain Lck +8 on their first turn.', source: 'Fates Shrine Maiden/Monk', classes: SKILL_CLASS_GROUPS.holy, family: 'rally', trigger: 'battleStart', stats: { lck: 8 } },
   // { rarity: 'rare', id: 'countermagic', name: 'Countermagic', desc: 'Reflects 30% of magical damage taken.', source: 'Fates Priestess/Great Master', classes: SKILL_CLASS_GROUPS.holy, family: 'retaliation', trigger: 'magicHitTaken', effect: 'reflectDamagePercent', amountPercent: 30 },
   { rarity: 'rare', id: 'amaterasu', name: 'Amaterasu', desc: 'All allies recover 4 HP on user\'s turn.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.monk, family: 'aura', trigger: 'turnStart', effect: 'allyRegenFlat', amount: 4 },
+  { rarity: 'uncommon', id: 'malice_sense', name: 'Malice Sense', desc: 'Grants passive Avoid +20.', source: 'Midnight Sun Shiori', classes: SKILL_CLASS_GROUPS.holy, family: 'stat', avoid: 20 },
 
   // Shaman, dark mage, and druid skills
   { rarity: 'normal', id: 'hex', name: 'Hex', desc: 'Enemies have Avoid -10 against the user.', source: 'Awakening Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', enemyAvoid: -10 },
@@ -565,6 +567,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'uncommon', id: 'malefic_aura', name: 'Malefic Aura', desc: 'Allies deal +2 magic damage while the user is alive.', source: 'Fates Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', teamAura: { magicDamageDealt: 2 } },
   { rarity: 'rare', id: 'vengeance', name: 'Vengeance', desc: "Skl%×2 chance to add half of user's missing HP to damage.", source: 'Awakening/Fates Sorcerer', classes: SKILL_CLASS_GROUPS.shaman, family: 'proc', trigger: 'attack', effect: 'addMissingHpChance', chanceStat: 'sklTimesTwo', amountPercent: 50 },
   { rarity: 'rare', id: 'tomebreaker', name: 'Tomebreaker', desc: 'Hit +25 and Avoid +25 against tome users.', source: 'Awakening Sorcerer', classes: SKILL_CLASS_GROUPS.shaman, family: 'breaker', breaker: 'tome', hit: 25, avoid: 25 },
+  { rarity: 'uncommon', id: 'vassals_seal', name: "Vassal's Seal", desc: 'While below 50% HP, deals +5 damage and Crit +10.', source: 'Midnight Sun Faratras', classes: SKILL_CLASS_GROUPS.shaman, family: 'combat', trigger: 'hpBelowHalf', damageDealt: 5, crit: 10 },
   // { rarity: 'uncommon', id: 'grisly_wound', name: 'Grisly Wound', desc: 'After user combat, target loses 10% max HP.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.shaman, family: 'debuff', trigger: 'afterCombat', effect: 'chipDamagePercent', amountPercent: 10 },
 ]
 
@@ -647,6 +650,11 @@ U('Priscilla','Cleric','staff', {bTotal:33,hp:16,str:3,skl:6,spd:8,lck:7,def:3,r
 U('Moulder','Cleric','staff',   {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,res:5,con:9},    {hp:70,str:40,skl:50,spd:40,lck:20,def:25,res:25,gTotal:270},'blue'),
 U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
 U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
+
+// Path of the Midnight Sun (Fire Emblem: The Midnight Sun) cameo units.
+U('Ornieres','Lord','sword',    {bTotal:29,hp:19,str:6,skl:7,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:45,skl:50,spd:40,lck:35,def:45,res:20,gTotal:315},'gold'),
+U('Shiori','Monk','light',      {bTotal:33,hp:17,str:4,skl:8,spd:7,lck:7,def:1,res:6,con:5},    {hp:55,str:40,skl:55,spd:50,lck:55,def:10,res:60,gTotal:325},'blue'),
+U('Faratras','Shaman','dark',   {bTotal:35,hp:18,str:8,skl:6,spd:6,lck:5,def:3,res:7,con:4},    {hp:65,str:60,skl:40,spd:40,lck:30,def:15,res:55,gTotal:305},'purple'),
 ]
 function U(name: string, cls: string, weaponType: WeaponType, stats: BaseStatBlock, growths: GrowthBlock, palette: PaletteKey, startOffset = 0): UnitBase {
   return { name, cls, weaponType, stats, growths, palette, startOffset }

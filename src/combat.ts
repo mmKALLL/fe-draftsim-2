@@ -75,6 +75,11 @@ export function arenaStatDelta(stat: StatKey) {
 export function heldItemConditionMet(u: Unit) {
   return u.heldItem?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
 }
+// Same 'hpBelowHalf' gating for skills (e.g. Vassal's Seal): a skill without that
+// trigger is always on; one with it only applies while the user is below half HP.
+export function skillConditionMet(u: Unit) {
+  return u.skill?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
+}
 export function combatStat(u: Unit, stat: StatKey) {
   // 'rally'/'tempo' (like 'playerPhase'/'arena') deliver their stats via the
   // battle-start turnBuff (applyBattleStartRallies), so the skill's own `stats`
@@ -204,7 +209,8 @@ export function skillSoloBonus(u: Unit, key: 'hit' | 'avoid') {
 // always the attacker (this engine has no counterattacks). 'faire' is handled
 // separately via skillFaireBonus, so it is not counted here (no double-apply).
 export function skillAttackDamage(a: Unit) {
-  return a.skill?.family === 'playerPhase' || a.skill?.family === 'combat' ? a.skill.damageDealt || 0 : 0
+  if (a.skill?.family !== 'playerPhase' && a.skill?.family !== 'combat') return 0
+  return skillConditionMet(a) ? a.skill.damageDealt || 0 : 0
 }
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
@@ -305,7 +311,7 @@ export function critRate(a: Unit, d: Unit) {
         bonus -
         combatStat(d, 'lck') +
         heldItemCrit +
-        (a.skill?.crit || 0) +
+        (skillConditionMet(a) ? a.skill?.crit || 0 : 0) +
         teamAuraBonus(a, 'crit') +
         (d.skill?.incomingCrit || 0) -
         (a.skill?.enemyCritAvoid || 0) -
