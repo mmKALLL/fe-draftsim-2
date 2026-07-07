@@ -66,9 +66,17 @@ export function generateEnemy() {
   const goodMinionSlots = new Set<number>()
   const availSlots = [...minionSlots]
   while (goodCount-- > 0 && availSlots.length) goodMinionSlots.add(availSlots.splice(rint(availSlots.length), 1)[0])
+  // Arena 1 only: a fresh team can't handle multiple armored/flying tanks, so cap
+  // Knight + Wyvern enemies at one per fight (boss included). After the first such
+  // pick, drop the rest of that combo from the pool so no later slot can roll one.
+  let arenaTankyPicked = false
   for (let i = 0; i < 5; i++) {
     const isBossSlot = i === 0 && bossTier
     const b = pickBaseFromPool(pool, enemyFocusForSlot(isBossSlot, bossTier)) || pick(BASES)
+    if (arena === 1 && !arenaTankyPicked && (b.cls === 'Knight' || b.cls === 'Wyvern')) {
+      arenaTankyPicked = true
+      for (let j = pool.length - 1; j >= 0; j--) if (pool[j].cls === 'Knight' || pool[j].cls === 'Wyvern') pool.splice(j, 1)
+    }
     // Bosses have extra levels; normal units have slight variance
     const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
     const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
