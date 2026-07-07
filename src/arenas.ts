@@ -28,6 +28,12 @@ export function makeArenaPlan() {
 export function arenaIndexForBattle(n = state.battle || 1) {
   return clamp(Math.floor((Math.max(1, n) - 1) / ARENA_CYCLE_LENGTH), 0, Math.max(0, state.arenaPlan.length - 1))
 }
+// Arenas 3 and 4 (the run's last two, plan index >= 2) double the magnitude of their
+// stat and avoid bonuses/penalties, making the late game swingier. The speed penalty,
+// being a multiplier rather than a flat delta, is left unchanged.
+export function arenaEffectMultiplier(n = state.battle || 1) {
+  return arenaIndexForBattle(n) >= 2 ? 2 : 1
+}
 export function arenaEntryForBattle(n = state.battle || 1) {
   return state.arenaPlan[arenaIndexForBattle(n)] || null
 }
@@ -40,23 +46,25 @@ export function activeArenaEffects() {
 export function hasArenaEffect(effect: string) {
   return activeArenaEffects().includes(effect)
 }
-export function arenaEffectLabel(effect: string) {
+export function arenaEffectLabel(effect: string, mult = 1) {
+  const stat = ARENA_STAT_DELTA * mult
+  const avoid = ARENA_AVOID_DELTA * mult
   const labels: Record<string, string> = {
-    avoidUp: `Avo +${ARENA_AVOID_DELTA}`,
-    avoidDown: `Avo -${ARENA_AVOID_DELTA}`,
-    defUp: `Def +${ARENA_STAT_DELTA}`,
-    defDown: `Def -${ARENA_STAT_DELTA}`,
-    resUp: `Res +${ARENA_STAT_DELTA}`,
-    resDown: `Res -${ARENA_STAT_DELTA}`,
-    luckUp: `Lck +${ARENA_STAT_DELTA}`,
-    luckDown: `Lck -${ARENA_STAT_DELTA}`,
-    strUp: `Str +${ARENA_STAT_DELTA}`,
+    avoidUp: `Avo +${avoid}`,
+    avoidDown: `Avo -${avoid}`,
+    defUp: `Def +${stat}`,
+    defDown: `Def -${stat}`,
+    resUp: `Res +${stat}`,
+    resDown: `Res -${stat}`,
+    luckUp: `Lck +${stat}`,
+    luckDown: `Lck -${stat}`,
+    strUp: `Str +${stat}`,
     speedDown: `Spd x${ARENA_SPEED_MULTIPLIER}`,
   }
   return labels[effect] || effect
 }
-export function arenaEffectLabels(arena: any) {
-  return arena.effects.length ? arena.effects.map(arenaEffectLabel) : ['Neutral']
+export function arenaEffectLabels(arena: any, mult = 1) {
+  return arena.effects.length ? arena.effects.map((e: string) => arenaEffectLabel(e, mult)) : ['Neutral']
 }
 export function focusLabel(focus: ArenaFocus) {
   return focus.label || focus.cls
@@ -103,7 +111,7 @@ export function renderArenaMap() {
     .map((entry, i) => {
       const arena = entry.arena,
         classes = i < activeIndex ? 'arenaNode done' : i === activeIndex ? 'arenaNode active' : 'arenaNode',
-        effects = arenaEffectLabels(arena),
+        effects = arenaEffectLabels(arena, i >= 2 ? 2 : 1),
         title = `${arena.name}: ${effects.join(', ')}. Bosses: ${entry.bossFocus.map(focusLabel).join(' / ')}`
       return `<div class="${classes}" title="${htmlAttr(title)}">${assetImg('arenaTile', `assets/femp/biomes/${arena.id}.jpg`, [], { type: 'arena' }, '')}<div class="arenaUnits">${entry.bossFocus.map((focus: ArenaFocus, bossIndex: any) => arenaUnitIconHTML(focus, bossIndex, i >= 2)).join('')}</div><div class="arenaInfo"><div class="arenaName">${arena.name}</div><div class="arenaEffects">${effects.map((effect: string) => `<span class="arenaEffect">${effect}</span>`).join('')}</div></div></div>`
     })
@@ -112,7 +120,7 @@ export function renderArenaMap() {
 export function arenaTitleHTML() {
   const arena = activeArenaEntry()?.arena
   if (!arena) return '<span class="arenaTitleName">Arena</span>'
-  const effects = arenaEffectLabels(arena).join(', ')
+  const effects = arenaEffectLabels(arena, arenaEffectMultiplier()).join(', ')
   const arenaBattle = ((Math.max(1, state.battle || 1) - 1) % ARENA_CYCLE_LENGTH) + 1
   return `<span class="arenaTitleName">${arena.name} Arena ${arenaBattle}</span>${effects ? ` <span class="arenaTitleEffects">(${effects})</span>` : ''}`
 }

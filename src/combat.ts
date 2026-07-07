@@ -1,6 +1,6 @@
 import { ARENA_AVOID_DELTA, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
-import { activeArenaEffects, activeArenaEntry, hasArenaEffect } from './arenas'
+import { activeArenaEffects, activeArenaEntry, arenaEffectMultiplier, hasArenaEffect } from './arenas'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
 import { closeModal, showModal } from './ui'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
@@ -63,7 +63,7 @@ export function arenaStatDelta(stat: StatKey) {
     if (effects.includes('luckUp')) delta += ARENA_STAT_DELTA
     if (effects.includes('luckDown')) delta -= ARENA_STAT_DELTA
   }
-  return delta
+  return delta * arenaEffectMultiplier()
 }
 // 'playerPhase' and 'arena' skills grant their `stats` only under a condition
 // (when attacking / while in a matching arena), so they are EXCLUDED from this
@@ -99,13 +99,13 @@ export function playerPhaseStat(u: Unit, stat: StatKey) {
   return u.skill?.family === 'playerPhase' ? u.skill?.stats?.[stat] || 0 : 0
 }
 export function arenaPhysicalPowerDelta(weapon: Weapon) {
-  return hasArenaEffect('strUp') && !weapon?.magic ? ARENA_STAT_DELTA : 0
+  return hasArenaEffect('strUp') && !weapon?.magic ? ARENA_STAT_DELTA * arenaEffectMultiplier() : 0
 }
 export function arenaAvoidDelta() {
   let delta = 0
   if (hasArenaEffect('avoidUp')) delta += ARENA_AVOID_DELTA
   if (hasArenaEffect('avoidDown')) delta -= ARENA_AVOID_DELTA
-  return delta
+  return delta * arenaEffectMultiplier()
 }
 export function attackSpeed(u: Unit) {
   const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con) + (u.heldItem?.speedPenalty || 0)
