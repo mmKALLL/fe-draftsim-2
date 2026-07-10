@@ -184,8 +184,8 @@ export const BOSS_NAMES_BY_CLASS: Record<string, string[]> = {
   Paladin: ['Eagler', 'Pascal', 'Orson'],
   Pegasus: ['Ursula', 'Farina'],
   'Falcon Knight': ['Ursula', 'Farina'],
-  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter', 'Memnus'],
-  'Wyvern Lord': ['Vaida', 'Glen', 'Valter', 'Memnus'],
+  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter' /*, 'Memnus' — PotMS, on hold pending portrait (6PcYVb66) */],
+  'Wyvern Lord': ['Vaida', 'Glen', 'Valter' /*, 'Memnus' — PotMS, on hold pending portrait (6PcYVb66) */],
   Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
   Warrior: ['Oleg', 'Brendan'],
   Archer: ['Uhai'],
@@ -651,10 +651,12 @@ U('Moulder','Cleric','staff',   {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,r
 U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
 U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
 
-// Path of the Midnight Sun (Fire Emblem: The Midnight Sun) cameo units.
-U('Ornieres','Lord','sword',    {bTotal:29,hp:19,str:6,skl:7,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:45,skl:50,spd:40,lck:35,def:45,res:20,gTotal:315},'gold'),
-U('Shiori','Monk','light',      {bTotal:33,hp:17,str:4,skl:8,spd:7,lck:7,def:1,res:6,con:5},    {hp:55,str:40,skl:55,spd:50,lck:55,def:10,res:60,gTotal:325},'blue'),
-U('Faratras','Shaman','dark',   {bTotal:35,hp:18,str:8,skl:6,spd:6,lck:5,def:3,res:7,con:4},    {hp:65,str:60,skl:40,spd:40,lck:30,def:15,res:55,gTotal:305},'purple'),
+// Path of the Midnight Sun (Fire Emblem: The Midnight Sun) cameo units — ON HOLD
+// (card 6PcYVb66): commented out until real portraits are found, so they don't ship
+// with generic placeholder faces. Re-enable these three lines once art is added.
+// U('Ornieres','Lord','sword',    {bTotal:29,hp:19,str:6,skl:7,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:45,skl:50,spd:40,lck:35,def:45,res:20,gTotal:315},'gold'),
+// U('Shiori','Monk','light',      {bTotal:33,hp:17,str:4,skl:8,spd:7,lck:7,def:1,res:6,con:5},    {hp:55,str:40,skl:55,spd:50,lck:55,def:10,res:60,gTotal:325},'blue'),
+// U('Faratras','Shaman','dark',   {bTotal:35,hp:18,str:8,skl:6,spd:6,lck:5,def:3,res:7,con:4},    {hp:65,str:60,skl:40,spd:40,lck:30,def:15,res:55,gTotal:305},'purple'),
 ]
 function U(name: string, cls: string, weaponType: WeaponType, stats: BaseStatBlock, growths: GrowthBlock, palette: PaletteKey, startOffset = 0): UnitBase {
   return { name, cls, weaponType, stats, growths, palette, startOffset }
