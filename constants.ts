@@ -110,6 +110,24 @@ export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'arena', Rec
 export const EARLY_ENEMY_NERF_BATTLES = 3
 export const EARLY_ENEMY_LEVEL_PENALTY = 1
 
+// Late-arena difficulty ramp (EaM4uENF). Per-arena (index 0 = arena 1), so each
+// arena tunes independently; arenas 3/4 currently carry the extra difficulty.
+// Extra internal levels added to every enemy in that arena.
+export const ARENA_ENEMY_LEVEL_BONUS = [0, 0, 1, 2]
+// Extra weapon forges (+2 Mt / +5 Hit each) applied to every enemy weapon, rolled
+// uniformly in [min, max]. Staves are never forged.
+export const ARENA_ENEMY_FORGE_RANGE: [number, number][] = [
+  [0, 0], // Arena 1
+  [0, 0], // Arena 2
+  [1, 2], // Arena 3
+  [2, 3], // Arena 4
+]
+// Boss max-HP multipliers. Mid (battle-3) bosses keep their standard multiplier;
+// arena (battle-5) bosses hit harder in the last two arenas (index >= 2).
+export const MID_BOSS_HP_MULT = 1.25
+export const ARENA_BOSS_HP_MULT = 1.25
+export const ARENA_BOSS_HP_MULT_LATE = 1.5
+
 // Debug: skills appear ~10x more often as rewards and attack procs always fire.
 export const DEBUG_SKILLS = false
 

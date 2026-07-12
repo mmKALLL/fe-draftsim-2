@@ -1,4 +1,4 @@
-import { ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MID_BOSS_HP_MULT, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
@@ -7,7 +7,7 @@ import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rew
 import { storeConsumable } from './shop'
 import { addGold, formatGold } from './state'
 import { levelLabel, showGameOver, showWin } from './ui'
-import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
+import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, forgeWeapon, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
@@ -49,14 +49,15 @@ export function bossTierForBattle(n: any) {
 }
 export function generateEnemy() {
   state.battle++
+  const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
   const earlyNerf = state.battle <= EARLY_ENEMY_NERF_BATTLES ? EARLY_ENEMY_LEVEL_PENALTY : 0
-  const baseInternal = clamp(1 + state.battle * 2 - earlyNerf, 1, 40)
+  // Arenas 3/4 add extra enemy levels to steepen the late-game curve (EaM4uENF).
+  const baseInternal = clamp(1 + state.battle * 2 - earlyNerf + (ARENA_ENEMY_LEVEL_BONUS[arena - 1] || 0), 1, 40)
   const bossTier = bossTierForBattle(state.battle)
   state.enemy = []
   // Decide up front which minion slots carry a 'good' weapon: a bounded count per fight
   // (by arena + battle type), placed in random slots. The boss (slot 0) is always good.
   const battleType = bossTier === BOSS_TIER_ARENA ? 'arena' : bossTier === BOSS_TIER_REGULAR ? 'regular' : 'standard'
-  const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
   // Exclude bases banned from this arena's enemy pool (e.g. high-stat prepromotes early on).
   const banned = ENEMY_ARENA_BANS[arena] || []
   const pool = BASES.filter((b) => !banned.includes(b.name))
@@ -83,7 +84,12 @@ export function generateEnemy() {
     const lvl = promoted ? internal - 20 : internal
     const e = freshFromBase(b, true, lvl, promoted)
     e.lvl = clamp(lvl + Math.ceil(b.startOffset / 2), 1, 20)
-    e.maxHp = isBossSlot ? floor(e.maxHp * 1.25) : e.maxHp
+    // Boss HP: mid (battle-3) bosses keep their multiplier; arena (battle-5) bosses
+    // hit harder in the last two arenas, standard earlier (EaM4uENF).
+    if (isBossSlot) {
+      const bossHpMult = bossTier === BOSS_TIER_ARENA ? (arena >= 3 ? ARENA_BOSS_HP_MULT_LATE : ARENA_BOSS_HP_MULT) : MID_BOSS_HP_MULT
+      e.maxHp = floor(e.maxHp * bossHpMult)
+    }
     e.bossTier = isBossSlot ? bossTier : null
     e.palette = 'red'
     e.team = 'red'
@@ -91,6 +97,10 @@ export function generateEnemy() {
     // wield a sword; force the sword type so enemyWeaponFor picks from the sword pool.
     if (e.kind === 'lord' && !e.promoted && e.weaponType !== 'sword') e.weaponType = 'sword'
     e.weapon = enemyWeaponFor(e, e.bossTier, !!isBossSlot || goodMinionSlots.has(i))
+    // Arenas 3/4: extra weapon forges make enemies hit harder late (EaM4uENF).
+    // forgeWeapon is a no-op on staves, so clerics are unaffected.
+    const [fMin, fMax] = ARENA_ENEMY_FORGE_RANGE[arena - 1] || [0, 0]
+    for (let f = fMin + rint(fMax - fMin + 1); f > 0; f--) forgeWeapon(e.weapon)
     e.name = enemyDisplayName(e)
     assignEnemyBonuses(e, isBossSlot ? 'boss' : 'minion')
     e.hp = e.maxHp
