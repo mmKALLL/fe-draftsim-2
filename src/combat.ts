@@ -544,11 +544,12 @@ export function applyPoison(u: Unit) {
 }
 // Held items with a battle-start trigger (e.g. Geosphere Shard) fire once at the
 // start of each battle; holders damage the opposing team.
-export function applyBattleStartHeldItems() {
+export async function applyBattleStartHeldItems() {
   const sides: [Unit[], Unit[]][] = [
     [state.player, state.enemy],
     [state.enemy, state.player],
   ]
+  const hits: { unit: Unit; amount: number }[] = []
   for (const [team, foes] of sides) {
     for (const holder of team) {
       if (holder.hp <= 0) continue
@@ -556,13 +557,22 @@ export function applyBattleStartHeldItems() {
       if (item?.trigger === 'battleStart' && item?.effect === 'enemyAoeDamage') {
         const amount = item.amount || 0
         foes.forEach((f) => {
-          if (f.hp > 0) f.hp = Math.max(0, f.hp - amount)
+          if (f.hp > 0) {
+            f.hp = Math.max(0, f.hp - amount)
+            hits.push({ unit: f, amount })
+          }
         })
         logLine(null, `${holder.name}'s ${item.name} hits all foes for ${amount}.`, 'hit')
       }
     }
   }
   renderTeams()
+  // Show the battle-start AoE (e.g. Geosphere Shard) as damage floats + a brief beat,
+  // rather than silently docking HP. Float after renderTeams so the sprites are fresh.
+  if (hits.length) {
+    for (const h of hits) floatText(h.unit, `-${h.amount}`, 'damage')
+    await sleep(650)
+  }
 }
 export function clearUnitStatus(u: Unit) {
   u.status = null
@@ -575,9 +585,17 @@ export function clearUnitStatus(u: Unit) {
 // the 'turnBuffs' bucket, so it reuses the tonic/turnBuff lifecycle and is cleared
 // after each unit finishes its first action (see clearTurnBuffs in game.ts). Multiple
 // rally casters stack, since each call adds to the bucket.
-export function applyBattleStartRallies() {
+// Concise float for a battle-start buff: a single stat reads "Def +4"; a multi-stat
+// rally (e.g. Rally Spectrum) collapses to "All +N" using the shared amount. Matches
+// the "Str +4" style tonics already float.
+function rallyFloatText(u: Unit, entries: [StatKey, number][]) {
+  if (entries.length === 1) return `${statLabel(u, entries[0][0])} +${entries[0][1]}`
+  return `All +${entries[0][1]}`
+}
+export async function applyBattleStartRallies() {
   const living = state.player.filter((u) => u.hp > 0)
   let applied = false
+  const floats: { unit: Unit; text: string }[] = []
   for (const caster of living) {
     const s = caster.skill
     if (!s || s.family !== 'rally' || s.trigger !== 'battleStart' || !s.stats) continue
@@ -589,6 +607,7 @@ export function applyBattleStartRallies() {
     const targets = living.filter((ally) => (s.rallyTarget === 'physical' ? !ally.weapon?.magic : s.rallyTarget === 'magic' ? !!ally.weapon?.magic : true))
     for (const ally of targets) {
       for (const [stat, amt] of entries) applyStatBuff(ally, stat, amt, 'turnBuffs')
+      floats.push({ unit: ally, text: rallyFloatText(caster, entries) })
     }
     const label = entries.map(([stat]) => statLabel(caster, stat)).join(', ')
     logLine(null, `${caster.name} uses ${s.name}; allies gain ${label} on their first turn.`, 'heal')
@@ -603,11 +622,18 @@ export function applyBattleStartRallies() {
     const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
     if (!entries.length) continue
     for (const [stat, amt] of entries) applyStatBuff(u, stat, amt, 'turnBuffs')
+    floats.push({ unit: u, text: rallyFloatText(u, entries) })
     const label = entries.map(([stat, amt]) => `${statLabel(u, stat)} +${amt}`).join(', ')
     logLine(null, `${u.name}'s ${s.name} grants ${label} on its first turn.`, 'heal')
     applied = true
   }
-  if (applied) renderTeams()
+  if (!applied) return
+  renderTeams()
+  // Surface the otherwise-silent battle-start buffs as stat floats + a brief beat.
+  if (floats.length) {
+    for (const f of floats) floatText(f.unit, f.text, 'healing')
+    await sleep(500)
+  }
 }
 
 // Heal a unit up to maxHp, returning the amount actually restored (0 if dead or
@@ -909,6 +935,7 @@ const SKILL_FLASH_COLORS: Record<string, string> = {
   astra: '#fca5a5',
   pavise: '#93c5fd',
   aegis: '#93c5fd',
+  miracle: '#86efac',
 }
 export function skillFlashColor(skill: any) {
   return SKILL_FLASH_COLORS[skill?.id] || '#fde68a'
@@ -1330,6 +1357,8 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
       if (r.proc) await animateSkillProc(actor, r.proc)
       if (r.defenseProc) await animateSkillProc(target, r.defenseProc)
       await animateStrike(actor, target, r)
+      // Miracle: the near-lethal blow lands, then the target flashes as it clings to 1 HP.
+      if (r.miracle) await animateSkillProc(target, { id: 'miracle', name: 'Miracle' })
       // Lifetaker: a player unit that defeats an enemy on player phase heals 50% max HP.
       if (target.hp <= 0 && r.hit) await applyLifetaker(actor)
       if ((actor.weapon?.poison || actor.heldItem?.effect === 'weaponPoison') && r.hit && target.hp > 0 && applyPoison(target)) {
@@ -1349,6 +1378,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
           floatText(actor, `+${healed}`, 'healing')
           updateUnitVisual(actor)
           renderSideCards()
+          await sleep(350) // life-drain heal reads as its own beat
         }
       }
       if (r.procHeal > 0) {
@@ -1359,6 +1389,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
           floatText(actor, `+${healed}`, 'healing')
           updateUnitVisual(actor)
           renderSideCards()
+          await sleep(350) // Aether/Sol heal reads as its own beat, after the strike
         }
       }
     }

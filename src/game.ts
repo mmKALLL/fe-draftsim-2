@@ -175,8 +175,8 @@ export async function runBattle() {
     staffExhaustionLogged = false
   updateNextEnemyMarker(eIdx)
   renderTeams()
-  applyBattleStartHeldItems()
-  applyBattleStartRallies()
+  await applyBattleStartHeldItems()
+  await applyBattleStartRallies()
   while (state.runToken === token && state.player.some((x) => x.hp > 0) && state.enemy.some((x) => x.hp > 0) && actions < 300) {
     state.combat.turn = actions + 1
     const stavesExhausted = actions >= STAFF_EXHAUST_ROUND_LIMIT
