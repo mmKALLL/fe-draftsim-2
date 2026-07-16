@@ -120,7 +120,7 @@ export const ARENA_ENEMY_FORGE_RANGE: [number, number][] = [
   [0, 0], // Arena 1
   [0, 0], // Arena 2
   [1, 2], // Arena 3
-  [2, 3], // Arena 4
+  [3, 4], // Arena 4 (xcaKWDD9: bumped from [2,3])
 ]
 // Boss max-HP multipliers. Mid (battle-3) bosses keep their standard multiplier;
 // arena (battle-5) bosses hit harder in the last two arenas (index >= 2).
@@ -202,7 +202,7 @@ export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'arena', [
   { standard: [0, 1], regular: [0, 1], arena: [1, 2] }, // Arena 1
   { standard: [0, 2], regular: [1, 1], arena: [1, 2] }, // Arena 2
   { standard: [1, 3], regular: [1, 2], arena: [2, 3] }, // Arena 3
-  { standard: [2, 3], regular: [1, 3], arena: [3, 4] }, // Arena 4
+  { standard: [3, 4], regular: [1, 3], arena: [3, 4] }, // Arena 4 (xcaKWDD9: standard [2,3]->[3,4])
 ]
 
 // Base names that cannot appear as enemies in a given arena (keyed by 1-based arena index).
