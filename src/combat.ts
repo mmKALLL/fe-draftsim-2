@@ -463,7 +463,9 @@ export function temporaryBuffLabel(u: Unit) {
 // All maxHp assignments route through this so the skill/item HP layer survives
 // level-ups, promotions, and buff add/clear cycles.
 export function computeMaxHp(u: Unit) {
-  return (u.stats.hp || 0) + (u.skill?.stats?.hp || 0) + (u.heldItem?.stats?.hp || 0)
+  // u.hpMult (enemy boss HP multiplier) is baked in here so it survives every
+  // recompute — notably refreshMaxHp() in assignEnemyBonuses (xcZugbQ4).
+  return Math.floor(((u.stats.hp || 0) + (u.skill?.stats?.hp || 0) + (u.heldItem?.stats?.hp || 0)) * ((u as any).hpMult || 1))
 }
 // Recompute maxHp after the skill/held-item HP layer changes (e.g. learning HP +5).
 // A living unit's current HP rises by the same delta so the gain is immediately

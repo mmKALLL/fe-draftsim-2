@@ -1,7 +1,7 @@
 import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MID_BOSS_HP_MULT, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './arenas'
-import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
+import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
@@ -82,13 +82,14 @@ export function generateEnemy() {
     const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
     const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
     const lvl = promoted ? internal - 20 : internal
-    const e = freshFromBase(b, true, lvl, promoted)
+    const e = freshFromBase(b, true, lvl, promoted, !!isBossSlot)
     e.lvl = clamp(lvl + Math.ceil(b.startOffset / 2), 1, 20)
-    // Boss HP: mid (battle-3) bosses keep their multiplier; arena (battle-5) bosses
-    // hit harder in the last two arenas, standard earlier (EaM4uENF).
+    // Boss HP: mid (battle-3) bosses keep 1.25x; arena (battle-5) bosses hit 1.5x in
+    // the last two arenas, 1.25x earlier (EaM4uENF). Stored as hpMult and folded into
+    // computeMaxHp so it survives refreshMaxHp() in assignEnemyBonuses (xcZugbQ4).
     if (isBossSlot) {
-      const bossHpMult = bossTier === BOSS_TIER_ARENA ? (arena >= 3 ? ARENA_BOSS_HP_MULT_LATE : ARENA_BOSS_HP_MULT) : MID_BOSS_HP_MULT
-      e.maxHp = floor(e.maxHp * bossHpMult)
+      e.hpMult = bossTier === BOSS_TIER_ARENA ? (arena >= 3 ? ARENA_BOSS_HP_MULT_LATE : ARENA_BOSS_HP_MULT) : MID_BOSS_HP_MULT
+      e.maxHp = computeMaxHp(e)
     }
     e.bossTier = isBossSlot ? bossTier : null
     e.palette = 'red'

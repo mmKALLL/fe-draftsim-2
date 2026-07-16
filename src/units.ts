@@ -1,4 +1,16 @@
-import { ALL_STAT_KEYS, BOSS_TIER_ARENA, DEFAULT_COMMON_FORCES_FIRST_WEAPON, DEFAULT_WEAPON_MAX_CRIT, ENEMY_LUCK_GROWTH_PENALTY, ENEMY_LUCK_PENALTY, ENEMY_WEAPON_PROFILE, ENEMY_WEAPON_TYPE_SPLIT, GROWTH_STAT_KEYS, PROMOTION_UNLOCK_AFTER_BATTLE, WEAPON_RANK_RARITY } from '../constants'
+import {
+  ALL_STAT_KEYS,
+  BOSS_TIER_ARENA,
+  DEFAULT_COMMON_FORCES_FIRST_WEAPON,
+  DEFAULT_WEAPON_MAX_CRIT,
+  ENEMY_LUCK_GROWTH_PENALTY,
+  ENEMY_LUCK_PENALTY,
+  ENEMY_WEAPON_PROFILE,
+  ENEMY_WEAPON_TYPE_SPLIT,
+  GROWTH_STAT_KEYS,
+  PROMOTION_UNLOCK_AFTER_BATTLE,
+  WEAPON_RANK_RARITY,
+} from '../constants'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'
@@ -7,7 +19,6 @@ import { $, capStat, clamp, pick, rint, rnd } from './utils'
 import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer, Rarity } from '../types'
-
 
 export function promote(u: Unit, showLog = true) {
   if (u.promoted) return
@@ -71,7 +82,7 @@ export function advanceTwoLevels(units: Unit[]) {
     u.hp = u.maxHp
   })
 }
-export function freshFromBase(base: any, enemy = false, targetLevel = 1, promoted = false) {
+export function freshFromBase(base: any, enemy = false, targetLevel = 1, promoted = false, uncapHp = false) {
   const c = CLASSES[base.cls],
     u: any = {
       // Deterministic ids under sim keep seeded batches reproducible; normal play keeps random ids.
@@ -96,6 +107,9 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
       heldItem: null,
       skill: null,
     }
+  // Boss enemies grow HP without the normal stat cap (xcZugbQ4) so high-level bosses
+  // gain real bulk; set before the level-up loop below so growth isn't clamped at 60.
+  if (uncapHp) u.caps.hp = 90
   u.weapon = startingWeapon(u.weaponType)
   // Enemies are "unlucky": lower Luck growth (applied before leveling) makes them
   // easier to hit and easier to crit, without touching the FE7 formulas.
@@ -111,7 +125,16 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
   return u
 }
 export function startingWeapon(type: any) {
-  const map: Record<string, string> = { sword: 'Iron Sword', lance: 'Iron Lance', axe: 'Iron Axe', bow: 'Iron Bow', anima: 'Fire', light: 'Lightning', dark: 'Flux', staff: 'Heal Staff' }
+  const map: Record<string, string> = {
+    sword: 'Iron Sword',
+    lance: 'Iron Lance',
+    axe: 'Iron Axe',
+    bow: 'Iron Bow',
+    anima: 'Fire',
+    light: 'Lightning',
+    dark: 'Flux',
+    staff: 'Heal Staff',
+  }
   return cloneWeapon(WEAPONS.find((w) => w.name === map[type])!)
 }
 export function cloneWeapon(w: Weapon) {
