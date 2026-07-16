@@ -184,8 +184,8 @@ export const BOSS_NAMES_BY_CLASS: Record<string, string[]> = {
   Paladin: ['Eagler', 'Pascal', 'Orson'],
   Pegasus: ['Ursula', 'Farina'],
   'Falcon Knight': ['Ursula', 'Farina'],
-  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter' /*, 'Memnus' — PotMS, on hold pending portrait (6PcYVb66) */],
-  'Wyvern Lord': ['Vaida', 'Glen', 'Valter' /*, 'Memnus' — PotMS, on hold pending portrait (6PcYVb66) */],
+  Wyvern: ['Heath', 'Vaida', 'Glen', 'Valter'],
+  'Wyvern Lord': ['Vaida', 'Glen', 'Valter'],
   Fighter: ['Batta', 'Zugu', 'Bazba', 'O’Neill', 'Bone'],
   Warrior: ['Oleg', 'Brendan'],
   Archer: ['Uhai'],
@@ -195,8 +195,10 @@ export const BOSS_NAMES_BY_CLASS: Record<string, string[]> = {
   Sage: ['Sonia', 'Limstella', 'Pablo'],
   Cleric: ['Kenneth', 'Riev'],
   Bishop: ['Kenneth', 'Riev'],
-  Shaman: ['Novala', 'Lyon', 'Teodor'],
-  Druid: ['Nergal', 'Teodor'],
+  // 'Evil Faratras' (FE:MS) is a boss-only cameo: boss names carry no stat block of
+  // their own, so she borrows the rolled shaman spread (portrait: boss-portraits/evilfaratras.png).
+  Shaman: ['Novala', 'Lyon', 'Teodor', 'Evil Faratras'],
+  Druid: ['Nergal', 'Teodor', 'Evil Faratras'],
 }
 
 // Weapon data
@@ -571,6 +573,37 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   // { rarity: 'uncommon', id: 'grisly_wound', name: 'Grisly Wound', desc: 'After user combat, target loses 10% max HP.', source: 'Fates Malig Knight', classes: SKILL_CLASS_GROUPS.shaman, family: 'debuff', trigger: 'afterCombat', effect: 'chipDamagePercent', amountPercent: 10 },
 ]
 
+// Fire Emblem: The Midnight Sun (FE:MS) cameo cast, kept separate because they're a
+// distinct origin game (see the game-origin filter card). Growths are the ROM values
+// from assets/fems/stat-sheets; bases mirror our same-class roster peers with the
+// sheet's personal modifiers layered on, since the ROM rows are class-relative.
+// A few near-zero stats were redistributed so units aren't degenerate (noted inline).
+// prettier-ignore
+export const FEMS_BASES: UnitBase[] = [
+U('Faratras','Shaman','dark',   {bTotal:41,hp:18,str:10,skl:8,spd:5,lck:8,def:7,res:3,con:5},   {hp:85,str:25,skl:50,spd:35,lck:60,def:55,res:25,gTotal:335},'purple'),
+U('Shiori','Monk','light',      {bTotal:42,hp:20,str:6,skl:8,spd:9,lck:7,def:4,res:8,con:5},    {hp:80,str:25,skl:60,spd:65,lck:65,def:30,res:45,gTotal:370},'blue'), // str growth 10 -> 25: a light mage with 10 never deals damage
+U('Menmus','Wyvern','lance',    {bTotal:35,hp:23,str:9,skl:6,spd:6,lck:4,def:9,res:1,con:11},   {hp:85,str:55,skl:50,spd:40,lck:40,def:55,res:20,gTotal:345},'blue'),
+U('Quinn','Myrmidon','sword',   {bTotal:43,hp:20,str:9,skl:8,spd:8,lck:7,def:6,res:5,con:6},    {hp:80,str:60,skl:65,spd:55,lck:40,def:35,res:20,gTotal:355},'red'),
+U('Cattleya','Myrmidon','sword',{bTotal:39,hp:20,str:5,skl:8,spd:10,lck:8,def:4,res:4,con:6},   {hp:65,str:40,skl:55,spd:70,lck:45,def:30,res:40,gTotal:345},'purple'),
+U('Letruffe','Thief','sword',   {bTotal:38,hp:20,str:7,skl:10,spd:8,lck:6,def:5,res:2,con:8},   {hp:75,str:40,skl:70,spd:65,lck:45,def:35,res:25,gTotal:355},'green'),
+U('Brendan','Fighter','axe',    {bTotal:43,hp:27,str:9,skl:10,spd:5,lck:5,def:12,res:2,con:13}, {hp:90,str:65,skl:55,spd:30,lck:40,def:65,res:20,gTotal:365},'blue'),
+U('Cristoph','Fighter','axe',   {bTotal:33,hp:24,str:7,skl:6,spd:6,lck:9,def:4,res:1,con:11},   {hp:80,str:55,skl:40,spd:55,lck:60,def:25,res:25,gTotal:340},'red'),
+U('Garion','Fighter','axe',     {bTotal:29,hp:28,str:9,skl:7,spd:4,lck:3,def:4,res:2,con:13},   {hp:130,str:70,skl:50,spd:35,lck:30,def:40,res:15,gTotal:370},'red'),
+U('Djambo','Fighter','axe',     {bTotal:33,hp:26,str:9,skl:6,spd:5,lck:8,def:4,res:1,con:12},   {hp:95,str:60,skl:45,spd:40,lck:60,def:35,res:25,gTotal:360},'gold'),
+U('Weiss','Cavalier','sword',   {bTotal:39,hp:22,str:8,skl:8,spd:6,lck:7,def:6,res:4,con:9},    {hp:90,str:50,skl:55,spd:40,lck:40,def:55,res:30,gTotal:360},'blue'),
+U('Valpurga','Cavalier','lance',{bTotal:33,hp:21,str:7,skl:5,spd:6,lck:8,def:6,res:1,con:9},    {hp:85,str:60,skl:45,spd:50,lck:45,def:60,res:25,gTotal:370},'gold'),
+U('Sae’rah','Knight','lance',   {bTotal:37,hp:19,str:5,skl:6,spd:7,lck:9,def:6,res:4,con:9},    {hp:75,str:40,skl:50,spd:55,lck:60,def:40,res:30,gTotal:350},'red'),
+U('Schwarz','Pegasus','sword',  {bTotal:34,hp:21,str:8,skl:5,spd:10,lck:3,def:4,res:4,con:6},   {hp:85,str:65,skl:40,spd:65,lck:30,def:30,res:50,gTotal:365},'purple'), // skl base 1 -> 5; sword-wielding flier per design
+U('Rya','Archer','bow',         {bTotal:30,hp:17,str:4,skl:6,spd:7,lck:6,def:3,res:4,con:5},    {hp:70,str:40,skl:65,spd:55,lck:35,def:30,res:45,gTotal:340},'green'),
+U('Diana','Mage','anima',       {bTotal:31,hp:18,str:5,skl:5,spd:7,lck:10,def:1,res:3,con:4},   {hp:65,str:30,skl:50,spd:60,lck:60,def:20,res:45,gTotal:330},'purple'), // str base 0 -> 5, growth 20 -> 30: otherwise deals no damage
+U('Andre','Mage','anima',       {bTotal:25,hp:16,str:4,skl:5,spd:6,lck:6,def:1,res:3,con:5},    {hp:70,str:30,skl:45,spd:45,lck:60,def:25,res:50,gTotal:325},'green'),
+U('Ceapana','Cleric','staff',   {bTotal:39,hp:19,str:4,skl:7,spd:9,lck:11,def:3,res:5,con:5},   {hp:65,str:35,skl:45,spd:50,lck:50,def:30,res:55,gTotal:330},'green'),
+U('Poledra','Monk','light',     {bTotal:28,hp:19,str:4,skl:8,spd:6,lck:2,def:1,res:7,con:5},    {hp:120,str:20,skl:65,spd:45,lck:30,def:30,res:75,gTotal:385},'blue'), // ROM name "Puledra"; str growth 5 -> 20, HP growth 145 -> 120 (still the game's highest)
+// TODO(Hellios): empty block to fill in — portrait already cropped to
+// assets/femp/portraits/hellios.png. Fill the stats and uncomment to enable.
+// U('Hellios','','',            {bTotal:0,hp:0,str:0,skl:0,spd:0,lck:0,def:0,res:0,con:0},      {hp:0,str:0,skl:0,spd:0,lck:0,def:0,res:0,gTotal:0},'red'),
+]
+
 // prettier-ignore
 export const BASES: UnitBase[] = [
   // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
@@ -587,11 +620,11 @@ U('Karel','Myrmidon','sword',   {bTotal:43,hp:22,str:7,skl:12,spd:13,lck:6,def:4
 U('Karla','Myrmidon','sword',   {bTotal:46,hp:20,str:7,skl:12,spd:12,lck:8,def:4,res:3,con:7},  {hp:60,str:25,skl:45,spd:55,lck:40,def:10,res:20,gTotal:255},'blue',2),
 
 U('Matthew','Thief','sword',    {bTotal:26,hp:18,str:4,skl:6,spd:10,lck:3,def:3,res:0,con:7},   {hp:75,str:30,skl:40,spd:70,lck:50,def:25,res:20,gTotal:310},'green'),
-U('Legault','Thief','sword',    {bTotal:37,hp:20,str:6,skl:8,spd:10,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:60,lck:60,def:25,res:25,gTotal:300},'purple',2),
+U('Legault','Thief','sword',    {bTotal:37,hp:20,str:6,skl:8,spd:10,lck:6,def:5,res:2,con:9},   {hp:60,str:25,skl:45,spd:50,lck:60,def:25,res:25,gTotal:290},'purple',2),
 U('Jaffar','Thief','sword',     {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6,res:3,con:8},  {hp:65,str:20,skl:45,spd:35,lck:15,def:20,res:20,gTotal:220},'red',4),
 
-U('Oswin','Knight','lance',     {bTotal:37,hp:24,str:11,skl:8,spd:4,lck:3,def:9,res:2,con:14},  {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:30,gTotal:310},'blue'),
-U('Wallace','Knight','lance',   {bTotal:42,hp:26,str:10,skl:6,spd:5,lck:8,def:12,res:1,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:35,gTotal:270},'blue',4),
+U('Oswin','Knight','lance',     {bTotal:37,hp:24,str:11,skl:8,spd:4,lck:3,def:9,res:2,con:14},  {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:20,gTotal:300},'blue'),
+U('Wallace','Knight','lance',   {bTotal:42,hp:26,str:10,skl:6,spd:5,lck:8,def:12,res:1,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:25,gTotal:260},'blue',4),
 U('Amelia','Knight','lance',    {bTotal:29,hp:18,str:5,skl:4,spd:4,lck:6,def:7,res:3,con:9},    {hp:75,str:50,skl:55,spd:50,lck:65,def:40,res:15,gTotal:350},'red'),
 
 U('Sain','Cavalier','lance',    {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
@@ -651,12 +684,7 @@ U('Moulder','Cleric','staff',   {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,r
 U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
 U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
 
-// Path of the Midnight Sun (Fire Emblem: The Midnight Sun) cameo units — ON HOLD
-// (card 6PcYVb66): commented out until real portraits are found, so they don't ship
-// with generic placeholder faces. Re-enable these three lines once art is added.
-// U('Ornieres','Lord','sword',    {bTotal:29,hp:19,str:6,skl:7,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:45,skl:50,spd:40,lck:35,def:45,res:20,gTotal:315},'gold'),
-// U('Shiori','Monk','light',      {bTotal:33,hp:17,str:4,skl:8,spd:7,lck:7,def:1,res:6,con:5},    {hp:55,str:40,skl:55,spd:50,lck:55,def:10,res:60,gTotal:325},'blue'),
-// U('Faratras','Shaman','dark',   {bTotal:35,hp:18,str:8,skl:6,spd:6,lck:5,def:3,res:7,con:4},    {hp:65,str:60,skl:40,spd:40,lck:30,def:15,res:55,gTotal:305},'purple'),
+  ...FEMS_BASES,
 ]
 function U(name: string, cls: string, weaponType: WeaponType, stats: BaseStatBlock, growths: GrowthBlock, palette: PaletteKey, startOffset = 0): UnitBase {
   return { name, cls, weaponType, stats, growths, palette, startOffset }
