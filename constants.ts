@@ -1,6 +1,6 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 
-export const APP_VERSION = '1.7.1-keyboard-hotkeys'
+export const APP_VERSION = '1.8.0-fems-units'
 
 type BoostPriceKey = StatKey | 'level'
 
@@ -174,23 +174,23 @@ type EnemyWeaponArena = { boss: EnemyWeaponRole; minion: EnemyWeaponRole }
 export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
   // Arena 1
   {
-    minion: { default: { normal: 10, uncommon: 0, rare: 0 }, good: { normal: 8, uncommon: 2, rare: 0 } },
+    minion: { default: { normal: 10, uncommon: 0, rare: 0 }, good: { normal: 6, uncommon: 4, rare: 0 } },
     boss: { default: { normal: 0, uncommon: 10, rare: 0 }, good: { normal: 0, uncommon: 10, rare: 0 } },
   },
   // Arena 2
   {
-    minion: { default: { normal: 6, uncommon: 3, rare: 0 }, good: { normal: 4, uncommon: 5, rare: 1 } },
+    minion: { default: { normal: 6, uncommon: 3, rare: 0 }, good: { normal: 2, uncommon: 7, rare: 1 } },
     boss: { default: { normal: 0, uncommon: 6, rare: 3 }, good: { normal: 0, uncommon: 6, rare: 3 } },
   },
   // Arena 3
   {
-    minion: { default: { normal: 3, uncommon: 6, rare: 0 }, good: { normal: 2, uncommon: 6, rare: 2 } },
-    boss: { default: { normal: 0, uncommon: 3, rare: 6 }, good: { normal: 0, uncommon: 3, rare: 6 } },
+    minion: { default: { normal: 3, uncommon: 6, rare: 1 }, good: { normal: 0, uncommon: 7, rare: 3 } },
+    boss: { default: { normal: 0, uncommon: 3, rare: 6 }, good: { normal: 0, uncommon: 2, rare: 6 } },
   },
   // Arena 4
   {
-    minion: { default: { normal: 1, uncommon: 4, rare: 4 }, good: { normal: 0, uncommon: 4, rare: 2 } },
-    boss: { default: { normal: 0, uncommon: 2, rare: 8 }, good: { normal: 0, uncommon: 2, rare: 8 } },
+    minion: { default: { normal: 0, uncommon: 7, rare: 3 }, good: { normal: 0, uncommon: 3, rare: 7 } },
+    boss: { default: { normal: 0, uncommon: 2, rare: 8 }, good: { normal: 0, uncommon: 0, rare: 10 } },
   },
 ]
 
@@ -200,16 +200,16 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
 // standard fight, 4 alongside a boss).
 export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'arena', [number, number]>[] = [
   { standard: [0, 1], regular: [0, 1], arena: [1, 2] }, // Arena 1
-  { standard: [0, 2], regular: [1, 1], arena: [1, 2] }, // Arena 2
-  { standard: [1, 3], regular: [1, 2], arena: [2, 3] }, // Arena 3
-  { standard: [3, 4], regular: [1, 3], arena: [3, 4] }, // Arena 4 (xcaKWDD9: standard [2,3]->[3,4])
+  { standard: [1, 2], regular: [1, 2], arena: [2, 2] }, // Arena 2
+  { standard: [2, 4], regular: [2, 2], arena: [3, 3] }, // Arena 3
+  { standard: [3, 4], regular: [3, 3], arena: [4, 4] }, // Arena 4 (xcaKWDD9: standard [2,3]->[3,4])
 ]
 
 // Base names that cannot appear as enemies in a given arena (keyed by 1-based arena index).
 // Used to keep high-stat prepromotes out of the early game. e.g. Wallace is a high-Def Knight
 // prepromote whose appearance in Arena 1 makes early fights unfair; he stays eligible in 2-4.
 export const ENEMY_ARENA_BANS: Record<number, string[]> = {
-  1: ['Wallace'],
+  1: ['Wallace', 'Athos'],
 }
 
 // Expected number of bonus skills / held items an enemy carries, by arena and role,

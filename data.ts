@@ -580,8 +580,8 @@ export const TEACHABLE_SKILLS: SkillData[] = [
 // A few near-zero stats were redistributed so units aren't degenerate (noted inline).
 // prettier-ignore
 export const FEMS_BASES: UnitBase[] = [
-U('Faratras','Shaman','dark',   {bTotal:41,hp:18,str:10,skl:8,spd:5,lck:8,def:7,res:3,con:5},   {hp:85,str:25,skl:50,spd:35,lck:60,def:55,res:25,gTotal:335},'purple'),
-U('Shiori','Monk','light',      {bTotal:42,hp:20,str:6,skl:8,spd:9,lck:7,def:4,res:8,con:5},    {hp:80,str:25,skl:60,spd:65,lck:65,def:30,res:45,gTotal:370},'blue'), // str growth 10 -> 25: a light mage with 10 never deals damage
+U('Faratras','Shaman','dark',   {bTotal:41,hp:18,str:10,skl:8,spd:5,lck:8,def:7,res:3,con:5},   {hp:85,str:60,skl:50,spd:35,lck:60,def:55,res:25,gTotal:370},'purple'),
+U('Shiori','Monk','light',      {bTotal:42,hp:20,str:6,skl:8,spd:9,lck:7,def:4,res:8,con:5},    {hp:80,str:40,skl:60,spd:65,lck:65,def:30,res:45,gTotal:385},'blue'), // str growth 10 -> 25: a light mage with 10 never deals damage
 U('Menmus','Wyvern','lance',    {bTotal:35,hp:23,str:9,skl:6,spd:6,lck:4,def:9,res:1,con:11},   {hp:85,str:55,skl:50,spd:40,lck:40,def:55,res:20,gTotal:345},'blue'),
 U('Quinn','Myrmidon','sword',   {bTotal:43,hp:20,str:9,skl:8,spd:8,lck:7,def:6,res:5,con:6},    {hp:80,str:60,skl:65,spd:55,lck:40,def:35,res:20,gTotal:355},'red'),
 U('Cattleya','Myrmidon','sword',{bTotal:39,hp:20,str:5,skl:8,spd:10,lck:8,def:4,res:4,con:6},   {hp:65,str:40,skl:55,spd:70,lck:45,def:30,res:40,gTotal:345},'purple'),
@@ -605,7 +605,7 @@ U('Poledra','Monk','light',     {bTotal:28,hp:19,str:4,skl:8,spd:6,lck:2,def:1,r
 ]
 
 // prettier-ignore
-export const BASES: UnitBase[] = [
+export const FE_BASES: UnitBase[] = [
   // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
 U('Lyn','Lord','sword',         {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
 U('Eliwood','Lord','sword',     {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
@@ -683,7 +683,10 @@ U('Priscilla','Cleric','staff', {bTotal:33,hp:16,str:3,skl:6,spd:8,lck:7,def:3,r
 U('Moulder','Cleric','staff',   {bTotal:27,hp:20,str:4,skl:6,spd:6,lck:2,def:4,res:5,con:9},    {hp:70,str:40,skl:50,spd:40,lck:20,def:25,res:25,gTotal:270},'blue'),
 U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,res:6,con:4},    {hp:50,str:60,skl:25,spd:40,lck:60,def:15,res:55,gTotal:305},'green'),
 U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
+]
 
+export const BASES = [
+  // ...FE_BASES,
   ...FEMS_BASES,
 ]
 function U(name: string, cls: string, weaponType: WeaponType, stats: BaseStatBlock, growths: GrowthBlock, palette: PaletteKey, startOffset = 0): UnitBase {
