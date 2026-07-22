@@ -1,4 +1,4 @@
-import { APP_VERSION } from '../constants'
+import { APP_VERSION } from '../config'
 import { makeArenaPlan, renderArenaMap } from './arenas'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'

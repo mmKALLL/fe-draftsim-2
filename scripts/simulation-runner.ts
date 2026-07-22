@@ -29,7 +29,7 @@ import { randomDraftOptions } from '../src/render'
 import { makeArenaPlan } from '../src/arenas'
 import { applySimSeed, pick } from '../src/utils'
 import { BASES } from '../data'
-import { ROSTER_SIZE } from '../constants'
+import { ROSTER_SIZE } from '../config'
 import type { RunStat } from '../src/stats'
 
 /* -------------------------------------------------------------- CLI parsing */

@@ -1,4 +1,4 @@
-import { FEMP_ASSET_ROOT, FEMP_IMAGE_EXTS, MAP_SPRITE_SLOT_H } from '../constants'
+import { FEMP_ASSET_ROOT, FEMP_IMAGE_EXTS, MAP_SPRITE_SLOT_H } from '../config'
 import { CLASSES, CUSTOM_MAP_SPRITE_STEMS, FEMP_NAME_OVERRIDES } from '../data'
 import { focusLabel } from './arenas'
 import { $ } from './utils'

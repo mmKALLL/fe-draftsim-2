@@ -1,4 +1,4 @@
-import { ARENA_AVOID_DELTA, ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, ARENA_FOCUS_CHANCE, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA } from '../constants'
+import { ARENA_AVOID_DELTA, ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, ARENA_FOCUS_CHANCE, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA } from '../config'
 import { ARENAS } from '../data'
 import { assetImg, htmlAttr, mapSpriteForFocus } from './assets'
 import { setStatus } from './combat'

@@ -10,7 +10,7 @@
 // rather than a single hardcoded "strong" threshold, so finer-grained stats stay computable.
 import { BASES } from '../data'
 import { state } from './state'
-import { APP_VERSION } from '../constants'
+import { APP_VERSION } from '../config'
 import type { UnitBase } from '../types'
 
 const STATS_KEY = 'firerogue.stats.v5'

@@ -10,7 +10,7 @@ import {
   GROWTH_STAT_KEYS,
   PROMOTION_UNLOCK_AFTER_BATTLE,
   WEAPON_RANK_RARITY,
-} from '../constants'
+} from '../config'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
 import { computeMaxHp, sleep, statLabel } from './combat'
 import { logLine } from './render'

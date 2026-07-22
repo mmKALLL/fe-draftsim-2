@@ -12,5 +12,5 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["constants.ts", "data.ts", "types.ts", "src/**/*.ts", "vite.config.ts"]
+  "include": ["config.ts", "data.ts", "types.ts", "src/**/*.ts", "vite.config.ts"]
 }

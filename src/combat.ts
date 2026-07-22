@@ -1,4 +1,4 @@
-import { ARENA_AVOID_DELTA, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../constants'
+import { ARENA_AVOID_DELTA, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
 import { activeArenaEffects, activeArenaEntry, arenaEffectMultiplier, hasArenaEffect } from './arenas'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
