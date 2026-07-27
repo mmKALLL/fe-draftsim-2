@@ -241,11 +241,23 @@ export const ENEMY_BONUS_RARITY: Record<'boss' | 'minion', EnemyWeaponRarityWeig
   { boss: { normal: 0, uncommon: 30, rare: 60 }, minion: { normal: 10, uncommon: 45, rare: 25 } },
 ]
 
+// Speed-based hit multipliers (9nK1J9Jo): a unit makes `hits` strikes when its
+// attack-speed advantage over the target reaches `minAsAdvantage`. Ascending order;
+// the highest matched tier wins (below the first tier = a single hit). Extendable to
+// any number of tiers. Tiers above double (3x+) are gated behind the extraHits setting.
+export const MULTI_HIT_THRESHOLDS: { minAsAdvantage: number; hits: number }[] = [
+  { minAsAdvantage: 4, hits: 2 }, // classic doubling
+  { minAsAdvantage: 10, hits: 3 }, // triple at +10 attack speed
+]
+
 // ─── Player settings (2aUH6Skw) ──────────────────────────────────────────────
 // Values a setting tunes are `export let` (not const) so a setting's apply() can
 // reassign them; ESM live bindings then propagate the new value to every module
 // that reads it at call time. Only values a setting actually touches need be let.
 export let SHOW_VICTORY_LOG = true
+// When false (default), speed multipliers cap at double (classic rule); the extraHits
+// setting toggles the 3x+ tiers of MULTI_HIT_THRESHOLDS on.
+export let MULTI_HIT_EXTRA_TIERS = false
 
 export type SettingValue = boolean | string | string[]
 export type SettingDef = {
@@ -286,5 +298,15 @@ export const SETTINGS: SettingDef[] = [
     default: gameOrigins(),
     options: gameOrigins().map((g) => ({ value: g, label: GAME_LABELS[g] || g })),
     apply: (v) => setEnabledGames(new Set(Array.isArray(v) ? v : [])),
+  },
+  {
+    key: 'extraHits',
+    label: 'Triple hits at high speed',
+    description: 'Enables 3× (and higher) hits when attack speed greatly exceeds the target’s. Off = classic double-only.',
+    type: 'toggle',
+    default: false,
+    apply: (v) => {
+      MULTI_HIT_EXTRA_TIERS = v === true
+    },
   },
 ]

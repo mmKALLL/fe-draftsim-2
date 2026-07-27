@@ -620,6 +620,10 @@ button:disabled {
   color: #22e06b;
   font-weight: 700;
 }
+.combatPreview .attackCountTriple {
+  color: #fb923c;
+  font-weight: 750;
+}
 .combatPreview .attackCountQuad {
   color: #e879f9;
   font-weight: 800;

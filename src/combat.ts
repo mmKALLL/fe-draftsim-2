@@ -1,4 +1,4 @@
-import { ARENA_AVOID_DELTA, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA, DEBUG_SKILLS, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
+import { ARENA_AVOID_DELTA, ARENA_SPEED_MULTIPLIER, ARENA_STAT_DELTA, DEBUG_SKILLS, MULTI_HIT_EXTRA_TIERS, MULTI_HIT_THRESHOLDS, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BOSS_NAMES_BY_CLASS, CLASSES, CLASS_TAGS } from '../data'
 import { activeArenaEffects, activeArenaEntry, arenaEffectMultiplier, hasArenaEffect } from './arenas'
 import { logLine, renderConsumables, renderSideCards, renderTeams } from './render'
@@ -352,9 +352,10 @@ export function combatPreviewHTML(actor: Unit, target: Unit) {
   const hit = displayedHit(actor, target),
     crit = critRate(actor, target),
     dmg = rawDamage(actor, target),
-    hits = (canDouble(actor, target) ? 2 : 1) * (actor.weapon?.brave ? 2 : 1),
+    hits = speedRounds(actor, target) * (actor.weapon?.brave ? 2 : 1),
     dmgClass = dmg < 3 ? 'lowDamage' : isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : '',
-    hitCountClass = hits >= 4 ? 'attackCount attackCountQuad' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
+    hitCountClass =
+      hits >= 4 ? 'attackCount attackCountQuad' : hits === 3 ? 'attackCount attackCountTriple' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
   return `<div><span class="${triangleClass(actor, target)}"${hitColorStyle(actor, target, hit)}>${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
 }
 export function classAbbrev(cls: string) {
@@ -404,10 +405,24 @@ export function enemyDisplayName(u: Unit) {
   if (bossName) return bossName
   return classAbbrev(u.displayCls)
 }
+// The attacker (a) always initiates here, so its 'playerPhase' Spd bonus (Darting
+// Blow) boosts its attack speed for the doubling check only — not the defender's.
+export function asAdvantage(a: Unit, d: Unit) {
+  return attackSpeed(a) + playerPhaseStat(a, 'spd') - attackSpeed(d)
+}
 export function canDouble(a: Unit, d: Unit) {
-  // The attacker (a) always initiates here, so its 'playerPhase' Spd bonus (Darting
-  // Blow) boosts its attack speed for the doubling check only — not the defender's.
-  return attackSpeed(a) + playerPhaseStat(a, 'spd') - attackSpeed(d) >= 4
+  return asAdvantage(a, d) >= (MULTI_HIT_THRESHOLDS[0]?.minAsAdvantage ?? 4)
+}
+// Speed-based strike count (1/2/3/…) from MULTI_HIT_THRESHOLDS: the highest tier whose
+// minAsAdvantage the attacker meets. Tiers above double (3x+) only count when the
+// extra-hits setting is on. Multiplied by brave (×2) at the call sites.
+export function speedRounds(a: Unit, d: Unit) {
+  const adv = asAdvantage(a, d)
+  let hits = 1
+  for (const t of MULTI_HIT_THRESHOLDS) {
+    if (adv >= t.minAsAdvantage && (MULTI_HIT_EXTRA_TIERS || t.hits <= 2)) hits = t.hits
+  }
+  return hits
 }
 // Healtouch (family 'staff', healBonus N): the user's healing staves restore +N HP.
 export function staffHealBonus(a: Unit) {
@@ -848,7 +863,7 @@ export function expectedDamage(a: Unit, d: Unit) {
   const hit = displayedHit(a, d) / 100,
     crit = critRate(a, d) / 100,
     dmg = rawDamage(a, d)
-  const strikes = canDouble(a, d) ? 2 : 1
+  const strikes = speedRounds(a, d)
   return hit * dmg * (1 + 2 * crit) * strikes
 }
 export function avgExpectedDamage(a: Unit, foes: Unit[]) {
@@ -1338,7 +1353,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
   const targets = foes.filter((x: any) => x.hp > 0)
   if (!targets.length) return
   const target = forcedTarget || pick(targets)
-  const rounds = canDouble(actor, target) ? 2 : 1
+  const rounds = speedRounds(actor, target)
   const braveStrikes = actor.weapon?.brave ? 2 : 1
   for (let round = 0; round < rounds && target.hp > 0; round++) {
     for (let b = 0; b < braveStrikes && target.hp > 0; b++) {
