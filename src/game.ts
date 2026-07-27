@@ -98,10 +98,6 @@ export function generateEnemy() {
     // wield a sword; force the sword type so enemyWeaponFor picks from the sword pool.
     if (e.kind === 'lord' && !e.promoted && e.weaponType !== 'sword') e.weaponType = 'sword'
     e.weapon = enemyWeaponFor(e, e.bossTier, !!isBossSlot || goodMinionSlots.has(i))
-    // Arenas 3/4: extra weapon forges make enemies hit harder late (EaM4uENF).
-    // forgeWeapon is a no-op on staves, so clerics are unaffected.
-    const [fMin, fMax] = ARENA_ENEMY_FORGE_RANGE[arena - 1] || [0, 0]
-    for (let f = fMin + rint(fMax - fMin + 1); f > 0; f--) forgeWeapon(e.weapon)
     e.name = enemyDisplayName(e)
     assignEnemyBonuses(e, isBossSlot ? 'boss' : 'minion')
     e.hp = e.maxHp
@@ -114,6 +110,12 @@ export function generateEnemy() {
   if (staffUnits.length >= 2) {
     for (const e of staffUnits.slice(0, -1)) e.weapon = clericStatusOrHealStaff(e)
   }
+  // Extra weapon forges for the arena (EaM4uENF), rolled once as a TEAM budget — not per
+  // enemy — and handed to random non-staff enemies (stacking allowed). Runs after cleric
+  // staff reassignment so only final, non-staff weapons are eligible.
+  const [fMin, fMax] = ARENA_ENEMY_FORGE_RANGE[arena - 1] || [0, 0]
+  const forgeable = state.enemy.filter((e) => e.weapon && !e.weapon.staff)
+  if (forgeable.length) for (let f = fMin + rint(fMax - fMin + 1); f > 0; f--) forgeWeapon(pick(forgeable).weapon)
   state.ui.activePreviewActor = null
   state.combat.nextEnemyMarkerId = null
   state.combat.turn = 0
