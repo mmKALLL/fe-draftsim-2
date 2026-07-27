@@ -222,7 +222,7 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const weaponDanger = isEnemy && u.weapon && enemyWeaponDangerous(u) ? ' weaponDanger' : !isEnemy && u.weapon?.rank === 'S' ? ' weaponSrank' : ''
   const weaponLine = u.weapon ? `<div class="small weaponLine${weaponDanger}" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
   // Base combat output on the center card (143HUpzn): damage · attack speed (AS only for staves).
-  const dmgAs = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${displayAttackPower(u)} dmg · ${attackSpeed(u)} AS`
+  const dmgAs = u.weapon?.staff ? `${attackSpeed(u)}as` : `${displayAttackPower(u)}at / ${attackSpeed(u)}as`
   const dmgAsLine = `<div class="small combatDmgAs">${dmgAs}</div>`
   // Skill + held-item names on the center card (148AGTes), below the dmg/AS line.
   const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${u.heldItem.name}</div>` : ''
