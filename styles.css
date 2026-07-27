@@ -1149,3 +1149,26 @@ h4 {
 #statsDetail h3 {
   margin-top: 12px;
 }
+/* Settings screen (2aUH6Skw) */
+.settingItem {
+  margin: 12px 0;
+}
+.settingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settingDesc {
+  margin: 4px 0 0;
+}
+.settingMultiGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+.settingMulti {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

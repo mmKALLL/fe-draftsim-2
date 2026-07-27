@@ -1,4 +1,5 @@
-import { APP_VERSION } from '../config'
+import { APP_VERSION, SETTINGS, type SettingDef } from '../config'
+import { getSetting, setSetting } from './settings'
 import { makeArenaPlan, renderArenaMap } from './arenas'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
@@ -239,6 +240,45 @@ document.addEventListener('click', (e) => {
   if (t && t.closest('[data-reset]')) resetRun()
   else if (t && t.closest('[data-close]')) closeModal()
 })
+function settingControlHTML(def: SettingDef): string {
+  const cur = getSetting(def.key)
+  const desc = def.description ? `<p class="small settingDesc">${def.description}</p>` : ''
+  let control: string
+  if (def.type === 'toggle') {
+    control = `<label class="settingRow"><input type="checkbox" data-key="${def.key}"${cur === true ? ' checked' : ''} /> <span>${def.label}</span></label>`
+  } else if (def.type === 'choice') {
+    const opts = (def.options || []).map((o) => `<option value="${o.value}"${o.value === cur ? ' selected' : ''}>${o.label}</option>`).join('')
+    control = `<label class="settingRow"><span>${def.label}</span> <select data-key="${def.key}">${opts}</select></label>`
+  } else {
+    const arr = Array.isArray(cur) ? cur : []
+    const boxes = (def.options || [])
+      .map((o) => `<label class="settingMulti"><input type="checkbox" data-key="${def.key}" data-value="${o.value}"${arr.includes(o.value) ? ' checked' : ''} /> ${o.label}</label>`)
+      .join('')
+    control = `<div class="settingRow"><span>${def.label}</span><div class="settingMultiGroup">${boxes}</div></div>`
+  }
+  return `<div class="settingItem">${control}${desc}</div>`
+}
+export function showSettings() {
+  const body = SETTINGS.map(settingControlHTML).join('')
+  showModal(`<h2>Settings</h2>${body || '<p class="small">No settings available yet.</p>'}<button data-close class="good">Back</button>`)
+  const root = $('modalBody')
+  if (!root) return
+  root.querySelectorAll('[data-key]').forEach((el: any) => {
+    el.onchange = () => {
+      const key = el.getAttribute('data-key')
+      const def = SETTINGS.find((d) => d.key === key)
+      if (!def) return
+      if (def.type === 'toggle') setSetting(key, el.checked)
+      else if (def.type === 'choice') setSetting(key, el.value)
+      else {
+        const values = Array.from(root.querySelectorAll(`[data-key="${key}"]`))
+          .filter((c: any) => c.checked)
+          .map((c: any) => c.getAttribute('data-value'))
+        setSetting(key, values)
+      }
+    }
+  })
+}
 export function showMenu() {
   $('menuScreen').classList.remove('hidden')
   $('menuVersion').textContent = `Version ${APP_VERSION}`

@@ -1,16 +1,22 @@
 import { $, pick } from './utils'
 import { state } from './state'
-import { startRandomGame, startDraftGame, showHelpRules, showStatistics, openMusic, showMenu, resetRun } from './ui'
+import { startRandomGame, startDraftGame, showHelpRules, showStatistics, showSettings, openMusic, showMenu, resetRun } from './ui'
 import { renderDraft, randomDraftOptions, emptyRosterChoices } from './render'
 import { setAutoFight } from './arenas'
 import { startRun, debugWinBattle, debugAddGeosphere } from './game'
 import { goldReward } from './rewards'
 import { applyReward, leaveShop } from './shop'
+import { loadSettings, applyAll } from './settings'
+
+// Load + apply persisted player settings before anything reads config.
+loadSettings()
+applyAll()
 
 $('menuRandomBtn').onclick = startRandomGame
 $('menuDraftBtn').onclick = startDraftGame
 $('menuHelpBtn').onclick = showHelpRules
 $('menuStatsBtn').onclick = showStatistics
+$('menuSettingsBtn').onclick = showSettings
 $('menuMusicBtn').onclick = openMusic
 $('randomPickBtn').onclick = () => {
   // Fill only the unselected slots at random, keeping existing picks; but if every

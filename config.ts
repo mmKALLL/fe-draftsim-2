@@ -239,3 +239,34 @@ export const ENEMY_BONUS_RARITY: Record<'boss' | 'minion', EnemyWeaponRarityWeig
   // Arena 4
   { boss: { normal: 0, uncommon: 30, rare: 60 }, minion: { normal: 10, uncommon: 45, rare: 25 } },
 ]
+
+// ─── Player settings (2aUH6Skw) ──────────────────────────────────────────────
+// Values a setting tunes are `export let` (not const) so a setting's apply() can
+// reassign them; ESM live bindings then propagate the new value to every module
+// that reads it at call time. Only values a setting actually touches need be let.
+export let SHOW_VICTORY_LOG = true
+
+export type SettingValue = boolean | string | string[]
+export type SettingDef = {
+  key: string // stable storage id — never rename or reuse (persisted in localStorage)
+  label: string
+  description?: string
+  type: 'toggle' | 'choice' | 'multi'
+  default: SettingValue
+  options?: { value: string; label: string }[] // for 'choice' / 'multi'
+  apply: (value: SettingValue) => void // writes the value's effect into the bindings above
+}
+// Setting definitions: rendered by the settings screen, persisted + applied by
+// src/settings.ts. Each apply() maps this setting's value onto config bindings.
+export const SETTINGS: SettingDef[] = [
+  {
+    key: 'showVictoryLog',
+    label: 'Show victory log line',
+    description: 'Print the "Victory in N actions" line in the combat log after winning a battle.',
+    type: 'toggle',
+    default: true,
+    apply: (v) => {
+      SHOW_VICTORY_LOG = v === true
+    },
+  },
+]
