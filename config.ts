@@ -226,7 +226,7 @@ type EnemyBonusRole = { skill: number; held: number }
 type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
 // Skill/held-item counts per arena at each difficulty (cxq8vZVL). HARD = the tuned
 // baseline. Explicit tables (not a shift) since Normal/Lunatic add or remove skills
-// where the base is 0. setDifficulty() below swaps the active table.
+// where the base is 0. setSkillDifficulty() below swaps the active table.
 const ENEMY_BONUS_COUNTS_HARD: EnemyBonusArena[] = [
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
@@ -282,9 +282,9 @@ export let MULTI_HIT_EXTRA_TIERS = false
 // damage line. Off (default) keeps the small cards compact (weapon + damage only).
 export let SHOW_COMBAT_LOADOUT_NAMES = false
 
-// Difficulty (cxq8vZVL): swaps the active enemy skill/good-weapon tables. Hard is the
-// tuned baseline; Normal shifts good-weapon minion counts down 1 with softer skill counts,
-// Lunatic shifts good weapons up with harsher skill counts.
+// Difficulty (cxq8vZVL, split per 17NQLJnh): the skill axis swaps the active enemy
+// skill/held-item table; the weapon axis shifts good-weapon minion counts. Hard is the
+// tuned baseline; Normal is softer, Lunatic harsher.
 export type DifficultyLevel = 'normal' | 'hard' | 'lunatic'
 const shiftRange = (r: [number, number], d: number): [number, number] => [Math.min(4, Math.max(0, r[0] + d)), Math.min(4, Math.max(0, r[1] + d))]
 const shiftGoodMinion = (base: GoodMinionCount[], d: number): GoodMinionCount[] =>
@@ -294,8 +294,13 @@ const DIFFICULTY_BONUS: Record<DifficultyLevel, EnemyBonusArena[]> = {
   hard: ENEMY_BONUS_COUNTS_HARD,
   lunatic: ENEMY_BONUS_COUNTS_LUNATIC,
 }
-export function setDifficulty(level: DifficultyLevel) {
+// Difficulty is split into two independent axes (17NQLJnh): enemy SKILLS (bonus skill/held
+// items, via ENEMY_BONUS_COUNTS) and enemy WEAPONS (good-weapon minion counts, via
+// ENEMY_GOOD_MINION_COUNT). Each gets its own Normal/Hard/Lunatic setting.
+export function setSkillDifficulty(level: DifficultyLevel) {
   ENEMY_BONUS_COUNTS = DIFFICULTY_BONUS[level]
+}
+export function setWeaponDifficulty(level: DifficultyLevel) {
   ENEMY_GOOD_MINION_COUNT = shiftGoodMinion(ENEMY_GOOD_MINION_HARD, level === 'normal' ? -1 : level === 'lunatic' ? 2 : 0)
 }
 
@@ -367,9 +372,9 @@ export const SETTINGS: SettingDef[] = [
     },
   },
   {
-    key: 'difficulty',
-    label: 'Difficulty',
-    description: "Affects likelihood of skills and rare weapons on enemies. Hard is the game's original difficulty.",
+    key: 'difficultySkills',
+    label: 'Enemy skills',
+    description: 'How often enemies carry bonus skills and held items. Hard is the game’s original difficulty.',
     type: 'choice',
     default: 'hard',
     options: [
@@ -377,7 +382,20 @@ export const SETTINGS: SettingDef[] = [
       { value: 'hard', label: 'Hard' },
       { value: 'lunatic', label: 'Lunatic' },
     ],
-    apply: (v) => setDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
+    apply: (v) => setSkillDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
+  },
+  {
+    key: 'difficultyWeapons',
+    label: 'Enemy weapons',
+    description: 'How often enemies carry good (non-basic) weapons. Hard is the game’s original difficulty.',
+    type: 'choice',
+    default: 'hard',
+    options: [
+      { value: 'normal', label: 'Normal' },
+      { value: 'hard', label: 'Hard' },
+      { value: 'lunatic', label: 'Lunatic' },
+    ],
+    apply: (v) => setWeaponDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
   },
   {
     key: 'goldMethod',
