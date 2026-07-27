@@ -1172,3 +1172,27 @@ h4 {
   align-items: center;
   gap: 6px;
 }
+/* Game-origin tag on draft cards (bpcceA3c) */
+.originTag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0 5px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+  color: #fff;
+  background: var(--muted);
+}
+.origin-fe6 {
+  background: #6b8e23;
+}
+.origin-fe7 {
+  background: #3a6ea5;
+}
+.origin-fe8 {
+  background: #a5433a;
+}
+.origin-fems {
+  background: #7a3aa5;
+}

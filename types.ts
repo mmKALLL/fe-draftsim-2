@@ -90,6 +90,7 @@ export type UnitBase = {
   growths: GrowthBlock
   palette: PaletteKey
   startOffset: number
+  origin?: string // origin game (FE6/FE7/FE8/FEMS); tagged when composing ALL_BASES
 }
 
 export type ArenaFocus = {

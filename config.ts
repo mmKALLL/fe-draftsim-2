@@ -1,6 +1,7 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
+import { gameOrigins, setEnabledGames } from './data'
 
-export const APP_VERSION = '1.8.0-fems-units'
+export const APP_VERSION = '1.9.0-settings'
 
 type BoostPriceKey = StatKey | 'level'
 
@@ -125,7 +126,7 @@ export const ARENA_ENEMY_FORGE_RANGE: [number, number][] = [
 // Boss max-HP multipliers. Mid (battle-3) bosses keep their standard multiplier;
 // arena (battle-5) bosses hit harder in the last two arenas (index >= 2).
 export const MID_BOSS_HP_MULT = 1.25
-export const ARENA_BOSS_HP_MULT = 1.25
+export const ARENA_BOSS_HP_MULT = 1.33
 export const ARENA_BOSS_HP_MULT_LATE = 1.5
 
 // Debug: skills appear ~10x more often as rewards and attack procs always fire.
@@ -179,18 +180,18 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
   },
   // Arena 2
   {
-    minion: { default: { normal: 6, uncommon: 3, rare: 0 }, good: { normal: 2, uncommon: 7, rare: 1 } },
+    minion: { default: { normal: 6, uncommon: 4, rare: 0 }, good: { normal: 2, uncommon: 6, rare: 2 } },
     boss: { default: { normal: 0, uncommon: 6, rare: 3 }, good: { normal: 0, uncommon: 6, rare: 3 } },
   },
   // Arena 3
   {
-    minion: { default: { normal: 3, uncommon: 6, rare: 1 }, good: { normal: 0, uncommon: 7, rare: 3 } },
+    minion: { default: { normal: 1, uncommon: 5, rare: 1 }, good: { normal: 0, uncommon: 6, rare: 4 } },
     boss: { default: { normal: 0, uncommon: 3, rare: 6 }, good: { normal: 0, uncommon: 2, rare: 6 } },
   },
   // Arena 4
   {
-    minion: { default: { normal: 0, uncommon: 7, rare: 3 }, good: { normal: 0, uncommon: 3, rare: 7 } },
-    boss: { default: { normal: 0, uncommon: 2, rare: 8 }, good: { normal: 0, uncommon: 0, rare: 10 } },
+    minion: { default: { normal: 0, uncommon: 7, rare: 3 }, good: { normal: 0, uncommon: 0, rare: 10 } },
+    boss: { default: { normal: 0, uncommon: 0, rare: 10 }, good: { normal: 0, uncommon: 0, rare: 10 } },
   },
 ]
 
@@ -200,8 +201,8 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
 // standard fight, 4 alongside a boss).
 export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'arena', [number, number]>[] = [
   { standard: [0, 1], regular: [0, 1], arena: [1, 2] }, // Arena 1
-  { standard: [1, 2], regular: [1, 2], arena: [2, 2] }, // Arena 2
-  { standard: [2, 4], regular: [2, 2], arena: [3, 3] }, // Arena 3
+  { standard: [1, 3], regular: [2, 2], arena: [3, 3] }, // Arena 2
+  { standard: [2, 4], regular: [3, 3], arena: [4, 4] }, // Arena 3
   { standard: [3, 4], regular: [3, 3], arena: [4, 4] }, // Arena 4 (xcaKWDD9: standard [2,3]->[3,4])
 ]
 
@@ -222,7 +223,7 @@ type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
 export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
-  { boss: { skill: 1, held: 0 }, minion: { skill: 0.1, held: 0 } }, // Arena 3
+  { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
   { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0 } }, // Arena 4
 ]
 // Rarity weights {normal, uncommon, rare} for an enemy's BONUS skill / held item, by arena
@@ -258,6 +259,14 @@ export type SettingDef = {
 }
 // Setting definitions: rendered by the settings screen, persisted + applied by
 // src/settings.ts. Each apply() maps this setting's value onto config bindings.
+// Display labels for the game-origin filter options (bpcceA3c); falls back to the
+// raw origin code for any origin not listed here.
+const GAME_LABELS: Record<string, string> = {
+  FE6: 'FE6 · Binding Blade',
+  FE7: 'FE7 · Blazing Sword',
+  FE8: 'FE8 · Sacred Stones',
+  FEMS: 'FE:MS · Midnight Sun',
+}
 export const SETTINGS: SettingDef[] = [
   {
     key: 'showVictoryLog',
@@ -268,5 +277,14 @@ export const SETTINGS: SettingDef[] = [
     apply: (v) => {
       SHOW_VICTORY_LOG = v === true
     },
+  },
+  {
+    key: 'enabledGames',
+    label: 'Character origin games',
+    description: 'Which games’ characters can be drafted and appear as enemies. Options are derived from the roster; default enables all.',
+    type: 'multi',
+    default: gameOrigins(),
+    options: gameOrigins().map((g) => ({ value: g, label: GAME_LABELS[g] || g })),
+    apply: (v) => setEnabledGames(new Set(Array.isArray(v) ? v : [])),
   },
 ]

@@ -625,7 +625,7 @@ U('Jaffar','Thief','sword',     {bTotal:46,hp:21,str:8,skl:12,spd:12,lck:5,def:6
 
 U('Oswin','Knight','lance',     {bTotal:37,hp:24,str:11,skl:8,spd:4,lck:3,def:9,res:2,con:14},  {hp:90,str:40,skl:30,spd:30,lck:35,def:55,res:20,gTotal:300},'blue'),
 U('Wallace','Knight','lance',   {bTotal:42,hp:26,str:10,skl:6,spd:5,lck:8,def:12,res:1,con:13}, {hp:70,str:45,skl:35,spd:20,lck:30,def:35,res:25,gTotal:260},'blue',4),
-U('Amelia','Knight','lance',    {bTotal:29,hp:18,str:5,skl:4,spd:4,lck:6,def:7,res:3,con:9},    {hp:75,str:50,skl:55,spd:50,lck:65,def:45,res:15,gTotal:355},'red'),
+U('Amelia','Knight','lance',    {bTotal:27,hp:18,str:5,skl:4,spd:4,lck:6,def:5,res:3,con:9},    {hp:80,str:65,skl:60,spd:50,lck:65,def:45,res:15,gTotal:380},'red'),
 
 U('Sain','Cavalier','lance',    {bTotal:28,hp:20,str:8,skl:4,spd:6,lck:4,def:6,res:0,con:9},    {hp:80,str:60,skl:35,spd:40,lck:35,def:20,res:20,gTotal:290},'green'),
 U('Kent','Cavalier','sword',    {bTotal:27,hp:20,str:6,skl:6,spd:7,lck:2,def:5,res:1,con:9},    {hp:85,str:40,skl:50,spd:45,lck:20,def:25,res:25,gTotal:290},'red'),
@@ -646,7 +646,7 @@ U('Dorcas','Fighter','axe',     {bTotal:26,hp:30,str:7,skl:7,spd:6,lck:3,def:3,r
 U('Bartre','Fighter','axe',     {bTotal:25,hp:29,str:9,skl:5,spd:3,lck:4,def:4,res:0,con:13},   {hp:85,str:50,skl:35,spd:40,lck:30,def:30,res:25,gTotal:295},'red'),
 U('Geitz','Fighter','axe',      {bTotal:38,hp:27,str:10,skl:8,spd:8,lck:5,def:6,res:1,con:13},  {hp:85,str:50,skl:40,spd:40,lck:40,def:20,res:20,gTotal:295},'green'),
 U('Garcia','Fighter','axe',     {bTotal:29,hp:28,str:8,skl:7,spd:6,lck:3,def:5,res:0,con:13},   {hp:80,str:65,skl:40,spd:30,lck:40,def:25,res:15,gTotal:295},'gold'),
-U('Ross','Fighter','axe',       {bTotal:28,hp:22,str:6,skl:4,spd:5,lck:8,def:4,res:1,con:8},    {hp:90,str:65,skl:45,spd:40,lck:50,def:30,res:25,gTotal:345},'blue'),
+U('Ross','Fighter','axe',       {bTotal:27,hp:22,str:5,skl:4,spd:5,lck:8,def:4,res:1,con:8},    {hp:95,str:75,skl:50,spd:40,lck:50,def:30,res:30,gTotal:370},'blue'),
 U('Dart','Fighter','axe',       {bTotal:31,hp:25,str:8,skl:5,spd:8,lck:3,def:6,res:1,con:10},   {hp:70,str:65,skl:20,spd:60,lck:35,def:20,res:15,gTotal:285},'red'),
 U('Hawkeye','Fighter','axe',    {bTotal:42,hp:28,str:10,skl:8,spd:6,lck:7,def:8,res:3,con:16},  {hp:50,str:40,skl:30,spd:25,lck:40,def:20,res:35,gTotal:240},'gold',4),
 
@@ -663,7 +663,7 @@ U('Pent','Mage','anima',        {bTotal:45,hp:22,str:8,skl:9,spd:10,lck:7,def:4,
 U('Lute','Mage','anima',        {bTotal:35,hp:17,str:6,skl:6,spd:7,lck:8,def:3,res:5,con:3},    {hp:45,str:65,skl:30,spd:45,lck:45,def:15,res:40,gTotal:285},'purple'),
 U('Saleh','Mage','anima',       {bTotal:40,hp:23,str:8,skl:8,spd:8,lck:5,def:5,res:6,con:8},    {hp:70,str:40,skl:40,spd:40,lck:30,def:25,res:45,gTotal:290},'gold'),
 U('Athos','Mage','anima',       {bTotal:49,hp:24,str:10,skl:10,spd:8,lck:5,def:6,res:10,con:9}, {hp:40,str:30,skl:30,spd:20,lck:25,def:20,res:40,gTotal:205},'gold',4),
-U('Ewan','Mage','anima',        {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:65,str:65,skl:55,spd:50,lck:65,def:15,res:50,gTotal:365},'red'),
+U('Ewan','Mage','anima',        {bTotal:21,hp:15,str:3,skl:4,spd:5,lck:5,def:1,res:3,con:5},    {hp:65,str:70,skl:60,spd:55,lck:65,def:15,res:60,gTotal:390},'red'),
 
 U('Lucius','Monk','light',      {bTotal:32,hp:18,str:7,skl:6,spd:10,lck:2,def:1,res:6,con:6},   {hp:55,str:60,skl:50,spd:40,lck:20,def:10,res:60,gTotal:295},'blue'),
 U('Renault','Monk','light',     {bTotal:38,hp:22,str:7,skl:8,spd:7,lck:4,def:5,res:7,con:9},    {hp:60,str:40,skl:40,spd:35,lck:30,def:25,res:45,gTotal:275},'red'),
@@ -685,10 +685,37 @@ U('Natasha','Cleric','staff',   {bTotal:27,hp:18,str:2,skl:4,spd:7,lck:6,def:2,r
 U('L’Arachel','Cleric','staff', {bTotal:36,hp:18,str:4,skl:5,spd:8,lck:9,def:3,res:7,con:5},    {hp:45,str:50,skl:45,spd:45,lck:65,def:15,res:50,gTotal:315},'gold'),
 ]
 
-export const BASES = [
-  // ...FE_BASES,
-  ...FEMS_BASES,
-]
+// Per-unit origin game for the FE_BASES roster; FEMS_BASES are all 'FEMS'. Drives the
+// game-origin filter setting (bpcceA3c). Verified against the FE character lists.
+// Karel/Marcus/Bartre debut in FE6 but are tagged FE7 to match how this FE7-themed
+// game uses them (a deliberate choice over strict debut game).
+// prettier-ignore
+export const FE_ORIGINS: Record<string, string> = {
+  // FE7 — Blazing Sword
+  Lyn: 'FE7', Eliwood: 'FE7', Hector: 'FE7', Raven: 'FE7', Harken: 'FE7', Guy: 'FE7', Karel: 'FE7', Karla: 'FE7',
+  Matthew: 'FE7', Legault: 'FE7', Jaffar: 'FE7', Oswin: 'FE7', Wallace: 'FE7', Sain: 'FE7', Kent: 'FE7', Lowen: 'FE7',
+  Marcus: 'FE7', Isadora: 'FE7', Florina: 'FE7', Fiora: 'FE7', Farina: 'FE7', Heath: 'FE7', Vaida: 'FE7', Dorcas: 'FE7',
+  Bartre: 'FE7', Geitz: 'FE7', Dart: 'FE7', Hawkeye: 'FE7', Rebecca: 'FE7', Wil: 'FE7', Louise: 'FE7', Rath: 'FE7',
+  Erk: 'FE7', Nino: 'FE7', Pent: 'FE7', Lucius: 'FE7', Renault: 'FE7', Canas: 'FE7', Serra: 'FE7', Priscilla: 'FE7', Athos: 'FE7',
+  // FE8 — Sacred Stones
+  Gerik: 'FE8', Amelia: 'FE8', Cormag: 'FE8', Garcia: 'FE8', Ross: 'FE8', Neimi: 'FE8', Innes: 'FE8', Lute: 'FE8',
+  Saleh: 'FE8', Ewan: 'FE8', Artur: 'FE8', Riev: 'FE8', Knoll: 'FE8', Lyon: 'FE8', Moulder: 'FE8', Natasha: 'FE8', 'L’Arachel': 'FE8',
+  // FE6 — Binding Blade
+  Melady: 'FE6', Saul: 'FE6', Raigh: 'FE6', Sophia: 'FE6', Niime: 'FE6',
+}
+// Full origin-tagged roster. BASES is the ENABLED subset, filtered live by the
+// enabledGames setting (setEnabledGames). Consumers read BASES inside functions, so
+// reassigning it below propagates everywhere via ESM live bindings.
+export const ALL_BASES: UnitBase[] = [...FE_BASES.map((u) => ({ ...u, origin: FE_ORIGINS[u.name] || 'FE7' })), ...FEMS_BASES.map((u) => ({ ...u, origin: 'FEMS' }))]
+export let BASES: UnitBase[] = ALL_BASES
+export function setEnabledGames(games: Set<string>) {
+  const filtered = ALL_BASES.filter((u) => games.has(u.origin || ''))
+  BASES = filtered.length ? filtered : ALL_BASES // never leave the draft/enemy pool empty
+}
+// Distinct origins present, first-seen order — drives the setting's options + default.
+export function gameOrigins(): string[] {
+  return [...new Set(ALL_BASES.map((u) => u.origin || ''))]
+}
 function U(name: string, cls: string, weaponType: WeaponType, stats: BaseStatBlock, growths: GrowthBlock, palette: PaletteKey, startOffset = 0): UnitBase {
   return { name, cls, weaponType, stats, growths, palette, startOffset }
 }
