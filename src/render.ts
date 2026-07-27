@@ -1,4 +1,4 @@
-import { ALL_STAT_KEYS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, GROWTH_STAT_KEYS, LEADER_BONUS_LEVELS, ROSTER_SIZE } from '../config'
+import { ALL_STAT_KEYS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, GROWTH_STAT_KEYS, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOW_COMBAT_LOADOUT_NAMES } from '../config'
 import { BASES, CLASSES, weaponRarityLabel } from '../data'
 import { battleImgForUnit, htmlAttr, portraitImgForBase, portraitImgForUnit } from './assets'
 import { renderArenaMap, updateAutoFightButton, updateMainModeTitle } from './arenas'
@@ -240,12 +240,12 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   // from class + doubling). Staves deal no damage, so they get no line.
   const dmgAs = u.weapon && !u.weapon.staff ? `${displayAttackPower(u)} dmg` : ''
   const dmgAsLine = dmgAs ? `<div class="small combatDmgAs">${dmgAs}</div>` : ''
-  // Skill + held-item names on the center card (148AGTes), below the dmg/AS line.
+  // Skill + held-item names on the center card (148AGTes), shown below the damage line only
+  // when the combatCardNames setting is on (17WAdseJ); off (default) keeps cards compact.
   const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${truncWeaponName(u.heldItem.name)}</div>` : ''
-  // Skills are temporarily disabled, while users are checking which layout looks better
-  // const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
-  // return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${skillLine}${heldLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
-  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
+  const loadout = SHOW_COMBAT_LOADOUT_NAMES ? `${skillLine}${heldLine}` : ''
+  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${loadout}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')

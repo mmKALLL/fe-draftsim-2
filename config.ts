@@ -278,6 +278,9 @@ export let SHOW_VICTORY_LOG = true
 // When false (default), speed multipliers cap at double (classic rule); the extraHits
 // setting toggles the 3x+ tiers of MULTI_HIT_THRESHOLDS on.
 export let MULTI_HIT_EXTRA_TIERS = false
+// Center combat cards (17WAdseJ): show each unit's skill + held-item names below the
+// damage line. Off (default) keeps the small cards compact (weapon + damage only).
+export let SHOW_COMBAT_LOADOUT_NAMES = false
 
 // Difficulty (cxq8vZVL): swaps the active enemy skill/good-weapon tables. Hard is the
 // tuned baseline; Normal shifts good-weapon minion counts down 1 with softer skill counts,
@@ -351,6 +354,16 @@ export const SETTINGS: SettingDef[] = [
     default: true,
     apply: (v) => {
       MULTI_HIT_EXTRA_TIERS = v === true
+    },
+  },
+  {
+    key: 'combatCardNames',
+    label: 'Skill & item names on combat cards',
+    description: 'Show each unit’s skill and held-item names on the small center combat cards. Off keeps them compact (weapon + damage only).',
+    type: 'toggle',
+    default: false,
+    apply: (v) => {
+      SHOW_COMBAT_LOADOUT_NAMES = v === true
     },
   },
   {
