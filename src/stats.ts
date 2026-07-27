@@ -10,7 +10,8 @@
 // rather than a single hardcoded "strong" threshold, so finer-grained stats stay computable.
 import { BASES } from '../data'
 import { state } from './state'
-import { APP_VERSION } from '../config'
+import { APP_VERSION, SETTINGS, type SettingValue } from '../config'
+import { getSetting } from './settings'
 import type { UnitBase } from '../types'
 
 const STATS_KEY = 'firerogue.stats.v5'
@@ -48,6 +49,7 @@ export type RunStat = {
   rewardsByRarity: Record<string, number> // chosen rewards counted by rarity (normal/uncommon/rare)
   rewardsByType: Record<string, number> // chosen rewards counted by type label
   goldByType: Record<string, number> // gold spent in shop, by item-type label
+  settings?: Record<string, SettingValue> // player settings snapshot at run end (14gwBLPy); absent on older runs
 }
 
 export function loadRunStats(): RunStat[] {
@@ -132,6 +134,7 @@ export function recordRunStat(outcome: RunOutcome): RunStat {
     rewardsByRarity: { ...state.run.rewardsByRarity },
     rewardsByType: { ...state.run.rewardsByType },
     goldByType: { ...state.run.goldByType },
+    settings: Object.fromEntries(SETTINGS.map((d) => [d.key, getSetting(d.key)])),
   }
   arr.push(stat)
   saveRunStats(arr)
@@ -157,6 +160,25 @@ function longestWinStreak(runs: RunStat[]): number {
     }
   }
   return best
+}
+
+// Score for a stored run (14gwBLPy), re-computed from run data with the CURRENT formula so
+// past runs re-score when the formula changes: wins × 1000 + gold at end. Leftover-consumable
+// value isn't stored per run, so it's excluded here (unlike the in-run currentScore). A win
+// counts the final battle; a loss/abandon doesn't count the battle it ended on.
+export function scoreFromStat(r: RunStat): number {
+  const wins = Math.max(0, r.battleReached - (r.outcome === 'win' ? 0 : 1))
+  return wins * 1000 + r.goldAtEnd
+}
+
+// Compact "Skills/Weapons" difficulty label (14gwBLPy). Runs recorded before settings were
+// captured predate the difficulty setting and were effectively Hard, so they show "Hard/Hard".
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+function difficultyLabel(r: RunStat): string {
+  const s = r.settings || {}
+  const skills = typeof s.difficultySkills === 'string' ? s.difficultySkills : 'hard'
+  const weapons = typeof s.difficultyWeapons === 'string' ? s.difficultyWeapons : 'hard'
+  return `${capitalize(skills)}/${capitalize(weapons)}`
 }
 
 export function statisticsHTML(): string {
@@ -205,11 +227,11 @@ export function statisticsHTML(): string {
     .map(({ r, num }) => {
       const outcome = r.outcome === 'win' ? 'Win' : `Lost at battle ${r.battleReached}`
       const mode = r.start_mode === 'random' ? 'Random' : 'Draft'
-      return `<tr><td class="num">${num}</td><td>${mode}</td><td>${outcome}</td><td class="num">${r.prepromotes}</td><td class="num">${r.consumables}</td><td class="num">${r.goldAtEnd}</td></tr>`
+      return `<tr><td class="num">${num}</td><td>${mode}</td><td>${difficultyLabel(r)}</td><td>${outcome}</td><td class="num">${r.prepromotes}</td><td class="num">${r.consumables}</td><td class="num">${scoreFromStat(r)}</td></tr>`
     })
     .join('')
   const table = `<table class="statsTable">
-    <thead><tr><th class="num">#</th><th>Mode</th><th>Outcome</th><th class="num">Prepromotes</th><th class="num">Consumables</th><th class="num">Gold</th></tr></thead>
+    <thead><tr><th class="num">#</th><th>Mode</th><th>Difficulty</th><th>Outcome</th><th class="num">Prepromotes</th><th class="num">Consumables</th><th class="num">Score</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`
 
