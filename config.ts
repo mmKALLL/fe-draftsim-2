@@ -199,12 +199,16 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
 // fight as [min, max] by arena and battle type. Bosses are always 'good' (and pinned to
 // slot 1); chosen good minions take random slots. Clamped to minions present (5 in a
 // standard fight, 4 alongside a boss).
-export const ENEMY_GOOD_MINION_COUNT: Record<'standard' | 'regular' | 'arena', [number, number]>[] = [
+type GoodMinionCount = Record<'standard' | 'regular' | 'arena', [number, number]>
+// Good-weapon minion counts per arena at HARD (the tuned baseline). The difficulty
+// setting (cxq8vZVL) derives Normal/Lunatic by shifting every [min,max] down/up by one.
+const ENEMY_GOOD_MINION_HARD: GoodMinionCount[] = [
   { standard: [0, 1], regular: [0, 1], arena: [1, 2] }, // Arena 1
   { standard: [1, 3], regular: [2, 2], arena: [3, 3] }, // Arena 2
   { standard: [2, 4], regular: [3, 3], arena: [4, 4] }, // Arena 3
   { standard: [3, 4], regular: [3, 3], arena: [4, 4] }, // Arena 4 (xcaKWDD9: standard [2,3]->[3,4])
 ]
+export let ENEMY_GOOD_MINION_COUNT: GoodMinionCount[] = ENEMY_GOOD_MINION_HARD
 
 // Base names that cannot appear as enemies in a given arena (keyed by 1-based arena index).
 // Used to keep high-stat prepromotes out of the early game. e.g. Wallace is a high-Def Knight
@@ -220,12 +224,28 @@ export const ENEMY_ARENA_BANS: Record<number, string[]> = {
 // is stored as one until multi-slot enemies are supported.
 type EnemyBonusRole = { skill: number; held: number }
 type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
-export const ENEMY_BONUS_COUNTS: EnemyBonusArena[] = [
+// Skill/held-item counts per arena at each difficulty (cxq8vZVL). HARD = the tuned
+// baseline. Explicit tables (not a shift) since Normal/Lunatic add or remove skills
+// where the base is 0. setDifficulty() below swaps the active table.
+const ENEMY_BONUS_COUNTS_HARD: EnemyBonusArena[] = [
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
   { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
   { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0 } }, // Arena 4
 ]
+const ENEMY_BONUS_COUNTS_NORMAL: EnemyBonusArena[] = [
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 4
+]
+const ENEMY_BONUS_COUNTS_LUNATIC: EnemyBonusArena[] = [
+  { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0.1 } }, // Arena 2
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.5, held: 0.3 } }, // Arena 3
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.8, held: 0.5 } }, // Arena 4
+]
+export let ENEMY_BONUS_COUNTS: EnemyBonusArena[] = ENEMY_BONUS_COUNTS_HARD
 // Rarity weights {normal, uncommon, rare} for an enemy's BONUS skill / held item, by arena
 // and role (same length/shape as ENEMY_WEAPON_PROFILE). assignEnemyBonuses rolls a rarity
 // with pickWeightedRarity, then picks from the pool filtered to that rarity (stepping down to
@@ -259,6 +279,30 @@ export let SHOW_VICTORY_LOG = true
 // setting toggles the 3x+ tiers of MULTI_HIT_THRESHOLDS on.
 export let MULTI_HIT_EXTRA_TIERS = false
 
+// Difficulty (cxq8vZVL): swaps the active enemy skill/good-weapon tables. Hard is the
+// tuned baseline; Normal shifts good-minion counts down 1 with softer skill counts,
+// Lunatic shifts up 1 with harsher skill counts.
+export type DifficultyLevel = 'normal' | 'hard' | 'lunatic'
+const shiftRange = (r: [number, number], d: number): [number, number] => [Math.max(0, r[0] + d), Math.max(0, r[1] + d)]
+const shiftGoodMinion = (base: GoodMinionCount[], d: number): GoodMinionCount[] =>
+  base.map((a) => ({ standard: shiftRange(a.standard, d), regular: shiftRange(a.regular, d), arena: shiftRange(a.arena, d) }))
+const DIFFICULTY_BONUS: Record<DifficultyLevel, EnemyBonusArena[]> = {
+  normal: ENEMY_BONUS_COUNTS_NORMAL,
+  hard: ENEMY_BONUS_COUNTS_HARD,
+  lunatic: ENEMY_BONUS_COUNTS_LUNATIC,
+}
+export function setDifficulty(level: DifficultyLevel) {
+  ENEMY_BONUS_COUNTS = DIFFICULTY_BONUS[level]
+  ENEMY_GOOD_MINION_COUNT = shiftGoodMinion(ENEMY_GOOD_MINION_HARD, level === 'normal' ? -1 : level === 'lunatic' ? 1 : 0)
+}
+
+// Gold-gain method (WpJBRyQ2). 'fixed' (default) = SHOP_ARENA_BOSS_GOLD lump after each
+// arena boss. 'perBattle' = GOLD_PER_BATTLE_SURVIVOR × surviving units after every battle,
+// plus GOLD_ARENA_BOSS_BONUS on arena-boss battles (rewards keeping units alive).
+export const GOLD_PER_BATTLE_SURVIVOR = 100
+export const GOLD_ARENA_BOSS_BONUS = 500
+export let GOLD_METHOD: 'fixed' | 'perBattle' = 'fixed'
+
 export type SettingValue = boolean | string | string[]
 export type SettingDef = {
   key: string // stable storage id — never rename or reuse (persisted in localStorage)
@@ -277,36 +321,63 @@ const GAME_LABELS: Record<string, string> = {
   FE6: 'FE6 · Binding Blade',
   FE7: 'FE7 · Blazing Sword',
   FE8: 'FE8 · Sacred Stones',
-  FEMS: 'FE:MS · Midnight Sun',
+  FEMS: 'FEMS · Midnight Sun',
 }
 export const SETTINGS: SettingDef[] = [
-  {
-    key: 'showVictoryLog',
-    label: 'Show victory log line',
-    description: 'Print the "Victory in N actions" line in the combat log after winning a battle.',
-    type: 'toggle',
-    default: true,
-    apply: (v) => {
-      SHOW_VICTORY_LOG = v === true
-    },
-  },
+  // {
+  //   key: 'showVictoryLog',
+  //   label: 'Show victory log line',
+  //   description: 'Print the "Victory in N actions" line in the combat log after winning a battle.',
+  //   type: 'toggle',
+  //   default: true,
+  //   apply: (v) => {
+  //     SHOW_VICTORY_LOG = v === true
+  //   },
+  // },
   {
     key: 'enabledGames',
     label: 'Character origin games',
-    description: 'Which games’ characters can be drafted and appear as enemies. Options are derived from the roster; default enables all.',
+    description: 'Which games’ characters can be drafted and appear as enemies.',
     type: 'multi',
-    default: gameOrigins(),
+    default: gameOrigins().slice(0, 3),
     options: gameOrigins().map((g) => ({ value: g, label: GAME_LABELS[g] || g })),
     apply: (v) => setEnabledGames(new Set(Array.isArray(v) ? v : [])),
   },
   {
     key: 'extraHits',
-    label: 'Triple hits at high speed',
-    description: 'Enables 3× (and higher) hits when attack speed greatly exceeds the target’s. Off = classic double-only.',
+    label: 'Triple hits at 10+ speed difference',
+    description: 'Enables 3× hits when attack speed exceeds the target’s by 10 or more. Off = classic double-only.',
     type: 'toggle',
     default: false,
     apply: (v) => {
       MULTI_HIT_EXTRA_TIERS = v === true
+    },
+  },
+  {
+    key: 'difficulty',
+    label: 'Difficulty',
+    description: "Affects likelihood of skills and rare weapons on enemies. Hard is the game's original difficulty.",
+    type: 'choice',
+    default: 'hard',
+    options: [
+      { value: 'normal', label: 'Normal' },
+      { value: 'hard', label: 'Hard' },
+      { value: 'lunatic', label: 'Lunatic' },
+    ],
+    apply: (v) => setDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
+  },
+  {
+    key: 'goldMethod',
+    label: 'Gold gain',
+    description: 'Fixed: a lump sum after each arena boss. Per battle: 100G × surviving units after every battle, plus 500G per arena boss.',
+    type: 'choice',
+    default: 'fixed',
+    options: [
+      { value: 'fixed', label: 'Fixed (per arena)' },
+      { value: 'perBattle', label: 'Per battle (survivors)' },
+    ],
+    apply: (v) => {
+      GOLD_METHOD = v === 'perBattle' ? 'perBattle' : 'fixed'
     },
   },
 ]

@@ -1,4 +1,4 @@
-import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MID_BOSS_HP_MULT, ROSTER_SIZE, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
+import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
@@ -292,6 +292,7 @@ export async function runBattle() {
   renderTeams()
   if (state.player.some((x) => x.hp > 0)) {
     if (SHOW_VICTORY_LOG) logLine(null, `Victory in ${actions} actions. Team fully healed and levels twice.`, 'heal')
+    const survivors = state.player.filter((u) => u.hp > 0).length // count before the post-battle heal revives the fallen
     clearTemporaryBuffs(state.player)
     advanceTwoLevels(state.player)
     state.player.forEach((u) => {
@@ -299,12 +300,23 @@ export async function runBattle() {
       clearUnitStatus(u)
     })
     renderTeams()
+    // Gold (WpJBRyQ2). Fixed: a lump per arena boss (none on the final battle 20, which
+    // ends the run). Per-battle: survivors × 100 every battle, plus 500 on arena bosses.
+    const isArenaBoss = bossTierForBattle(state.battle) === BOSS_TIER_ARENA
+    if (GOLD_METHOD === 'perBattle') {
+      const bounty = GOLD_PER_BATTLE_SURVIVOR * survivors + (isArenaBoss ? GOLD_ARENA_BOSS_BONUS : 0)
+      if (bounty > 0) {
+        addGold(bounty)
+        logLine(null, `Battle bounty: ${formatGold(bounty)} (${survivors} survived${isArenaBoss ? ', arena boss' : ''}).`, 'goldLog')
+      }
+    } else if (isArenaBoss && state.battle < 20) {
+      addGold(SHOP_ARENA_BOSS_GOLD)
+      logLine(null, `Arena boss bounty: ${formatGold(SHOP_ARENA_BOSS_GOLD)}.`, 'goldLog')
+    }
     if (state.battle >= 20) {
       showWin()
-    } else if (bossTierForBattle(state.battle) === BOSS_TIER_ARENA) {
-      addGold(SHOP_ARENA_BOSS_GOLD)
+    } else if (isArenaBoss) {
       state.ui.pendingShopAfterReward = true
-      logLine(null, `Arena boss bounty: ${formatGold(SHOP_ARENA_BOSS_GOLD)}.`, 'goldLog')
       renderTeams()
       showRewards()
     } else showRewards()
