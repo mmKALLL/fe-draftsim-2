@@ -599,14 +599,13 @@ U('Diana','Mage','anima',       {bTotal:31,hp:18,str:5,skl:5,spd:7,lck:10,def:1,
 U('Andre','Mage','anima',       {bTotal:25,hp:16,str:4,skl:5,spd:6,lck:6,def:1,res:3,con:5},    {hp:80,str:70,skl:60,spd:60,lck:60,def:35,res:55,gTotal:420},'green'), // trainee: the game's highest growth total
 U('Ceapana','Cleric','staff',   {bTotal:39,hp:19,str:4,skl:7,spd:9,lck:11,def:3,res:5,con:5},   {hp:65,str:35,skl:45,spd:50,lck:50,def:30,res:55,gTotal:330},'green'),
 U('Poledra','Monk','light',     {bTotal:28,hp:19,str:4,skl:8,spd:6,lck:2,def:1,res:7,con:5},    {hp:120,str:20,skl:65,spd:45,lck:30,def:30,res:75,gTotal:385},'blue'), // ROM name "Puledra"; str growth 5 -> 20, HP growth 145 -> 120 (still the game's highest)
-// TODO(Hellios): empty block to fill in — portrait already cropped to
-// assets/femp/portraits/hellios.png. Fill the stats and uncomment to enable.
-// U('Hellios','','',            {bTotal:0,hp:0,str:0,skl:0,spd:0,lck:0,def:0,res:0,con:0},      {hp:0,str:0,skl:0,spd:0,lck:0,def:0,res:0,gTotal:0},'red'),
+U('Hellios','Mercenary','sword',            {bTotal:36,hp:22,str:8,skl:10,spd:8,lck:2,def:4,res:4,con:7},      {hp:80,str:55,skl:60,spd:40,lck:20,def:25,res:20,gTotal:300},'red'),
 ]
 
 // prettier-ignore
 export const FE_BASES: UnitBase[] = [
   // FE7-inspired roster pool. Stats/growths are close enough for prototype balance, not exact ROM data. Unit data.
+  // Rough guidelines for balance: bTotal 20-25 = gTotal 350-380, b 26-30 = g 300-350, b 31-38 = g 260-300, b 39+ = g 220-250 with prepromote offset levels
 U('Lyn','Lord','sword',         {bTotal:27,hp:16,str:4,skl:7,spd:9,lck:5,def:2,res:0,con:5},    {hp:70,str:40,skl:60,spd:60,lck:55,def:20,res:30,gTotal:335},'blue'),
 U('Eliwood','Lord','sword',     {bTotal:29,hp:18,str:5,skl:5,spd:7,lck:7,def:5,res:0,con:7},    {hp:80,str:45,skl:50,spd:40,lck:45,def:30,res:35,gTotal:325},'red'),
 U('Hector','Lord','axe',        {bTotal:27,hp:19,str:7,skl:4,spd:5,lck:3,def:8,res:0,con:13},   {hp:90,str:60,skl:45,spd:30,lck:30,def:50,res:25,gTotal:330},'green'),

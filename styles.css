@@ -256,7 +256,7 @@ button:disabled {
   justify-content: space-between;
 }
 .small {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--muted);
 }
 .muted {
@@ -621,7 +621,7 @@ button:disabled {
   font-weight: 700;
 }
 .combatPreview .attackCountTriple {
-  color: #fb923c;
+  color: #b7ff23;
   font-weight: 750;
 }
 .combatPreview .attackCountQuad {

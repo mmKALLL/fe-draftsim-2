@@ -241,9 +241,9 @@ const ENEMY_BONUS_COUNTS_NORMAL: EnemyBonusArena[] = [
 ]
 const ENEMY_BONUS_COUNTS_LUNATIC: EnemyBonusArena[] = [
   { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
-  { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0.1 } }, // Arena 2
-  { boss: { skill: 1, held: 1 }, minion: { skill: 0.5, held: 0.3 } }, // Arena 3
-  { boss: { skill: 1, held: 1 }, minion: { skill: 0.8, held: 0.5 } }, // Arena 4
+  { boss: { skill: 1, held: 0 }, minion: { skill: 0.3, held: 0.1 } }, // Arena 2
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.5, held: 0.1 } }, // Arena 3
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.8, held: 0.2 } }, // Arena 4
 ]
 export let ENEMY_BONUS_COUNTS: EnemyBonusArena[] = ENEMY_BONUS_COUNTS_HARD
 // Rarity weights {normal, uncommon, rare} for an enemy's BONUS skill / held item, by arena
@@ -280,10 +280,10 @@ export let SHOW_VICTORY_LOG = true
 export let MULTI_HIT_EXTRA_TIERS = false
 
 // Difficulty (cxq8vZVL): swaps the active enemy skill/good-weapon tables. Hard is the
-// tuned baseline; Normal shifts good-minion counts down 1 with softer skill counts,
-// Lunatic shifts up 1 with harsher skill counts.
+// tuned baseline; Normal shifts good-weapon minion counts down 1 with softer skill counts,
+// Lunatic shifts good weapons up with harsher skill counts.
 export type DifficultyLevel = 'normal' | 'hard' | 'lunatic'
-const shiftRange = (r: [number, number], d: number): [number, number] => [Math.max(0, r[0] + d), Math.max(0, r[1] + d)]
+const shiftRange = (r: [number, number], d: number): [number, number] => [Math.min(4, Math.max(0, r[0] + d)), Math.min(4, Math.max(0, r[1] + d))]
 const shiftGoodMinion = (base: GoodMinionCount[], d: number): GoodMinionCount[] =>
   base.map((a) => ({ standard: shiftRange(a.standard, d), regular: shiftRange(a.regular, d), arena: shiftRange(a.arena, d) }))
 const DIFFICULTY_BONUS: Record<DifficultyLevel, EnemyBonusArena[]> = {
@@ -293,7 +293,7 @@ const DIFFICULTY_BONUS: Record<DifficultyLevel, EnemyBonusArena[]> = {
 }
 export function setDifficulty(level: DifficultyLevel) {
   ENEMY_BONUS_COUNTS = DIFFICULTY_BONUS[level]
-  ENEMY_GOOD_MINION_COUNT = shiftGoodMinion(ENEMY_GOOD_MINION_HARD, level === 'normal' ? -1 : level === 'lunatic' ? 1 : 0)
+  ENEMY_GOOD_MINION_COUNT = shiftGoodMinion(ENEMY_GOOD_MINION_HARD, level === 'normal' ? -1 : level === 'lunatic' ? 2 : 0)
 }
 
 // Gold-gain method (WpJBRyQ2). 'fixed' (default) = SHOP_ARENA_BOSS_GOLD lump after each
@@ -337,7 +337,7 @@ export const SETTINGS: SettingDef[] = [
   {
     key: 'enabledGames',
     label: 'Character origin games',
-    description: 'Which games’ characters can be drafted and appear as enemies.',
+    description: 'Which games’ characters can appear in runs. Midnight Sun is not balanced with the other games.',
     type: 'multi',
     default: gameOrigins().slice(0, 3),
     options: gameOrigins().map((g) => ({ value: g, label: GAME_LABELS[g] || g })),
@@ -348,7 +348,7 @@ export const SETTINGS: SettingDef[] = [
     label: 'Triple hits at 10+ speed difference',
     description: 'Enables 3× hits when attack speed exceeds the target’s by 10 or more. Off = classic double-only.',
     type: 'toggle',
-    default: false,
+    default: true,
     apply: (v) => {
       MULTI_HIT_EXTRA_TIERS = v === true
     },
@@ -369,7 +369,7 @@ export const SETTINGS: SettingDef[] = [
   {
     key: 'goldMethod',
     label: 'Gold gain',
-    description: 'Fixed: a lump sum after each arena boss. Per battle: 100G × surviving units after every battle, plus 500G per arena boss.',
+    description: 'Fixed: gain 2000G after each arena boss. Per battle: 100G × surviving units after every battle, plus 500G per arena.',
     type: 'choice',
     default: 'fixed',
     options: [
