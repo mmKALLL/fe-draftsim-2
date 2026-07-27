@@ -221,9 +221,10 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
   const weaponDanger = isEnemy && u.weapon && enemyWeaponDangerous(u) ? ' weaponDanger' : !isEnemy && u.weapon?.rank === 'S' ? ' weaponSrank' : ''
   const weaponLine = u.weapon ? `<div class="small weaponLine${weaponDanger}" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
-  // Base combat output on the center card (143HUpzn): damage · attack speed (AS only for staves).
-  const dmgAs = u.weapon?.staff ? `${attackSpeed(u)}sp` : `${displayAttackPower(u)}dmg, ${attackSpeed(u)}sp`
-  const dmgAsLine = `<div class="small combatDmgAs">${dmgAs}</div>`
+  // Base combat output on the center card (143HUpzn): damage only (attack speed is intuitive
+  // from class + doubling). Staves deal no damage, so they get no line.
+  const dmgAs = u.weapon && !u.weapon.staff ? `${displayAttackPower(u)} dmg` : ''
+  const dmgAsLine = dmgAs ? `<div class="small combatDmgAs">${dmgAs}</div>` : ''
   // Skill + held-item names on the center card (148AGTes), below the dmg/AS line.
   const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${truncWeaponName(u.heldItem.name)}</div>` : ''
   const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
