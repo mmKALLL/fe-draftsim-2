@@ -203,7 +203,7 @@ type GoodMinionCount = Record<'standard' | 'regular' | 'arena', [number, number]
 // Good-weapon minion counts per arena at HARD (the tuned baseline). The difficulty
 // setting (cxq8vZVL) derives Normal/Lunatic by shifting every [min,max] down/up by one.
 const ENEMY_GOOD_MINION_HARD: GoodMinionCount[] = [
-  { standard: [0, 1], regular: [0, 1], arena: [1, 2] }, // Arena 1
+  { standard: [0, 0], regular: [1, 1], arena: [2, 2] }, // Arena 1
   { standard: [1, 3], regular: [2, 2], arena: [3, 3] }, // Arena 2
   { standard: [2, 4], regular: [3, 3], arena: [4, 4] }, // Arena 3
   { standard: [3, 4], regular: [3, 3], arena: [4, 4] }, // Arena 4 (xcaKWDD9: standard [2,3]->[3,4])
