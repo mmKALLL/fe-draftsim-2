@@ -399,6 +399,11 @@ button:disabled {
 .name {
   font-weight: 800;
 }
+/* Game-origin suffix on the draft card name line, e.g. "Matthew (FE7)" — non-bold + muted. */
+.nameOrigin {
+  font-weight: 400;
+  color: var(--muted);
+}
 .class {
   font-size: 12px;
   color: #cbd5e1;

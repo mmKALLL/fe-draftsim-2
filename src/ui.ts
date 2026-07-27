@@ -3,7 +3,7 @@ import { getSetting, setSetting } from './settings'
 import { makeArenaPlan, renderArenaMap } from './arenas'
 import { statLabel } from './combat'
 import { beginNextBattle, startRun } from './game'
-import { emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
+import { draftOptionsStale, emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { shopConsumablePrice, startShop } from './shop'
 import { clearRunStats, loadRunStats, noteRewardChoice, recordRunStat, statisticsDetailHTML, statisticsHTML } from './stats'
@@ -290,7 +290,12 @@ export function showMenu() {
   renderArenaMap()
 }
 export function startDraftGame() {
-  if (!state.draft.options.length) state.draft.options = randomDraftOptions()
+  // Regenerate if empty OR stale — a prior draft may name units the origin filter has
+  // since removed from BASES, which would crash renderDraft.
+  if (!state.draft.options.length || draftOptionsStale()) {
+    state.draft.options = randomDraftOptions()
+    state.draft.chosen = emptyRosterChoices()
+  }
   if (!state.draft.chosen.length) state.draft.chosen = emptyRosterChoices()
   $('menuScreen').classList.add('hidden')
   $('draftScreen').classList.remove('hidden')

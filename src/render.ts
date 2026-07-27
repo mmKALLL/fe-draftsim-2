@@ -8,7 +8,7 @@ import { levelLabel } from './ui'
 import { startingWeapon } from './units'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
-import type { Unit, Weapon, Consumable, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
+import type { Unit, UnitBase, Weapon, Consumable, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
 
 export function selectedRosterCount() {
@@ -18,11 +18,14 @@ export function emptyRosterChoices() {
   return Array(ROSTER_SIZE).fill(null)
 }
 export function randomDraftOptions() {
-  const pool = [...BASES],
-    slots = []
+  let pool = [...BASES]
+  const slots = []
   for (let slot = 0; slot < ROSTER_SIZE; slot++) {
     const offers = []
     for (let choice = 0; choice < DRAFT_CHOICES_PER_SLOT; choice++) {
+      // A heavy origin filter can shrink BASES below the 15 distinct picks a draft
+      // needs; refill the pool rather than running dry (allows reuse across slots).
+      if (!pool.length) pool = [...BASES]
       const wantStaff = choice === 0 && rnd() < 0.125
       let candidates = pool.map((b, idx) => ({ b, idx }))
       if (wantStaff) {
@@ -30,12 +33,18 @@ export function randomDraftOptions() {
         if (staffers.length) candidates = staffers
       }
       const picked = pick(candidates)
+      if (!picked) continue
       offers.push(picked.b.name)
       pool.splice(picked.idx, 1)
     }
     slots.push(offers)
   }
   return slots
+}
+// True if any current draft option names a unit no longer in BASES (e.g. after the
+// origin filter changed) — rendering such options would crash, so callers regenerate.
+export function draftOptionsStale() {
+  return state.draft.options.some((slot: string[]) => slot.some((n) => !BASES.some((b) => b.name === n)))
 }
 export function padCell(v: any, w = 2) {
   return String(v).padStart(w, ' ')
@@ -73,14 +82,15 @@ export function renderDraft() {
     slotEl.innerHTML = `<div class="row space"><h3>${slotTitle}</h3></div><div class="draftChoices"></div>`
     const choices = slotEl.querySelector<HTMLElement>('.draftChoices')!
     slot
-      .map((n) => BASES.find((b) => b.name === n)!)
+      .map((n) => BASES.find((b) => b.name === n))
+      .filter((b): b is UnitBase => !!b) // a name can vanish from BASES when the origin filter changes
       .forEach((b) => {
         const c = CLASSES[b.cls]
         const el = document.createElement('button')
         el.type = 'button'
         el.className = `draftChoice unitCard ${state.draft.chosen[slotIndex] === b.name ? 'selected' : ''}`
         const personalNote = b.startOffset ? ` · starts with +${b.startOffset} levels` : ''
-        el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType} · con ${b.stats.con}${personalNote}${b.origin ? ` · ${b.origin}` : ''}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
+        el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}${b.origin ? ` <span class="nameOrigin">(${b.origin})</span>` : ''}</div><div class="class">${b.cls} · ${b.weaponType} · con ${b.stats.con}${personalNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
         el.onclick = () => {
           state.draft.chosen[slotIndex] = b.name
           renderDraft()
