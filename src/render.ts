@@ -1,4 +1,14 @@
-import { ALL_STAT_KEYS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DRAFT_CHOICES_PER_SLOT, GROWTH_STAT_KEYS, LEADER_BONUS_LEVELS, ROSTER_SIZE, SHOW_COMBAT_LOADOUT_NAMES } from '../config'
+import {
+  ALL_STAT_KEYS,
+  BOSS_TIER_ARENA,
+  BOSS_TIER_REGULAR,
+  CONSUMABLE_SLOTS,
+  DRAFT_CHOICES_PER_SLOT,
+  GROWTH_STAT_KEYS,
+  LEADER_BONUS_LEVELS,
+  ROSTER_SIZE,
+  SHOW_COMBAT_LOADOUT_NAMES,
+} from '../config'
 import { BASES, CLASSES, weaponRarityLabel } from '../data'
 import { battleImgForUnit, htmlAttr, portraitImgForBase, portraitImgForUnit } from './assets'
 import { renderArenaMap, updateAutoFightButton, updateMainModeTitle } from './arenas'

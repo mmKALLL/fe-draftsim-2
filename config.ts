@@ -227,17 +227,17 @@ type EnemyBonusArena = { boss: EnemyBonusRole; minion: EnemyBonusRole }
 // Skill/held-item counts per arena at each difficulty (cxq8vZVL). HARD = the tuned
 // baseline. Explicit tables (not a shift) since Normal/Lunatic add or remove skills
 // where the base is 0. setSkillDifficulty() below swaps the active table.
-const ENEMY_BONUS_COUNTS_HARD: EnemyBonusArena[] = [
-  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
-  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
-  { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
-  { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0 } }, // Arena 4
-]
 const ENEMY_BONUS_COUNTS_NORMAL: EnemyBonusArena[] = [
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
   { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 4
+]
+const ENEMY_BONUS_COUNTS_HARD: EnemyBonusArena[] = [
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
+  { boss: { skill: 0, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 2
+  { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 3
+  { boss: { skill: 1, held: 1 }, minion: { skill: 0.3, held: 0 } }, // Arena 4
 ]
 const ENEMY_BONUS_COUNTS_LUNATIC: EnemyBonusArena[] = [
   { boss: { skill: 1, held: 0 }, minion: { skill: 0, held: 0 } }, // Arena 1
@@ -364,7 +364,7 @@ export const SETTINGS: SettingDef[] = [
   {
     key: 'combatCardNames',
     label: 'Skill & item names on combat cards',
-    description: 'Show each unit’s skill and held-item names on the small center combat cards. Off keeps them compact (weapon + damage only).',
+    description: 'Show skill and item names on the unit combat cards. Most are long and get truncated though.',
     type: 'toggle',
     default: false,
     apply: (v) => {
@@ -374,25 +374,25 @@ export const SETTINGS: SettingDef[] = [
   {
     key: 'difficultySkills',
     label: 'Enemy skills',
-    description: 'How often enemies carry bonus skills and held items. Hard is the game’s original difficulty.',
+    description: 'How often enemies carry bonus skills and held items.',
     type: 'choice',
     default: 'hard',
     options: [
-      { value: 'normal', label: 'Normal' },
-      { value: 'hard', label: 'Hard' },
-      { value: 'lunatic', label: 'Lunatic' },
+      { value: 'normal', label: 'Normal (never)' },
+      { value: 'hard', label: 'Hard (default)' },
+      { value: 'lunatic', label: 'Lunatic (often)' },
     ],
     apply: (v) => setSkillDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
   },
   {
     key: 'difficultyWeapons',
     label: 'Enemy weapons',
-    description: 'How often enemies carry good (non-basic) weapons. Hard is the game’s original difficulty.',
+    description: 'How often enemies carry high-rank weapons.',
     type: 'choice',
     default: 'hard',
     options: [
       { value: 'normal', label: 'Normal' },
-      { value: 'hard', label: 'Hard' },
+      { value: 'hard', label: 'Hard (default)' },
       { value: 'lunatic', label: 'Lunatic' },
     ],
     apply: (v) => setWeaponDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
@@ -404,8 +404,8 @@ export const SETTINGS: SettingDef[] = [
     type: 'choice',
     default: 'fixed',
     options: [
-      { value: 'fixed', label: 'Fixed (per arena)' },
-      { value: 'perBattle', label: 'Per battle (survivors)' },
+      { value: 'fixed', label: 'Fixed (2000G / arena)' },
+      { value: 'perBattle', label: 'Per battle (100G / survivor)' },
     ],
     apply: (v) => {
       GOLD_METHOD = v === 'perBattle' ? 'perBattle' : 'fixed'
