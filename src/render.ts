@@ -225,7 +225,10 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   // Base combat output on the center card (143HUpzn): damage · attack speed (AS only for staves).
   const dmgAs = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${displayAttackPower(u)} dmg · ${attackSpeed(u)} AS`
   const dmgAsLine = `<div class="small combatDmgAs">${dmgAs}</div>`
-  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  // Skill + held-item names on the center card (148AGTes), below the dmg/AS line.
+  const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${u.heldItem.name}</div>` : ''
+  const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${u.skill.name}</div>` : ''
+  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${heldLine}${skillLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')
