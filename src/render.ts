@@ -2,13 +2,29 @@ import { ALL_STAT_KEYS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, DR
 import { BASES, CLASSES, weaponRarityLabel } from '../data'
 import { battleImgForUnit, htmlAttr, portraitImgForBase, portraitImgForUnit } from './assets'
 import { renderArenaMap, updateAutoFightButton, updateMainModeTitle } from './arenas'
-import { attackSpeed, avoid, combatPreviewHTML, consumableSummary, consumableTargets, displayAttackPower, enemyWeaponDangerous, hitRate, nextLivingIndex, sleep, staffEffect, statLabel, statusLabel, statusName, temporaryBuffLabel, weaponEffectLabels } from './combat'
+import {
+  attackSpeed,
+  avoid,
+  combatPreviewHTML,
+  consumableSummary,
+  consumableTargets,
+  displayAttackPower,
+  enemyWeaponDangerous,
+  hitRate,
+  nextLivingIndex,
+  sleep,
+  staffEffect,
+  statLabel,
+  statusLabel,
+  statusName,
+  temporaryBuffLabel,
+  weaponEffectLabels,
+} from './combat'
 import { updateGoldUI } from './state'
 import { levelLabel } from './ui'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
 import type { Unit, UnitBase, Weapon, Consumable, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
-
 
 export function selectedRosterCount() {
   return state.draft.chosen.filter(Boolean).length
@@ -130,14 +146,13 @@ export function weaponStatHTML(w: Weapon) {
 }
 export function statHTML(u: Unit, showGrowths = false) {
   return ALL_STAT_KEYS.map((k) => {
-      const growth = u.growths[k] == null ? '--' : u.growths[k]
-      // Show base/permanent stats, not temporary buffs: applyStatBuff adds rally/tonic
-      // buffs into u.stats, so subtract the buff buckets here. The buff stays visible in
-      // the card's buff label and in the derived dmg/AS/Hit/Avo values.
-      const tempBuff = ((u.turnBuffs?.[k] as number) || 0) + ((u.tempBuffs?.[k] as number) || 0)
-      return `<span><b>${statLabel(u, k)}</b> ${showGrowths ? growth : (u.stats[k] || 0) - tempBuff}</span>`
-    })
-    .join('')
+    const growth = u.growths[k] == null ? '--' : u.growths[k]
+    // Show base/permanent stats, not temporary buffs: applyStatBuff adds rally/tonic
+    // buffs into u.stats, so subtract the buff buckets here. The buff stays visible in
+    // the card's buff label and in the derived dmg/AS/Hit/Avo values.
+    const tempBuff = ((u.turnBuffs?.[k] as number) || 0) + ((u.tempBuffs?.[k] as number) || 0)
+    return `<span><b>${statLabel(u, k)}</b> ${showGrowths ? growth : (u.stats[k] || 0) - tempBuff}</span>`
+  }).join('')
 }
 export function growthSummaryHTML(u: Unit) {
   const g = u.growths
@@ -227,8 +242,10 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const dmgAsLine = dmgAs ? `<div class="small combatDmgAs">${dmgAs}</div>` : ''
   // Skill + held-item names on the center card (148AGTes), below the dmg/AS line.
   const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${truncWeaponName(u.heldItem.name)}</div>` : ''
-  const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
-  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${skillLine}${heldLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  // Skills are temporarily disabled, while users are checking which layout looks better
+  // const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
+  // return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${skillLine}${heldLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')
