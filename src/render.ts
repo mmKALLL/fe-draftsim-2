@@ -154,7 +154,7 @@ export function unitCard(u: Unit) {
   const effectBracket = (desc: string) => (desc ? ` <span class="effectNote">[${desc}]</span>` : '')
   const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">${u.heldItem.name}${effectBracket(u.heldItem.desc || '')}</div>` : ''
   const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">${u.skill.name}${effectBracket(u.skill.desc || '')}</div>` : ''
-  const itemSkillList = held || skill ? `<div class="cardItemList">${held}${skill}</div>` : ''
+  const itemSkillList = held || skill ? `<div class="cardItemList">${skill}${held}</div>` : ''
   const dmg = displayAttackPower(u)
   const pill = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${dmg} dmg / ${attackSpeed(u)} AS`
   return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space nameRow"><div class="name">${u.name}</div><span class="pill">${pill}</span></div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
@@ -228,7 +228,7 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   // Skill + held-item names on the center card (148AGTes), below the dmg/AS line.
   const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${truncWeaponName(u.heldItem.name)}</div>` : ''
   const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
-  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${heldLine}${skillLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
+  return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${skillLine}${heldLine}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
 export function logLine(logEl: any, msg: string, cls = '') {
   const p = document.createElement('p')
