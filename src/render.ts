@@ -5,7 +5,6 @@ import { renderArenaMap, updateAutoFightButton, updateMainModeTitle } from './ar
 import { attackSpeed, avoid, combatPreviewHTML, consumableSummary, consumableTargets, displayAttackPower, enemyWeaponDangerous, hitRate, nextLivingIndex, sleep, staffEffect, statLabel, statusLabel, statusName, temporaryBuffLabel, weaponEffectLabels } from './combat'
 import { updateGoldUI } from './state'
 import { levelLabel } from './ui'
-import { startingWeapon } from './units'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
 import type { Unit, UnitBase, Weapon, Consumable, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
@@ -90,7 +89,7 @@ export function renderDraft() {
         el.type = 'button'
         el.className = `draftChoice unitCard ${state.draft.chosen[slotIndex] === b.name ? 'selected' : ''}`
         const personalNote = b.startOffset ? ` · starts with +${b.startOffset} levels` : ''
-        el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType} · con ${b.stats.con} · base ${b.stats.bTotal} · growth ${b.growths.gTotal}${personalNote}</div></div><span class="pill">${startingWeapon(b.weaponType).name}</span></div>${growthCompareHTML(b)}</div>`
+        el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType} · con ${b.stats.con} · base ${b.stats.bTotal} · growth ${b.growths.gTotal}${personalNote}</div></div></div>${growthCompareHTML(b)}</div>`
         el.onclick = () => {
           state.draft.chosen[slotIndex] = b.name
           renderDraft()
