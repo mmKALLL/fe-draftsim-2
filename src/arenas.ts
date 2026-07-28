@@ -116,8 +116,14 @@ export function renderArenaMap() {
     return
   }
   const activeIndex = arenaIndexForBattle(state.battle || 1)
+  // Endless (1T3CRjDJ): render only the current block of arenas so the map is replaced each block
+  // instead of growing an ever-longer row. The full plan is kept for battle->arena mapping; `i` is
+  // the absolute plan index so active/done state and late-arena effects stay correct.
+  const blockStart = Math.floor(activeIndex / ARENA_CYCLES_PER_RUN) * ARENA_CYCLES_PER_RUN
   el.innerHTML = state.arenaPlan
-    .map((entry, i) => {
+    .slice(blockStart, blockStart + ARENA_CYCLES_PER_RUN)
+    .map((entry, j) => {
+      const i = blockStart + j
       const arena = entry.arena,
         classes = i < activeIndex ? 'arenaNode done' : i === activeIndex ? 'arenaNode active' : 'arenaNode',
         effects = arenaEffectLabels(arena, i >= 2 ? 2 : 1),
