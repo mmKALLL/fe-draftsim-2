@@ -220,10 +220,10 @@ export const WEAPONS: WeaponData[] = [
   { name: 'Regal Blade', type: 'sword', rank: 'S', mt: 20, hit: 85, wt: 9, crit: 0, magic: false },
   { name: 'Sol Katti', type: 'sword', rank: 'S', mt: 12, hit: 95, wt: 7, crit: 25, magic: false, resBonus: 5, effective: ['dragon'] },
 
-  { name: 'Dagger', type: 'dagger', rank: 'D', mt: 2, hit: 95, wt: 1, crit: 0, magic: false, halfDef: true },
-  { name: 'Sai', type: 'dagger', rank: 'C', mt: 2, hit: 80, wt: 2, crit: 30, magic: false, halfDef: true },
-  { name: 'Poison Dagger', type: 'dagger', rank: 'B', mt: 2, hit: 90, wt: 2, crit: 0, magic: false, halfDef: true, poison: true },
-  { name: 'Silver Dagger', type: 'dagger', rank: 'A', mt: 6, hit: 100, wt: 4, crit: 0, magic: false, halfDef: true},
+  { name: 'Dagger', type: 'dagger', rank: 'D', mt: 2, hit: 95, wt: 1, crit: 10, magic: false, halfDef: true },
+  { name: 'Sai', type: 'dagger', rank: 'C', mt: 2, hit: 80, wt: 2, crit: 40, magic: false, halfDef: true },
+  { name: 'Poison Dagger', type: 'dagger', rank: 'B', mt: 2, hit: 90, wt: 2, crit: 10, magic: false, halfDef: true, poison: true },
+  { name: 'Silver Dagger', type: 'dagger', rank: 'A', mt: 6, hit: 100, wt: 4, crit: 10, magic: false, halfDef: true},
 
   { name: 'Iron Lance', type: 'lance', rank: 'E', mt: 7, hit: 80, wt: 8, crit: 0, magic: false },
   { name: 'Slim Lance', type: 'lance', rank: 'E', mt: 4, hit: 85, wt: 4, crit: 5, magic: false, speedBonus: 4 },
