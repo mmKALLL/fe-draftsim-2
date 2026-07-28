@@ -182,14 +182,23 @@ export function showHelpRules() {
     <h3>Between battles</h3>
     <p>Your party fully heals after each battle. Improve your equipment, manage consumables, and build a well-balanced team capable of overcoming any obstacle.</p>
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
-    <h3>Differences from FE7</h3>
-    <p>All units only have one weapon slot, weapons with extended range provide a defense bonus, consumables don't end the unit's turn, and FE13/14 skills are included.</p>
     <h3>Scoring</h3>
     <p>Score is calculated as wins × 1000 + remaining gold + half of remaining consumables price.</p>
     <h3>Controls</h3>
     <p>Press <b>1</b>–<b>5</b> to pick the Nth reward, boost, or draft option — or, while choosing a combat target, the unit in that on-screen slot; <b>5</b> also skips a reward screen. During a fight, <b>a</b> toggles auto-battle, and <b>Esc</b> cancels target selection.</p>
     <h3>Reference</h3>
-    <p>Combat uses Fire Emblem: Blazing Sword's formulas. See the <a href="https://serenesforest.net/blazing-sword/miscellaneous/calculations/" target="_blank" rel="noopener noreferrer">Serenes Forest FE7 battle calculations</a> page for the underlying hit, damage, and crit math.</p>
+    <p>Combat uses Fire Emblem: Blazing Sword's formulas. See the <a href="https://serenesforest.net/blazing-sword/miscellaneous/calculations/" target="_blank" rel="noopener noreferrer" style="color: white;">Serenes Forest FE7 battle calculations</a> page for the underlying hit, damage, and crit math.</p>
+    <h3>Differences from FE7</h3>
+    <ul>
+      <li>All units only have one weapon slot</li>
+      <li>Weapons with extended range provide a defense bonus</li>
+      <li>Consumables don't end the unit's turn</li>
+      <li>FE13/14 skills are included</li>
+      <li>Effective weapon attacks have 3x Mt</li>
+      <li>High-base units have nerfed growths</li>
+      <li>Low-base units have buffed growths</li>
+      <li>10+ speed advantage results in a 3x hit</li>
+    </ul>
     <button data-close class="good">Back</button>`
   )
 }
@@ -259,7 +268,9 @@ function settingControlHTML(def: SettingDef): string {
   } else {
     const arr = Array.isArray(cur) ? cur : []
     const boxes = (def.options || [])
-      .map((o) => `<label class="settingMulti"><input type="checkbox" data-key="${def.key}" data-value="${o.value}"${arr.includes(o.value) ? ' checked' : ''} /> ${o.label}</label>`)
+      .map(
+        (o) => `<label class="settingMulti"><input type="checkbox" data-key="${def.key}" data-value="${o.value}"${arr.includes(o.value) ? ' checked' : ''} /> ${o.label}</label>`
+      )
       .join('')
     control = `<div class="settingRow"><span>${def.label}</span><div class="settingMultiGroup">${boxes}</div></div>`
   }
