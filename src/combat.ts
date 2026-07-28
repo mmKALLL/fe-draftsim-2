@@ -168,7 +168,7 @@ export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | '
 export function skillArenaBonus(u: Unit, key: string) {
   const arenaId = activeArenaEntry()?.arena.id
   if (!arenaId) return 0
-  return sumSkills(u, (s) => (s.family === 'arena' && Array.isArray(s.arenas) && s.arenas.includes(arenaId) ? s.stats?.[key] ?? s[key] ?? 0 : 0))
+  return sumSkills(u, (s) => (s.family === 'arena' && Array.isArray(s.arenas) && s.arenas.includes(arenaId) ? (s.stats?.[key] ?? s[key] ?? 0) : 0))
 }
 // Team-aura skills (Solidarity, Charm, Inspiration, Malefic Aura) buff the holder's
 // WHOLE team — every living ally including the holder — for as long as the holder is
@@ -250,7 +250,12 @@ export function rawDamage(a: Unit, d: Unit) {
   if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
   let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
   if (a.weapon.halfDef) def = floor(def / 2)
-  const minDamage = Math.max(1, ...unitSkills(a).filter((s) => s.effect === 'minimumDamage').map((s) => s.amount || 1))
+  const minDamage = Math.max(
+    1,
+    ...unitSkills(a)
+      .filter((s) => s.effect === 'minimumDamage')
+      .map((s) => s.amount || 1)
+  )
   return Math.max(minDamage, attackPower(a, d) - def + damageTakenFlat(d))
 }
 export function hitRate(a: Unit, d: Unit) {
@@ -311,8 +316,8 @@ export function critRate(a: Unit, d: Unit) {
   return clamp(
     floor(
       (a.weapon.crit || 0) +
-        combatStat(a, 'skl') / 2 +
-        combatStat(a, 'lck') / 2 +
+        Math.min(30, combatStat(a, 'skl')) / 2 +
+        Math.min(30, combatStat(a, 'lck')) / 2 +
         bonus -
         combatStat(d, 'lck') +
         heldItemCrit +
