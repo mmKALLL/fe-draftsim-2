@@ -1358,11 +1358,11 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
     for (let b = 0; b < braveStrikes && target.hp > 0; b++) {
       const suffix = round > 0 ? ' follows up' : b > 0 ? ' strikes again' : ''
       let r = strikeResult(actor, target, suffix)
-      if (!r.hit) logLine(null, `${actor.name}${suffix} attacks ${target.name}: miss (${r.dh}% displayed).`, 'miss')
+      if (!r.hit) logLine(null, `${actor.name}${suffix} attacks ${target.name}: miss (${r.dh}% hit).`, 'miss')
       else {
         logLine(
           null,
-          `${actor.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${target.name} for ${r.damage} (${r.dh}% displayed). ${target.name} HP ${target.hp}/${target.maxHp}.`,
+          `${actor.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${target.name} for ${r.damage}. ${target.name} HP ${target.hp}/${target.maxHp}. (${r.dh}% hit)`,
           r.crit ? 'crit' : 'hit'
         )
         if (r.proc) logLine(null, `${actor.name}'s ${r.proc.name} activates${r.lethal ? ' — instant defeat' : ''}!`, 'crit')
