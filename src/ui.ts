@@ -190,12 +190,10 @@ export function showHelpRules() {
     <h3>Between battles</h3>
     <p>Your party fully heals after each battle. Improve your equipment, manage consumables, and build a well-balanced team capable of overcoming any obstacle.</p>
     <p>After each arena, you gain 2000 gold and have an opportunity to buy various items from a shop. Unspent gold carries over, and managing it well is crucial for any good strategy.</p>
-    <h3>Scoring</h3>
-    <p>Score is calculated as wins × 1000 + remaining gold + half of remaining consumables price.</p>
     <h3>Controls</h3>
     <p>Press <b>1</b>–<b>5</b> to pick the Nth reward, boost, or draft option — or, while choosing a combat target, the unit in that on-screen slot; <b>5</b> also skips a reward screen. During a fight, <b>a</b> toggles auto-battle, and <b>Esc</b> cancels target selection.</p>
-    <h3>Reference</h3>
-    <p>Combat uses Fire Emblem: Blazing Sword's formulas. See the <a href="https://serenesforest.net/blazing-sword/miscellaneous/calculations/" target="_blank" rel="noopener noreferrer" style="color: white;">Serenes Forest FE7 battle calculations</a> page for the underlying hit, damage, and crit math.</p>
+    <h3>Mechanics</h3>
+    <p>Combat uses Fire Emblem: Blazing Sword's formulas. See the <a href="https://serenesforest.net/blazing-sword/miscellaneous/calculations/" target="_blank" rel="noopener noreferrer" style="color: white;">Serenes Forest FE7 battle calculations</a> page for the underlying hit, damage, and crit math. It can be helpful for understanding the weapon stats as well.</p>
     <h3>Differences from FE7</h3>
     <ul>
       <li>All units only have one weapon slot</li>
@@ -208,7 +206,7 @@ export function showHelpRules() {
       <li>10+ speed advantage results in a 3x hit</li>
     </ul>
     <h3>Endless mode</h3>
-    <p>Winning the run unlocks endless mode: it keeps generating fresh sets of 4 arenas (up to 20 arenas total) with all stat caps removed and steadily tougher foes. Each unit gains +1 skill and +1 held-item slot every 4 arenas.</p>
+    <p>Winning the run unlocks endless mode: challenge yourself with ever-stronger foes, with all stat caps removed and steadily increasingly difficulty. Each unit gains an additional skill and item slot every 4 arenas. How far can you get?</p>
     <button data-close class="good">Back</button>`
   )
 }

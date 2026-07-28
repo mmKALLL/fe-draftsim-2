@@ -412,7 +412,7 @@ export const HELD_ITEMS: CandidateItemData[] = [
 
   // FE9-style growth bands, adapted for this roguelike
   { id: 'fighter_band', name: 'Fighter Band', rarity: 'normal', price: 800, family: 'growthBand', growths: { hp: 15, str: 5 }, desc: 'HP growth +15, Str/Mag growth +5.' },
-  { id: 'knight_band', name: 'Knight Band', rarity: 'normal', price: 800, family: 'growthBand', growths: { hp: 5, def: 15 }, desc: 'HP growth +5, Def growth +15.' },
+  { id: 'knight_band', name: 'Knight Band', rarity: 'uncommon', price: 900, family: 'growthBand', growths: { hp: 5, def: 15 }, desc: 'HP growth +5, Def growth +15.' },
   { id: 'mage_band', name: 'Mage Band', rarity: 'normal', price: 800, family: 'growthBand', growths: { str: 15, res: 5 }, desc: 'Str/Mag growth +15, Res growth +5.' },
   { id: 'pegasus_band', name: 'Pegasus Band', rarity: 'normal', price: 800, family: 'growthBand', growths: { spd: 15, res: 5 }, desc: 'Spd growth +15, Res growth +5.' },
   { id: 'thief_band', name: 'Thief Band', rarity: 'normal', price: 800, family: 'growthBand', growths: { spd: 10, lck: 10 }, desc: 'Spd growth +10, Lck growth +10.' },
