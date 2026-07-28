@@ -1,6 +1,6 @@
 import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BASES } from '../data'
-import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, extendArenaPlan, pickBaseFromPool, setAutoFight } from './arenas'
+import { activeArenaEntry, arenaEffectLabels, arenaEffectMultiplier, enemyFocusForSlot, extendArenaPlan, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
@@ -126,7 +126,7 @@ export function generateEnemy() {
   $('log').innerHTML = ''
   setStatus('')
   const arenaData = activeArenaEntry()?.arena
-  const arenaPrefix = arenaData ? `${arenaData.name} (${arenaEffectLabels(arenaData).join(', ')}): ` : ''
+  const arenaPrefix = arenaData ? `${arenaData.name} (${arenaEffectLabels(arenaData, arenaEffectMultiplier()).join(', ')}): ` : ''
   const msg =
     bossTier === BOSS_TIER_ARENA
       ? 'Arena boss fight: +6 level leader with stronger weapons.'
