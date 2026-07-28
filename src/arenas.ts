@@ -25,6 +25,15 @@ export function makeArenaPlan() {
     return { arena, bossFocus: shuffledCopy(arena.focus) }
   })
 }
+// Endless mode (1T3CRjDJ): append another block of arenas onto the live plan so the run
+// continues past its normal length. renderArenaMap iterates the plan, so the map grows too.
+export function extendArenaPlan(cycles = ARENA_CYCLES_PER_RUN) {
+  const pool = shuffledCopy(ARENAS)
+  for (let i = 0; i < cycles; i++) {
+    const arena = pool[i % pool.length]
+    state.arenaPlan.push({ arena, bossFocus: shuffledCopy(arena.focus) })
+  }
+}
 export function arenaIndexForBattle(n = state.battle || 1) {
   return clamp(Math.floor((Math.max(1, n) - 1) / ARENA_CYCLE_LENGTH), 0, Math.max(0, state.arenaPlan.length - 1))
 }

@@ -50,6 +50,7 @@ export type RunStat = {
   rewardsByType: Record<string, number> // chosen rewards counted by type label
   goldByType: Record<string, number> // gold spent in shop, by item-type label
   settings?: Record<string, SettingValue> // player settings snapshot at run end (14gwBLPy); absent on older runs
+  endless?: boolean // run entered endless mode (1T3CRjDJ); a separate entry from the base victory
 }
 
 export function loadRunStats(): RunStat[] {
@@ -135,6 +136,7 @@ export function recordRunStat(outcome: RunOutcome): RunStat {
     rewardsByType: { ...state.run.rewardsByType },
     goldByType: { ...state.run.goldByType },
     settings: Object.fromEntries(SETTINGS.map((d) => [d.key, getSetting(d.key)])),
+    endless: state.run.endlessExtensions > 0,
   }
   arr.push(stat)
   saveRunStats(arr)
@@ -226,7 +228,7 @@ export function statisticsHTML(): string {
   const rows = recent
     .map(({ r, num }) => {
       const outcome = r.outcome === 'win' ? 'Win' : `Lost at battle ${r.battleReached}`
-      const mode = r.start_mode === 'random' ? 'Random' : 'Draft'
+      const mode = (r.endless ? 'Endless ' : '') + (r.start_mode === 'random' ? 'Random' : 'Draft')
       return `<tr><td class="num">${num}</td><td>${mode}</td><td>${difficultyLabel(r)}</td><td>${outcome}</td><td class="num">${r.prepromotes}</td><td class="num">${r.consumables}</td><td class="num">${scoreFromStat(r)}</td></tr>`
     })
     .join('')

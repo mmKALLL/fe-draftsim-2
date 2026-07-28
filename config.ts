@@ -39,6 +39,11 @@ export const ROSTER_SIZE = 5,
   ARENA_STAT_DELTA = 4,
   ARENA_SPEED_MULTIPLIER = 0.6
 
+// Endless mode (1T3CRjDJ): most arenas a run can reach (base 4 + extensions of 4), and the
+// lifted internal-level cap (normal is 40) so units keep gaining levels/stats deep into endless.
+export const MAX_ENDLESS_ARENAS = 20
+export const ENDLESS_INTERNAL_LEVEL_CAP = 99
+
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   E: 300,
   D: 500,

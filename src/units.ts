@@ -6,6 +6,7 @@ import {
   ENEMY_LUCK_GROWTH_PENALTY,
   ENEMY_LUCK_PENALTY,
   ENEMY_WEAPON_PROFILE,
+  ENDLESS_INTERNAL_LEVEL_CAP,
   ENEMY_WEAPON_TYPE_SPLIT,
   GROWTH_STAT_KEYS,
   PROMOTION_UNLOCK_AFTER_BATTLE,
@@ -17,7 +18,13 @@ import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
 import { sim } from './sim'
-import { state } from './state'
+import { endlessActive, state } from './state'
+
+// Endless mode (1T3CRjDJ): lift the internal-level ceiling (normally 40) so units keep
+// leveling and gaining stats past promotion. Stat caps are lifted separately (see freshFromBase).
+export function internalLevelCap() {
+  return endlessActive() ? ENDLESS_INTERNAL_LEVEL_CAP : 40
+}
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer, Rarity } from '../types'
 
 export function promote(u: Unit, showLog = true) {
@@ -44,7 +51,8 @@ export function currentInternalLevel(u: Unit) {
 }
 export function syncDisplayLevel(u: Unit) {
   const internal = currentInternalLevel(u)
-  u.lvl = u.promoted ? clamp(internal - 20, 1, 20) : clamp(internal, 1, 20)
+  const promotedCap = endlessActive() ? internalLevelCap() - 20 : 20
+  u.lvl = u.promoted ? clamp(internal - 20, 1, promotedCap) : clamp(internal, 1, 20)
 }
 export function applyGrowthLevel(u: Unit) {
   const before = { ...u.stats }
@@ -58,13 +66,13 @@ export function applyGrowthLevel(u: Unit) {
   return GROWTH_STAT_KEYS.filter((k) => u.stats[k] > before[k])
 }
 export function advanceInternalLevel(u: Unit, allowPromotion: any, showLog = true) {
-  if (u.promoted && u.lvl >= 20) return false
+  if (u.promoted && u.lvl >= 20 && !endlessActive()) return false
   if (!u.promoted && u.lvl >= 20 && allowPromotion) {
     promote(u, showLog)
     return true
   }
   const gains = applyGrowthLevel(u)
-  u.internalLevel = Math.min(40, currentInternalLevel(u) + 1)
+  u.internalLevel = Math.min(internalLevelCap(), currentInternalLevel(u) + 1)
   syncDisplayLevel(u)
   if (showLog) {
     const gainsText = gains.map((k) => statLabel(u, k as StatKey)).join(', ') || 'no stats'
@@ -73,7 +81,7 @@ export function advanceInternalLevel(u: Unit, allowPromotion: any, showLog = tru
   return true
 }
 export function levelUp(u: Unit, showLog = true) {
-  if (u.promoted && u.lvl >= 20) return false
+  if (u.promoted && u.lvl >= 20 && !endlessActive()) return false
   return advanceInternalLevel(u, true, showLog)
 }
 export function advanceTwoLevels(units: Unit[]) {
@@ -110,6 +118,9 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
   // Boss enemies grow HP without the normal stat cap (xcZugbQ4) so high-level bosses
   // gain real bulk; set before the level-up loop below so growth isn't clamped at 60.
   if (uncapHp) u.caps.hp = 90
+  // Endless mode (1T3CRjDJ) lifts all stat caps: seed high caps before the leveling loop
+  // so growth/promotion aren't clamped. Existing player units get the same on continueEndless().
+  if (endlessActive()) for (const k of ALL_STAT_KEYS) u.caps[k] = 999
   u.weapon = startingWeapon(u.weaponType)
   // Enemies are "unlucky": lower Luck growth (applied before leveling) makes them
   // easier to hit and easier to crit, without touching the FE7 formulas.
@@ -117,7 +128,7 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
   u.maxHp = computeMaxHp(u)
   u.hp = u.maxHp
   const requestedInternalLevel = (promoted ? 20 + targetLevel : targetLevel) + (base.startOffset || 0)
-  const internalLevel = clamp(requestedInternalLevel, 1, 40)
+  const internalLevel = clamp(requestedInternalLevel, 1, internalLevelCap())
   while (currentInternalLevel(u) < internalLevel) advanceInternalLevel(u, promoted, false)
   // Flat Luck penalty, floored at 1 so enemy Luck never reaches 0.
   if (enemy) u.stats.lck = Math.max(1, u.stats.lck - ENEMY_LUCK_PENALTY)

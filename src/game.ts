@@ -1,13 +1,13 @@
-import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
+import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BASES } from '../data'
-import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, pickBaseFromPool, setAutoFight } from './arenas'
+import { activeArenaEntry, arenaEffectLabels, enemyFocusForSlot, extendArenaPlan, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
-import { addGold, formatGold } from './state'
-import { levelLabel, showGameOver, showWin } from './ui'
-import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, forgeWeapon, freshFromBase, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
+import { addGold, enemyLevelPerBattle, formatGold } from './state'
+import { closeModal, levelLabel, showGameOver, showWin } from './ui'
+import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, forgeWeapon, freshFromBase, internalLevelCap, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
@@ -52,7 +52,9 @@ export function generateEnemy() {
   const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
   const earlyNerf = state.battle <= EARLY_ENEMY_NERF_BATTLES ? EARLY_ENEMY_LEVEL_PENALTY : 0
   // Arenas 3/4 add extra enemy levels to steepen the late-game curve (EaM4uENF).
-  const baseInternal = clamp(1 + state.battle * 2 - earlyNerf + (ARENA_ENEMY_LEVEL_BONUS[arena - 1] || 0), 1, 40)
+  // Endless (1T3CRjDJ): enemies gain +1 level/battle per extension (enemyLevelPerBattle) and the
+  // internal cap is lifted, so they keep scaling; arena is still clamped to 4 (bonuses pin at arena 4).
+  const baseInternal = clamp(1 + state.battle * enemyLevelPerBattle() - earlyNerf + (ARENA_ENEMY_LEVEL_BONUS[arena - 1] || 0), 1, internalLevelCap())
   const bossTier = bossTierForBattle(state.battle)
   state.enemy = []
   // Decide up front which minion slots carry a 'good' weapon: a bounded count per fight
@@ -79,7 +81,7 @@ export function generateEnemy() {
       for (let j = pool.length - 1; j >= 0; j--) if (pool[j].cls === 'Knight' || pool[j].cls === 'Wyvern') pool.splice(j, 1)
     }
     // Bosses have extra levels; normal units have slight variance
-    const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, 40)
+    const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, internalLevelCap())
     const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
     const lvl = promoted ? internal - 20 : internal
     const e = freshFromBase(b, true, lvl, promoted, !!isBossSlot)
@@ -311,11 +313,11 @@ export async function runBattle() {
         addGold(bounty)
         logLine(null, `Battle bounty: ${formatGold(bounty)} (${survivors} survived${isArenaBoss ? ', arena boss' : ''}).`, 'goldLog')
       }
-    } else if (isArenaBoss && state.battle < 20) {
+    } else if (isArenaBoss && state.battle < finalBattleThisRun()) {
       addGold(SHOP_ARENA_BOSS_GOLD)
       logLine(null, `Arena boss bounty: ${formatGold(SHOP_ARENA_BOSS_GOLD)}.`, 'goldLog')
     }
-    if (state.battle >= 20) {
+    if (state.battle >= finalBattleThisRun()) {
       showWin()
     } else if (isArenaBoss) {
       state.ui.pendingShopAfterReward = true
@@ -326,4 +328,33 @@ export async function runBattle() {
     logLine(null, `Defeat on battle ${state.battle}.`, 'death')
     showGameOver()
   }
+}
+// --- Endless mode run-length helpers (1T3CRjDJ) ---
+// Arenas this run: base 4, plus 4 per endless extension (4, 8, 12, 16, 20).
+export function arenasThisRun() {
+  return ARENA_CYCLES_PER_RUN * (1 + state.run.endlessExtensions)
+}
+// Last battle of the current block; reaching it triggers the victory screen.
+export function finalBattleThisRun() {
+  return arenasThisRun() * ARENA_CYCLE_LENGTH
+}
+// Whether another +4-arena endless extension is still available (capped at MAX_ENDLESS_ARENAS).
+export function canExtendEndless() {
+  return arenasThisRun() < MAX_ENDLESS_ARENAS
+}
+// Enter/extend endless mode from the victory screen: +1 extension (more slots, harder enemies,
+// lifted caps), append 4 arenas, and record the continuation as its own stats entry.
+export function continueEndless() {
+  if (!canExtendEndless()) return
+  state.run.endlessExtensions++
+  extendArenaPlan()
+  // Lift stat caps for units already in the roster (new units get high caps in freshFromBase).
+  state.player.forEach((u) => Object.keys(u.caps).forEach((k) => (u.caps[k] = 999)))
+  state.run.recorded = false // the endless continuation is recorded as a separate stats entry
+  closeModal()
+  // Grant the just-cleared arena boss's reward + shop (the final-battle path skips them since a
+  // normal run ends there), then proceed into the next arena block.
+  state.ui.pendingShopAfterReward = true
+  renderTeams()
+  showRewards()
 }

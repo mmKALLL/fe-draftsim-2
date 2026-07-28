@@ -1,8 +1,8 @@
-import { APP_VERSION, SETTINGS, type SettingDef } from '../config'
+import { APP_VERSION, MAX_ENDLESS_ARENAS, SETTINGS, type SettingDef } from '../config'
 import { getSetting, setSetting } from './settings'
 import { makeArenaPlan, renderArenaMap } from './arenas'
 import { statLabel } from './combat'
-import { beginNextBattle, startRun } from './game'
+import { arenasThisRun, beginNextBattle, canExtendEndless, continueEndless, startRun } from './game'
 import { draftOptionsStale, emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { shopConsumablePrice, startShop } from './shop'
@@ -88,9 +88,18 @@ export function showWin() {
   const stat = recordRunStat('win')
   // Headless sim: signal run-end with the recorded stat instead of showing the results modal.
   if (sim.active) return sim.onRunEnd?.(stat)
-  showResultsModal(
-    `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Please feel free to share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
-  )
+  // Endless mode (1T3CRjDJ): offer to push on unless the run has hit the 20-arena ceiling.
+  const arenas = arenasThisRun()
+  const endless = state.run.endlessExtensions > 0
+  const mastered = arenas >= MAX_ENDLESS_ARENAS
+  const title = mastered ? 'Absolute mastery!' : endless ? `Endless victory — ${arenas} arenas!` : 'Victory!!!'
+  const body = mastered
+    ? `<p>You have conquered all ${MAX_ENDLESS_ARENAS} arenas of Elibe across ${state.battle} battles. There is nothing left to prove — absolute mastery of FireRogue. Congratulations!</p>`
+    : endless
+      ? `<p>You cleared ${arenas} arenas (${state.battle} battles) in endless mode. Push deeper for tougher foes and more power, or bank this run.</p>`
+      : `<p>Congratulations, you have survived ${state.battle} battles and overcome the toughest arenas in Elibe! Continue into endless mode for an ever-escalating challenge, or share the game with your friends!</p>`
+  const endlessBtn = canExtendEndless() ? `<button data-endless type="button">${endless ? 'Extend +4 arenas' : 'Endless mode (+4 arenas)'}</button>` : ''
+  showResultsModal(`<h2>${title}</h2>${body}${scoreHTML(true)}${endlessBtn}<button data-reset class="good">New run</button>`)
 }
 export function showGameOver() {
   const stat = recordRunStat('loss')
@@ -156,7 +165,7 @@ export function resetRun() {
     pendingDefaultLabel: '',
   })
   Object.assign(state.shop, { open: false, offers: [] })
-  Object.assign(state.run, { mode: 'draft', consumablesAcquired: 0, cheated: false, recorded: false, rewardsByRarity: {}, rewardsByType: {}, goldByType: {} })
+  Object.assign(state.run, { mode: 'draft', endlessExtensions: 0, consumablesAcquired: 0, cheated: false, recorded: false, rewardsByRarity: {}, rewardsByType: {}, goldByType: {} })
   Object.assign(state.ui, { awaitingReward: false, pendingShopAfterReward: false, activePreviewActor: null, activeConsumableActor: null })
   closeModal()
   hideShowResultsFloater()
@@ -254,6 +263,7 @@ export function showStatistics() {
 document.addEventListener('click', (e) => {
   const t = e.target as HTMLElement | null
   if (t && t.closest('[data-reset]')) resetRun()
+  else if (t && t.closest('[data-endless]')) continueEndless()
   else if (t && t.closest('[data-close]')) closeModal()
 })
 function settingControlHTML(def: SettingDef): string {

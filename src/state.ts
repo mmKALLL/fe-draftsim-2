@@ -36,6 +36,9 @@ export const state = {
   // Per-run statistics tracking (see src/stats.ts). Reset on each new run.
   run: {
     mode: 'draft' as 'draft' | 'random',
+    // Endless mode (1T3CRjDJ): 0 = normal run. Each +4-arena extension increments it, which
+    // raises the skill/held-item slot capacity and enemy level scaling, and lifts all caps.
+    endlessExtensions: 0,
     consumablesAcquired: 0,
     cheated: false,
     recorded: false,
@@ -52,6 +55,13 @@ export const state = {
     rewardArmAt: 0, // timestamp before which reward 1-5 hotkeys are ignored (mouse stays immediate)
   },
 }
+
+// Endless-mode derived values (1T3CRjDJ). endlessExtensions: 0 -> normal run.
+export const endlessActive = () => state.run.endlessExtensions > 0
+// Skill / held-item slots per unit: 1 normally, +1 per endless extension (2, 3, ...).
+export const slotCapacity = () => 1 + state.run.endlessExtensions
+// Enemy internal levels gained per battle: 2 normally, +1 per extension (3, 4, ...).
+export const enemyLevelPerBattle = () => 2 + state.run.endlessExtensions
 
 export const formatGold = (amount = 0) => `${amount} G`
 export const goldHTML = (amount = 0) => `<span class="goldAmount">${formatGold(amount)}</span>`
