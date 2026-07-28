@@ -10,6 +10,7 @@ import {
   ENEMY_WEAPON_TYPE_SPLIT,
   GROWTH_STAT_KEYS,
   PROMOTION_UNLOCK_AFTER_BATTLE,
+  SIMPLIFY_ENEMY_WEAPONS,
   WEAPON_RANK_RARITY,
 } from '../config'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
@@ -264,6 +265,17 @@ function pickWeaponType(types: string[]): string {
   }
   return types[types.length - 1]
 }
+// Whether regular minions are restricted to the plain (isDefaultWeapon) pool this arena, per the
+// 'Simplify enemy weapons' setting. Threshold is EXCLUSIVE: 'arenaN' simplifies arenas 1..N-1,
+// 'endless' simplifies all normal arenas, and only 'always' also simplifies endless arenas.
+export function shouldSimplifyEnemyWeapons(): boolean {
+  if (SIMPLIFY_ENEMY_WEAPONS === 'always') return true
+  if (SIMPLIFY_ENEMY_WEAPONS === 'never') return false
+  if (endlessActive()) return false // endless is beyond every threshold except 'always'
+  const arena = clamp(Math.floor((state.battle - 1) / 5) + 1, 1, 4)
+  const threshold = SIMPLIFY_ENEMY_WEAPONS === 'arena2' ? 2 : SIMPLIFY_ENEMY_WEAPONS === 'arena3' ? 3 : SIMPLIFY_ENEMY_WEAPONS === 'arena4' ? 4 : 5 // 'endless' -> all normal arenas
+  return arena < threshold
+}
 export function enemyWeaponFor(u: Unit, rarity: any, forceGood: boolean) {
   const allowedTypes = allowedWeapons(u) // ordered, PRIMARY first; promotion types are SECONDARY
   // Pick the weapon TYPE first (favoring the primary), then restrict the pool to it before
@@ -276,7 +288,10 @@ export function enemyWeaponFor(u: Unit, rarity: any, forceGood: boolean) {
   const arena = clamp(Math.floor((state.battle - 1) / 5) + 1, 1, 4)
   const role = rarity ? 'boss' : 'minion'
   const profile = ENEMY_WEAPON_PROFILE[arena - 1][role]
-  let pool = classWeapons.filter((w) => (forceGood ? !isBasicWeapon(w) : isDefaultWeapon(w)))
+  // Regular minions draw from the plain (isDefaultWeapon) pool only while this arena is simplified
+  // (Simplify enemy weapons setting); otherwise they use the full type pool. Bosses/good minions
+  // always exclude just the basic weapon.
+  let pool = forceGood ? classWeapons.filter((w) => !isBasicWeapon(w)) : shouldSimplifyEnemyWeapons() ? classWeapons.filter(isDefaultWeapon) : classWeapons
   if (!pool.length) pool = classWeapons
   const target = pickWeightedRarity(forceGood ? profile.good : profile.default)
   let picked = pick(resolveRarity(pool, target))

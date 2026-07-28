@@ -185,7 +185,7 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
   },
   // Arena 2
   {
-    minion: { default: { normal: 6, uncommon: 4, rare: 0 }, good: { normal: 2, uncommon: 6, rare: 2 } },
+    minion: { default: { normal: 7, uncommon: 3, rare: 0 }, good: { normal: 2, uncommon: 6, rare: 2 } },
     boss: { default: { normal: 0, uncommon: 6, rare: 3 }, good: { normal: 0, uncommon: 6, rare: 3 } },
   },
   // Arena 3
@@ -286,6 +286,11 @@ export let MULTI_HIT_EXTRA_TIERS = false
 // Center combat cards (17WAdseJ): show each unit's skill + held-item names below the
 // damage line. Off (default) keeps the small cards compact (weapon + damage only).
 export let SHOW_COMBAT_LOADOUT_NAMES = false
+// Simplify enemy weapons: restrict regular minions to the plain (isDefaultWeapon) weapon pool,
+// reducing complex weapons, for arenas UP TO the chosen threshold (exclusive — 'arena3' simplifies
+// arenas 1-2). 'endless' covers all normal arenas but not endless; 'always' includes endless.
+export type SimplifyEnemyWeapons = 'never' | 'arena2' | 'arena3' | 'arena4' | 'endless' | 'always'
+export let SIMPLIFY_ENEMY_WEAPONS: SimplifyEnemyWeapons = 'arena2'
 
 // Difficulty (cxq8vZVL, split per 17NQLJnh): the skill axis swaps the active enemy
 // skill/held-item table; the weapon axis shifts good-weapon minion counts. Hard is the
@@ -401,6 +406,24 @@ export const SETTINGS: SettingDef[] = [
       { value: 'lunatic', label: 'Lunatic' },
     ],
     apply: (v) => setWeaponDifficulty(v === 'normal' || v === 'lunatic' ? v : 'hard'),
+  },
+  {
+    key: 'simplifyEnemyWeapons',
+    label: 'Simplify enemy weapons',
+    description: 'Reduces the likelihood of complex weapons until the given arena.',
+    type: 'choice',
+    default: 'arena2',
+    options: [
+      { value: 'never', label: 'Never simplify' },
+      { value: 'arena2', label: 'Until arena 2' },
+      { value: 'arena3', label: 'Until arena 3' },
+      { value: 'arena4', label: 'Until arena 4' },
+      { value: 'endless', label: 'Until endless mode' },
+      { value: 'always', label: 'Always simplify' },
+    ],
+    apply: (v) => {
+      SIMPLIFY_ENEMY_WEAPONS = (['never', 'arena2', 'arena3', 'arena4', 'endless', 'always'].includes(v as string) ? v : 'arena2') as SimplifyEnemyWeapons
+    },
   },
   {
     key: 'goldMethod',
