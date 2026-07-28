@@ -3,7 +3,7 @@ import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponRarityLabel } from '../dat
 import { setShopOpen } from './arenas'
 import { consumableSummary, refreshMaxHp, statLabel, unitItems } from './combat'
 import { beginNextBattle } from './game'
-import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
+import { collapseForges, growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity, skillTargets } from './rewards'
 import { noteConsumablesGained, noteRewardChoice } from './stats'
 import { addGold, formatGold, goldHTML, spendGold } from './state'
@@ -308,7 +308,7 @@ export function chooseShopForgeTarget(i: number) {
   let html = `<h2>Weapon Forge: choose weapon</h2><div class="small">Cost ${goldHTML(offer.price)}. Upgrades Mt +2 and Hit +5.</div>`
   eligible.forEach((u, idx) => {
     const preview = forgePreview(u.weapon)
-    html += `<div class="choice"><div><h4>${u.name}: ${u.weapon.name} -> ${preview.name}</h4><div>${weaponSummary(u.weapon)} -> ${weaponSummary(preview)}</div></div><button data-shop-forge-target="${idx}" class="good">Forge</button></div>`
+    html += `<div class="choice"><div><h4>${u.name}: ${collapseForges(u.weapon.name)} -> ${collapseForges(preview.name)}</h4><div>${weaponSummary(u.weapon)} -> ${weaponSummary(preview)}</div></div><button data-shop-forge-target="${idx}" class="good">Forge</button></div>`
   })
   html += '<button id="cancelShopForgeBtn">Cancel</button>'
   showModal(html)
@@ -326,12 +326,12 @@ export function chooseShopForgeTarget(i: number) {
           renderShop('Not enough gold for the weapon forge.')
           return
         }
-        const oldName = u.weapon.name
+        const oldName = collapseForges(u.weapon.name)
         forgeWeapon(u.weapon)
         offer.sold = true
         closeModal()
         renderTeams()
-        renderShop(`${u.name}'s ${oldName} was forged into ${u.weapon.name}.`)
+        renderShop(`${u.name}'s ${oldName} was forged into ${collapseForges(u.weapon.name)}.`)
       })
   )
   $('cancelShopForgeBtn').onclick = closeModal

@@ -81,7 +81,14 @@ export function padCell(v: any, w = 2) {
 // Card weapon labels live in narrow slots; names of 12+ chars are clipped to their
 // first 9 and marked with two dots (e.g. "Silver Sword" -> "Silver Sw..").
 export function truncWeaponName(name = '', max = 9, truncateAt = 12) {
-  return name.length >= truncateAt ? `${name.slice(0, max)}..` : name
+  return collapseForges(name).length >= truncateAt ? `${collapseForges(name).slice(0, max)}..` : collapseForges(name)
+}
+// Collapse a run of 5+ trailing forge pluses to '+N' for readability, e.g. 'Brave Lance+++++'
+// -> 'Brave Lance+5'. Fewer than 5 keep their literal pluses.
+export function collapseForges(name = '') {
+  const m = String(name).match(/\++$/)
+  const n = m ? m[0].length : 0
+  return n >= 5 ? `${name.slice(0, -n)}+${n}` : name
 }
 export function growthCompareHTML(b: any) {
   const s = b.stats,
@@ -173,7 +180,7 @@ export function growthSummaryHTML(u: Unit) {
   return `<span class="muted">(${GROWTH_STAT_KEYS.map((k) => `${statLabel(u, k)} ${g[k]}%`).join(', ')})</span>`
 }
 export function unitCard(u: Unit) {
-  const wt = u.weapon ? ` · ${u.weapon.name}` : ''
+  const wt = u.weapon ? ` · ${collapseForges(u.weapon.name)}` : ''
   const st = statusLabel(u)
   const status = st ? ` · ${st}` : ''
   const leader = u.isLeader ? ' · Leader' : ''
@@ -251,7 +258,7 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
       : ''
   const hpLine = `${levelLabel(u)} - ${u.hp}/${u.maxHp}`
   const weaponDanger = isEnemy && u.weapon && enemyWeaponDangerous(u) ? ' weaponDanger' : !isEnemy && u.weapon?.rank === 'S' ? ' weaponSrank' : ''
-  const weaponLine = u.weapon ? `<div class="small weaponLine${weaponDanger}" title="${htmlAttr(u.weapon.name)}">${truncWeaponName(u.weapon.name)}</div>` : ''
+  const weaponLine = u.weapon ? `<div class="small weaponLine${weaponDanger}" title="${htmlAttr(collapseForges(u.weapon.name))}">${truncWeaponName(u.weapon.name)}</div>` : ''
   // Base combat output on the center card (143HUpzn): damage only (attack speed is intuitive
   // from class + doubling). Staves deal no damage, so they get no line.
   const dmgAs = u.weapon && !u.weapon.staff ? `${displayAttackPower(u)} dmg` : ''
@@ -296,23 +303,23 @@ function fmtSignedSpd(n: number) {
   return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '±0'
 }
 export function weaponReplacementText(unit: Unit) {
-  return unit.weapon ? `${unit.weapon.name} (${weaponSummary(unit.weapon)})` : 'nothing'
+  return unit.weapon ? `${collapseForges(unit.weapon.name)} (${weaponSummary(unit.weapon)})` : 'nothing'
 }
 export const SPD_ARROW = '<span class="spdArrow">→</span>'
 export function weaponOfferTitle(item: any, unit: Unit | null = null) {
-  if (!unit) return item.name
+  if (!unit) return collapseForges(item.name)
   // Show the con-based net speed change as an arrow (current weapon → this weapon), with the
   // weapon's speed bonus folded in: e.g. "Spd -4 → -1". When equipping wouldn't change the
   // net speed (or there's no current weapon), show just the single value: e.g. "Spd +4".
   const next = weaponNetSpeed(unit, item)
   const cur = unit.weapon ? weaponNetSpeed(unit, unit.weapon) : next
   const spdText = cur === next ? `Spd ${fmtSignedSpd(next)}` : `Spd ${fmtSignedSpd(cur)} ${SPD_ARROW} ${fmtSignedSpd(next)}`
-  return `${item.name} to ${unit.name} (${spdText})`
+  return `${collapseForges(item.name)} to ${unit.name} (${spdText})`
 }
 export function weaponOfferDescription(item: any, unit: Unit | null = null, opts: any = {}) {
   const action = opts.action || 'Equip'
   const includeRarity = opts.includeRarity !== false
-  const lead = unit ? `${action} ${unit.name} with ${item.name}` : `${action} ${item.name}`
+  const lead = unit ? `${action} ${unit.name} with ${collapseForges(item.name)}` : `${action} ${collapseForges(item.name)}`
   const meta = []
   if (includeRarity) meta.push(weaponRarityLabel(item.rarity))
   if (unit) meta.push(`Replaces ${weaponReplacementText(unit)}`)
