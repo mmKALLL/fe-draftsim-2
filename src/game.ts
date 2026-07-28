@@ -1,11 +1,11 @@
-import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
+import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LATE_LEVEL_VARIANCE_AFTER_ARENA, LATE_LEVEL_VARIANCE_PCT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, arenaEffectMultiplier, enemyFocusForSlot, extendArenaPlan, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
-import { addGold, enemyLevelPerBattle, formatGold } from './state'
+import { addGold, formatGold } from './state'
 import { closeModal, levelLabel, showGameOver, showWin } from './ui'
 import { advanceTwoLevels, clericStatusOrHealStaff, consumableById, enemyWeaponFor, forgeWeapon, freshFromBase, internalLevelCap, promotionUnlockedForRegularEnemies, startingConsumables } from './units'
 import { $, clamp, floor, pick, rint, rnd } from './utils'
@@ -52,9 +52,10 @@ export function generateEnemy() {
   const arena = clamp(floor((state.battle - 1) / 5) + 1, 1, 4)
   const earlyNerf = state.battle <= EARLY_ENEMY_NERF_BATTLES ? EARLY_ENEMY_LEVEL_PENALTY : 0
   // Arenas 3/4 add extra enemy levels to steepen the late-game curve (EaM4uENF).
-  // Endless (1T3CRjDJ): enemies gain +1 level/battle per extension (enemyLevelPerBattle) and the
-  // internal cap is lifted, so they keep scaling; arena is still clamped to 4 (bonuses pin at arena 4).
-  const baseInternal = clamp(1 + state.battle * enemyLevelPerBattle() - earlyNerf + (ARENA_ENEMY_LEVEL_BONUS[arena - 1] || 0), 1, internalLevelCap())
+  // Endless (1T3CRjDJ): +2 internal level/battle through the normal run, +3/battle from arena 5 on,
+  // applied INCREMENTALLY (enemyBaseInternalLevel) so the level doesn't jump on entering endless; the
+  // internal cap is lifted so enemies keep scaling. Arena stays clamped to 4 (bonuses pin at arena 4).
+  const baseInternal = clamp(enemyBaseInternalLevel() - earlyNerf + (ARENA_ENEMY_LEVEL_BONUS[arena - 1] || 0), 1, internalLevelCap())
   const bossTier = bossTierForBattle(state.battle)
   state.enemy = []
   // Decide up front which minion slots carry a 'good' weapon: a bounded count per fight
@@ -81,7 +82,11 @@ export function generateEnemy() {
       for (let j = pool.length - 1; j >= 0; j--) if (pool[j].cls === 'Knight' || pool[j].cls === 'Wyvern') pool.splice(j, 1)
     }
     // Bosses have extra levels; normal units have slight variance
-    const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0), 1, internalLevelCap())
+    // Deep endless (past LATE_LEVEL_VARIANCE_AFTER_ARENA): jitter each enemy's level by up to
+    // +-LATE_LEVEL_VARIANCE_PCT of the base level, on top of the boss/minion offsets.
+    const lateVariance =
+      state.battle > LATE_LEVEL_VARIANCE_AFTER_ARENA * ARENA_CYCLE_LENGTH ? Math.round(baseInternal * LATE_LEVEL_VARIANCE_PCT * (rnd() * 2 - 1)) : 0
+    const internal = clamp(baseInternal + (isBossSlot ? (bossTier === BOSS_TIER_ARENA ? 6 : 4) : rnd() < 0.5 ? rint(3) - 1 : 0) + lateVariance, 1, internalLevelCap())
     const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
     const lvl = promoted ? internal - 20 : internal
     const e = freshFromBase(b, true, lvl, promoted, !!isBossSlot)
@@ -335,6 +340,13 @@ export async function runBattle() {
   }
 }
 // --- Endless mode run-length helpers (1T3CRjDJ) ---
+// Enemy base internal level from the per-battle rate applied INCREMENTALLY (not retroactively):
+// +2/level through the normal 20-battle run, then +3/level from arena 5 (endless) onward. This
+// keeps the level continuous across the arena-4->5 boundary instead of re-scaling all battles.
+export function enemyBaseInternalLevel() {
+  const baseRunBattles = ARENA_CYCLES_PER_RUN * ARENA_CYCLE_LENGTH
+  return 1 + Math.min(state.battle, baseRunBattles) * 2 + Math.max(0, state.battle - baseRunBattles) * 3
+}
 // Arenas this run: base 4, plus 4 per endless extension (4, 8, 12, 16, 20).
 export function arenasThisRun() {
   return ARENA_CYCLES_PER_RUN * (1 + state.run.endlessExtensions)

@@ -53,13 +53,10 @@ export function currentInternalLevel(u: Unit) {
 }
 export function syncDisplayLevel(u: Unit) {
   const internal = currentInternalLevel(u)
-  // Endless (1T3CRjDJ): show the raw internal level, continuous across promotion, up to 99 —
-  // rather than resetting to a 1-20 promoted tier.
-  if (endlessActive()) {
-    u.lvl = clamp(internal, 1, ENDLESS_DISPLAY_LEVEL_CAP)
-    return
-  }
-  u.lvl = u.promoted ? clamp(internal - 20, 1, 20) : clamp(internal, 1, 20)
+  // Endless (1T3CRjDJ): the promoted display keeps climbing past L20 (up to the display cap) but
+  // stays internal-20 like the normal arenas, so there's no jump on entering endless.
+  const promotedCap = endlessActive() ? ENDLESS_DISPLAY_LEVEL_CAP : 20
+  u.lvl = u.promoted ? clamp(internal - 20, 1, promotedCap) : clamp(internal, 1, 20)
 }
 export function applyGrowthLevel(u: Unit) {
   const before = { ...u.stats }

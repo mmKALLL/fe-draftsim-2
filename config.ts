@@ -45,6 +45,10 @@ export const ROSTER_SIZE = 5,
 export const MAX_ENDLESS_ARENAS = 20
 export const ENDLESS_INTERNAL_LEVEL_CAP = 9999
 export const ENDLESS_DISPLAY_LEVEL_CAP = 999
+// Deep-endless level variance (1T3CRjDJ): past this arena, each enemy's level is jittered by up to
+// +-this fraction of the battle's base level, on top of the usual boss/minion offsets. Pct 0 = off.
+export const LATE_LEVEL_VARIANCE_AFTER_ARENA = 12
+export const LATE_LEVEL_VARIANCE_PCT = 0.04
 
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   E: 300,
@@ -115,7 +119,7 @@ export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'arena', Rec
 
 // Gentle early ramp: enemies in the first EARLY_ENEMY_NERF_BATTLES fights are
 // this many levels lower (final enemy level is still floored at 1).
-export const EARLY_ENEMY_NERF_BATTLES = 3
+export const EARLY_ENEMY_NERF_BATTLES = 4
 export const EARLY_ENEMY_LEVEL_PENALTY = 1
 
 // Late-arena difficulty ramp (EaM4uENF). Per-arena (index 0 = arena 1), so each
