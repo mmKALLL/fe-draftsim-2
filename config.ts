@@ -1,7 +1,7 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 import { gameOrigins, setEnabledGames } from './data'
 
-export const APP_VERSION = '1.10.1-endless-balancing'
+export const APP_VERSION = '1.10.3-endless-rebalancing'
 
 type BoostPriceKey = StatKey | 'level'
 
@@ -44,7 +44,7 @@ export const ROSTER_SIZE = 5,
 // is just a high safety ceiling for the level-up loop. The DISPLAYED level is clamped separately.
 export const MAX_ENDLESS_ARENAS = 20
 export const ENDLESS_INTERNAL_LEVEL_CAP = 9999
-export const ENDLESS_DISPLAY_LEVEL_CAP = 99
+export const ENDLESS_DISPLAY_LEVEL_CAP = 999
 
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   E: 300,
