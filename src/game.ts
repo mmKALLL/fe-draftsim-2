@@ -318,7 +318,10 @@ export async function runBattle() {
       logLine(null, `Arena boss bounty: ${formatGold(SHOP_ARENA_BOSS_GOLD)}.`, 'goldLog')
     }
     if (state.battle >= finalBattleThisRun()) {
-      showWin()
+      // Endless (1T3CRjDJ): mid-endless blocks auto-roll into the next 4 arenas with no prompt;
+      // only the base victory (opt-in) and the final 20-arena mastery show a victory screen.
+      if (state.run.endlessExtensions > 0 && canExtendEndless()) advanceEndless(false)
+      else showWin()
     } else if (isArenaBoss) {
       state.ui.pendingShopAfterReward = true
       renderTeams()
@@ -342,19 +345,23 @@ export function finalBattleThisRun() {
 export function canExtendEndless() {
   return arenasThisRun() < MAX_ENDLESS_ARENAS
 }
-// Enter/extend endless mode from the victory screen: +1 extension (more slots, harder enemies,
-// lifted caps), append 4 arenas, and record the continuation as its own stats entry.
-export function continueEndless() {
+// Roll into the next block of 4 endless arenas (1T3CRjDJ): +1 extension (more slots, tougher foes,
+// lifted caps), append 4 arenas, then grant the just-cleared boss's reward + shop before the next
+// arena (the final-battle path skips them since a normal run ends there). fromModal closes the
+// base-victory screen — the one manual opt-in; mid-endless blocks advance automatically with no
+// prompt. The endless run records its own stats entry when it finally ends (loss/mastery/abandon).
+function advanceEndless(fromModal: boolean) {
   if (!canExtendEndless()) return
   state.run.endlessExtensions++
   extendArenaPlan()
-  // Lift stat caps for units already in the roster (new units get high caps in freshFromBase).
   state.player.forEach((u) => Object.keys(u.caps).forEach((k) => (u.caps[k] = 999)))
-  state.run.recorded = false // the endless continuation is recorded as a separate stats entry
-  closeModal()
-  // Grant the just-cleared arena boss's reward + shop (the final-battle path skips them since a
-  // normal run ends there), then proceed into the next arena block.
+  state.run.recorded = false
+  if (fromModal) closeModal()
   state.ui.pendingShopAfterReward = true
   renderTeams()
   showRewards()
+}
+// The base victory's "Endless mode" button — the only manual opt-in into endless.
+export function continueEndless() {
+  advanceEndless(true)
 }

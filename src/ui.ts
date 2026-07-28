@@ -2,7 +2,7 @@ import { APP_VERSION, MAX_ENDLESS_ARENAS, SETTINGS, type SettingDef } from '../c
 import { getSetting, setSetting } from './settings'
 import { makeArenaPlan, renderArenaMap } from './arenas'
 import { statLabel } from './combat'
-import { arenasThisRun, beginNextBattle, canExtendEndless, continueEndless, startRun } from './game'
+import { beginNextBattle, continueEndless, startRun } from './game'
 import { draftOptionsStale, emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { shopConsumablePrice, startShop } from './shop'
@@ -88,18 +88,17 @@ export function showWin() {
   const stat = recordRunStat('win')
   // Headless sim: signal run-end with the recorded stat instead of showing the results modal.
   if (sim.active) return sim.onRunEnd?.(stat)
-  // Endless mode (1T3CRjDJ): offer to push on unless the run has hit the 20-arena ceiling.
-  const arenas = arenasThisRun()
-  const endless = state.run.endlessExtensions > 0
-  const mastered = arenas >= MAX_ENDLESS_ARENAS
-  const title = mastered ? 'Absolute mastery!' : endless ? `Endless victory — ${arenas} arenas!` : 'Victory!!!'
-  const body = mastered
-    ? `<p>You have conquered all ${MAX_ENDLESS_ARENAS} arenas of Elibe across ${state.battle} battles. There is nothing left to prove — absolute mastery of FireRogue. Congratulations!</p>`
-    : endless
-      ? `<p>You cleared ${arenas} arenas (${state.battle} battles) in endless mode. Push deeper for tougher foes and more power, or bank this run.</p>`
-      : `<p>Congratulations, you have survived ${state.battle} battles and overcome the toughest arenas in Elibe! Continue into endless mode for an ever-escalating challenge, or share the game with your friends!</p>`
-  const endlessBtn = canExtendEndless() ? `<button data-endless type="button">${endless ? 'Extend +4 arenas' : 'Endless mode (+4 arenas)'}</button>` : ''
-  showResultsModal(`<h2>${title}</h2>${body}${scoreHTML(true)}${endlessBtn}<button data-reset class="good">New run</button>`)
+  // Endless (1T3CRjDJ): only the BASE victory (offer endless) and the final 20-arena mastery reach
+  // here — mid-endless blocks auto-continue in game.ts. So endlessExtensions > 0 here means mastery.
+  if (state.run.endlessExtensions > 0) {
+    showResultsModal(
+      `<h2>Absolute mastery!</h2><p>You have conquered all ${MAX_ENDLESS_ARENAS} arenas of Elibe across ${state.battle} battles — absolute mastery of FireRogue. Congratulations!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
+    )
+  } else {
+    showResultsModal(
+      `<h2>Victory!!!</h2><p>Congratulations, you have survived ${state.battle} battles and overcome the toughest arenas in Elibe! Enter endless mode for an ever-escalating challenge — a fresh set of 4 arenas each time, +1 skill/item slot and tougher foes per set, up to 20 arenas — or share the game with your friends!</p>${scoreHTML(true)}<button data-endless type="button">Endless mode</button><button data-reset class="good">New run</button>`
+    )
+  }
 }
 export function showGameOver() {
   const stat = recordRunStat('loss')
@@ -208,6 +207,8 @@ export function showHelpRules() {
       <li>Low-base units have buffed growths</li>
       <li>10+ speed advantage results in a 3x hit</li>
     </ul>
+    <h3>Endless mode</h3>
+    <p>Winning the run unlocks endless mode: it keeps generating fresh sets of 4 arenas (up to 20 arenas total) with all stat caps removed and steadily tougher foes. Each unit gains +1 skill and +1 held-item slot every 4 arenas.</p>
     <button data-close class="good">Back</button>`
   )
 }
