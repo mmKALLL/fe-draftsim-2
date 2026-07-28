@@ -1362,7 +1362,7 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
       else {
         logLine(
           null,
-          `${actor.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${target.name} for ${r.damage}. ${target.name} HP ${target.hp}/${target.maxHp}.`,
+          `${actor.name}${suffix}${r.crit ? ' CRITICAL' : ''} hits ${target.name} for ${r.damage} (${r.dh}% displayed). ${target.name} HP ${target.hp}/${target.maxHp}.`,
           r.crit ? 'crit' : 'hit'
         )
         if (r.proc) logLine(null, `${actor.name}'s ${r.proc.name} activates${r.lethal ? ' — instant defeat' : ''}!`, 'crit')
