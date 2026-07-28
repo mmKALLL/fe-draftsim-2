@@ -1,6 +1,6 @@
 import { ALL_STAT_KEYS, ARENA_CYCLES_PER_RUN, ARENA_CYCLE_LENGTH, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, DEBUG_SKILLS, ENEMY_BONUS_COUNTS, ENEMY_BONUS_RARITY, REWARD_OPTIONS_PER_SCREEN, REWARD_RARE_LOCKED_UNTIL_BATTLE, REWARD_RARITY_WEIGHTS, REWARD_SKIP_GOLD, REWARD_TYPE_UNIT_COOLDOWN, REWARD_TYPE_WEIGHTS, UNIVERSAL_SKILL_WEIGHT } from '../config'
 import { CONSUMABLES, HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponRarityLabel } from '../data'
-import { attackSpeed, computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitTags, weaponResultingAS } from './combat'
+import { attackSpeed, computeMaxHp, consumableSummary, refreshMaxHp, statLabel, unitItems, unitSkills, unitTags, weaponResultingAS } from './combat'
 import { bossTierForBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, SPD_ARROW, weaponOfferDescription, weaponOfferTitle } from './render'
 import { applyReward } from './shop'
@@ -9,7 +9,7 @@ import { levelLabel, showModal } from './ui'
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, isBasicWeapon, levelUp, pickWeightedRarity } from './units'
 import { $, capStat, pick, rnd } from './utils'
 import { sim } from './sim'
-import { state } from './state'
+import { endlessActive, slotCapacity, state } from './state'
 import type { Unit, Weapon, Rarity, RewardType, StatKey } from '../types'
 
 
@@ -138,7 +138,7 @@ export function consumableReward(rarity: Rarity = 'normal') {
 export function heldItemReward(rarity: Rarity = 'normal') {
   const chosen = pickByRarity(HELD_ITEMS, rarity)
   if (!chosen) return null
-  const candidates = state.player.filter((u) => u.heldItem?.id !== chosen.id && !unitOnRewardCooldown(u.id, 'heldItem') && heldItemRelevantToUnit(chosen, u))
+  const candidates = state.player.filter((u) => !unitItems(u).some((i) => i.id === chosen.id) && !unitOnRewardCooldown(u.id, 'heldItem') && heldItemRelevantToUnit(chosen, u))
   if (!candidates.length) return null
   const unit = pick(candidates)
   const item = { ...chosen }
@@ -150,7 +150,7 @@ export function skillClassMatches(skill: any, u: Unit) {
   return skill.classes.includes('Any') || skill.classes.includes(u.cls) || skill.classes.includes(u.displayCls)
 }
 export function skillTargets(skill: any) {
-  return state.player.filter((u) => u.hp > 0 && u.skill?.id !== skill.id && !unitOnRewardCooldown(u.id, 'skill') && skillClassMatches(skill, u))
+  return state.player.filter((u) => u.hp > 0 && !unitSkills(u).some((s) => s.id === skill.id) && !unitOnRewardCooldown(u.id, 'skill') && skillClassMatches(skill, u))
 }
 export function skillReward(rarity: Rarity = 'normal') {
   const offerable = TEACHABLE_SKILLS.filter((s) => skillTargets(s).length)
@@ -173,29 +173,36 @@ function rollFractionalCount(v: number) {
   const base = Math.floor(v)
   return base + (rnd() < v - base ? 1 : 0)
 }
-// Give an enemy class-appropriate bonus skill / held item per ENEMY_BONUS_COUNTS
-// (keyed by current arena + role). All-zero by default, so this is a no-op unless a
-// "hard mode" table is swapped in. Units have one slot each, so a rolled count >= 1 fills it.
+// Give an enemy class-appropriate bonus skill / held item per ENEMY_BONUS_COUNTS (keyed by
+// current arena + role). All-zero by default, so this is a no-op unless a "hard mode" table is
+// swapped in. Endless (1T3CRjDJ): a roll of >= 1 fills ALL of the enemy's slots (no duplicate
+// skills/items); normally it fills the single slot. Rarity is rolled per slot.
 export function assignEnemyBonuses(unit: Unit, role: 'boss' | 'minion') {
   const arena = rewardArena(state.battle)
   const cfg = ENEMY_BONUS_COUNTS[arena - 1]?.[role]
   if (!cfg) return
   const rarityWeights = ENEMY_BONUS_RARITY[arena - 1]?.[role]
+  const want = endlessActive() ? slotCapacity() : 1
+  const rollOne = (pool: any[]) => (rarityWeights ? pickByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool))
   if (rollFractionalCount(cfg.skill) >= 1) {
     const pool = TEACHABLE_SKILLS.filter((s) => skillClassMatches(s, unit))
-    // Roll a rarity, then pick a skill of that rarity (steps down to any rarity if empty).
-    const skill = rarityWeights ? pickByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
-    if (skill) {
-      unit.skill = skill
+    while (unit.skills.length < want) {
+      const avail = pool.filter((s: any) => !unit.skills.some((h) => h.id === s.id))
+      if (!avail.length) break
+      const skill = rollOne(avail)
+      if (!skill) break
+      unit.skills.push(skill)
       refreshMaxHp(unit) // a rolled HP +5 raises the enemy's maxHp before its hp is set to full
     }
   }
   if (rollFractionalCount(cfg.held) >= 1) {
     const pool = HELD_ITEMS.filter((i: any) => heldItemRelevantToUnit(i, unit))
-    // Same rarity-weighted roll for held items, keyed on `.rarity` via pickByRarity.
-    const item = rarityWeights ? pickByRarity(pool, pickWeightedRarity(rarityWeights)) : pick(pool)
-    if (item) {
-      unit.heldItem = item
+    while (unit.heldItems.length < want) {
+      const avail = pool.filter((i: any) => !unit.heldItems.some((h) => h.id === i.id))
+      if (!avail.length) break
+      const item = rollOne(avail)
+      if (!item) break
+      unit.heldItems.push(item)
       refreshMaxHp(unit) // keep maxHp in sync if a held item ever grants HP
     }
   }

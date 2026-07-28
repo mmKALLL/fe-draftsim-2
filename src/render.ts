@@ -29,8 +29,12 @@ import {
   statusName,
   temporaryBuffLabel,
   weaponEffectLabels,
+  unitItems,
+  unitSkills,
+  sumItems,
+  sumSkills,
 } from './combat'
-import { updateGoldUI } from './state'
+import { slotCapacity, updateGoldUI } from './state'
 import { levelLabel } from './ui'
 import { $, floor, pick, rnd } from './utils'
 import { state } from './state'
@@ -177,12 +181,12 @@ export function unitCard(u: Unit) {
   const buffText = buffs ? ` · ${buffs}` : ''
   const portrait = portraitImgForUnit(u)
   const effectBracket = (desc: string) => (desc ? ` <span class="effectNote">[${desc}]</span>` : '')
-  const held = u.heldItem ? `<div class="small heldLine" title="${htmlAttr(u.heldItem.desc || '')}">${u.heldItem.name}${effectBracket(u.heldItem.desc || '')}</div>` : ''
-  const skill = u.skill ? `<div class="small heldLine" title="${htmlAttr(u.skill.desc || '')}">${u.skill.name}${effectBracket(u.skill.desc || '')}</div>` : ''
+  const held = unitItems(u).map((i) => `<div class="small heldLine" title="${htmlAttr(i.desc || '')}">${i.name}${effectBracket(i.desc || '')}</div>`).join('')
+  const skill = unitSkills(u).map((s) => `<div class="small heldLine" title="${htmlAttr(s.desc || '')}">${s.name}${effectBracket(s.desc || '')}</div>`).join('')
   const itemSkillList = held || skill ? `<div class="cardItemList">${skill}${held}</div>` : ''
   const dmg = displayAttackPower(u)
   const pill = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${dmg} dmg / ${attackSpeed(u)} AS`
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space nameRow"><div class="name">${u.name}</div><span class="pill">${pill}</span></div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + (u.heldItem?.crit || 0) + (u.skill?.crit || 0))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space nameRow"><div class="name">${u.name}</div><span class="pill">${pill}</span></div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + sumItems(u, (i) => i.crit) + sumSkills(u, (s) => s.crit))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
 }
 export function renderConsumables() {
   const panel = $('consumablePanel')
@@ -238,7 +242,9 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const boss = u.bossTier === BOSS_TIER_ARENA ? ' <div class="bossTag">ARENA BOSS</div>' : u.bossTier === BOSS_TIER_REGULAR ? ' <div class="bossTag">BOSS</div>' : ''
   const st = statusLabel(u)
   const status = st ? `<br>${st}` : ''
-  const bonus = isEnemy && (u.skill || u.heldItem) ? (u.skill && u.heldItem ? ' hasBonus hasBonusBoth' : ' hasBonus') : ''
+  const hasSkill = unitSkills(u).length > 0
+  const hasItem = unitItems(u).length > 0
+  const bonus = isEnemy && (hasSkill || hasItem) ? (hasSkill && hasItem ? ' hasBonus hasBonusBoth' : ' hasBonus') : ''
   const next =
     isEnemy && u.id === state.combat.nextEnemyMarkerId && u.hp > 0
       ? '<span class="nextMarker" title="Moves next" aria-label="Moves next"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 20 L4 8 H20 Z"/></svg></span>'
@@ -252,8 +258,8 @@ export function combatantSpriteSlot(u: Unit, isEnemy = false) {
   const dmgAsLine = dmgAs ? `<div class="small combatDmgAs">${dmgAs}</div>` : ''
   // Skill + held-item names on the center card (148AGTes), shown below the damage line only
   // when the combatCardNames setting is on (17WAdseJ); off (default) keeps cards compact.
-  const heldLine = u.heldItem ? `<div class="small combatLoadout" title="${htmlAttr(u.heldItem.desc || '')}">${truncWeaponName(u.heldItem.name)}</div>` : ''
-  const skillLine = u.skill ? `<div class="small combatLoadout" title="${htmlAttr(u.skill.desc || '')}">${truncWeaponName(u.skill.name)}</div>` : ''
+  const heldLine = unitItems(u).map((i) => `<div class="small combatLoadout" title="${htmlAttr(i.desc || '')}">${truncWeaponName(i.name)}</div>`).join('')
+  const skillLine = unitSkills(u).map((s) => `<div class="small combatLoadout" title="${htmlAttr(s.desc || '')}">${truncWeaponName(s.name)}</div>`).join('')
   const loadout = SHOW_COMBAT_LOADOUT_NAMES ? `${skillLine}${heldLine}` : ''
   return `<div class="combatSlot"><div class="combatant ${u.hp <= 0 ? 'dead' : ''}${bonus}" data-id="${u.id}">${next}${battleImgForUnit(u)}<div class="small">${u.name}${boss}${status}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="hpText">${hpLine}</div>${weaponLine}${dmgAsLine}${loadout}</div><div class="${previewClass}">${preview || '&nbsp;'}</div></div>`
 }
@@ -313,7 +319,11 @@ export function weaponOfferDescription(item: any, unit: Unit | null = null, opts
   return `${lead} (${weaponSummary(item)}).${meta.length ? `<div class="small rewardMeta">${meta.join(' · ')}</div>` : ''}`
 }
 export function heldItemReplacementText(unit: Unit) {
-  return unit.heldItem ? `Replaces ${unit.heldItem.name}${unit.heldItem.desc ? ` — ${unit.heldItem.desc}` : ''}` : 'Currently no item'
+  const items = unitItems(unit)
+  const cap = slotCapacity()
+  if (!items.length) return `Empty (0/${cap} items)`
+  const names = items.map((i) => i.name).join(', ')
+  return items.length < cap ? `Adds alongside ${names} (${items.length}/${cap})` : `Full (${items.length}/${cap}) — you'll pick which to replace: ${names}`
 }
 export function heldItemOfferTitle(item: any, unit: Unit | null = null) {
   return unit ? `${item.name} to ${unit.name}` : item.name
@@ -337,7 +347,7 @@ export function skillEligibleUnitsLabel(skill: any) {
   // Universal ('Any'-class) skills go on anyone, so listing the whole roster (each with its
   // current skill) is noise — collapse to a single word instead.
   if (skill.classes?.includes('Any')) return 'Universal'
-  const withSkill = (u: Unit) => `${u.name} (${u.skill?.name || 'None'})`
+  const withSkill = (u: Unit) => `${u.name} (${unitSkills(u).map((s) => s.name).join(', ') || 'None'})`
   const eligible = state.player.filter((u) => skill.classes?.includes(u.cls) || skill.classes?.includes(u.displayCls))
   return eligible.map(withSkill).join(', ')
 }
@@ -349,6 +359,11 @@ export function skillOfferDescription(skill: any, unit: Unit | null = null, opts
   // separated from the rarity by a center-dot like the unit card's stat list.
   const eligible = unit ? '' : skillEligibleUnitsLabel(skill)
   const meta = [eligible ? `${rarity} · ${eligible}` : rarity]
-  if (unit) meta.push(unit.skill ? `Replaces ${unit.skill.name}${unit.skill.desc ? ` — ${unit.skill.desc}` : ''}` : 'No current skill')
+  if (unit) {
+    const skills = unitSkills(unit)
+    const cap = slotCapacity()
+    const names = skills.map((s) => s.name).join(', ')
+    meta.push(!skills.length ? `Empty (0/${cap} skills)` : skills.length < cap ? `Adds alongside ${names} (${skills.length}/${cap})` : `Full (${skills.length}/${cap}) — you'll pick which to replace: ${names}`)
+  }
   return `${lead}: ${skill.desc}<div class="small rewardMeta">${meta.join(' · ')}</div>`
 }

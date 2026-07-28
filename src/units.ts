@@ -13,7 +13,7 @@ import {
   WEAPON_RANK_RARITY,
 } from '../config'
 import { CLASSES, CONSUMABLES, WEAPONS } from '../data'
-import { computeMaxHp, sleep, statLabel } from './combat'
+import { computeMaxHp, sleep, statLabel, sumSkills, sumItems } from './combat'
 import { logLine } from './render'
 import { levelLabel } from './ui'
 import { $, capStat, clamp, pick, rint, rnd } from './utils'
@@ -57,8 +57,8 @@ export function syncDisplayLevel(u: Unit) {
 export function applyGrowthLevel(u: Unit) {
   const before = { ...u.stats }
   for (const k of GROWTH_STAT_KEYS) {
-    const skillGrowth = (u.skill?.growths?.[k] || 0) + (u.skill?.effect === 'growthBonusAll' ? u.skill.amount || 0 : 0)
-    const growth = (u.growths[k] || 0) + (u.heldItem?.growths?.[k] || 0) + skillGrowth
+    const skillGrowth = sumSkills(u, (s) => (s.growths?.[k] || 0) + (s.effect === 'growthBonusAll' ? s.amount || 0 : 0))
+    const growth = (u.growths[k] || 0) + sumItems(u, (i) => i.growths?.[k]) + skillGrowth
     if (rint(100) + 1 <= growth) u.stats[k] = Math.min(capStat(u, k), u.stats[k] + 1)
   }
   u.maxHp = computeMaxHp(u)
@@ -112,8 +112,8 @@ export function freshFromBase(base: any, enemy = false, targetLevel = 1, promote
       isEnemy: enemy,
       startOffset: base.startOffset || 0,
       status: null,
-      heldItem: null,
-      skill: null,
+      heldItems: [],
+      skills: [],
     }
   // Boss enemies grow HP without the normal stat cap (xcZugbQ4) so high-level bosses
   // gain real bulk; set before the level-up loop below so growth isn't clamped at 60.

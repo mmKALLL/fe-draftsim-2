@@ -140,8 +140,9 @@ export type Unit = {
   hp: number
   isLeader?: boolean
   bossTier?: string | null
-  heldItem?: any
-  skill?: any
+  // Endless mode (1T3CRjDJ) allows multiple slots; normally each holds 0-1 entries.
+  heldItems: any[]
+  skills: any[]
   [key: string]: any
 }
 

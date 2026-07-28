@@ -8,6 +8,19 @@ import { sim } from './sim'
 import { state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
 
+// --- Multi-slot skill / held-item aggregation (endless mode, 1T3CRjDJ) ---
+// Units normally hold 0-1 skill + 0-1 item; endless lets them hold several. All combat
+// contributions aggregate ACROSS slots: numeric bonuses sum, boolean/effect checks use `.some`,
+// and single-target lookups (procs) take the FIRST matching slot by the reader's own priority.
+export const unitSkills = (u: any): any[] => (u && u.skills) || []
+export const unitItems = (u: any): any[] => (u && u.heldItems) || []
+export const sumSkills = (u: any, fn: (s: any) => number | undefined) => unitSkills(u).reduce((t, s) => t + (fn(s) || 0), 0)
+export const sumItems = (u: any, fn: (i: any) => number | undefined) => unitItems(u).reduce((t, i) => t + (fn(i) || 0), 0)
+export const anySkill = (u: any, pred: (s: any) => any) => unitSkills(u).some(pred)
+export const anyItem = (u: any, pred: (i: any) => any) => unitItems(u).some(pred)
+export const firstSkill = (u: any, pred: (s: any) => any) => unitSkills(u).find(pred) || null
+export const firstItem = (u: any, pred: (i: any) => any) => unitItems(u).find(pred) || null
+
 export function unitTags(u: Unit) {
   return CLASS_TAGS[u.displayCls] || CLASS_TAGS[u.cls] || []
 }
@@ -15,7 +28,7 @@ export function isWeaponEffective(w: Weapon, d: Unit) {
   if (!w?.effective) return false
   const tags = unitTags(d)
   return w.effective.some((e: any) => {
-    if (d.heldItem?.effect === `${e}EffectiveImmune`) return false
+    if (anyItem(d, (i) => i.effect === `${e}EffectiveImmune`)) return false
     return e === 'swordUser' ? d.weapon?.type === 'sword' : tags.includes(e)
   })
 }
@@ -72,21 +85,20 @@ export function arenaStatDelta(stat: StatKey) {
 // (attacker only), 'arena' via skillArenaBonus inside combatDefense/combatResistance.
 // A held item with an 'hpBelowHalf' trigger (Wrath/Resolve Scroll) only grants its
 // bonus while the holder is below half HP. Always-on items (no such trigger) pass.
-export function heldItemConditionMet(u: Unit) {
-  return u.heldItem?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
+export function heldItemConditionMet(u: Unit, i: any) {
+  return i?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
 }
 // Same 'hpBelowHalf' gating for skills (e.g. Vassal's Seal): a skill without that
 // trigger is always on; one with it only applies while the user is below half HP.
-export function skillConditionMet(u: Unit) {
-  return u.skill?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
+export function skillConditionMet(u: Unit, s: any) {
+  return s?.trigger !== 'hpBelowHalf' || u.hp * 2 < u.maxHp
 }
 export function combatStat(u: Unit, stat: StatKey) {
   // 'rally'/'tempo' (like 'playerPhase'/'arena') deliver their stats via the
   // battle-start turnBuff (applyBattleStartRallies), so the skill's own `stats`
   // must NOT also count as a passive self-bonus — that double-buffed the holder.
-  const deliveredViaBuff = u.skill?.family === 'playerPhase' || u.skill?.family === 'arena' || u.skill?.family === 'rally' || u.skill?.family === 'tempo'
-  const skillStat = deliveredViaBuff ? 0 : u.skill?.stats?.[stat] || 0
-  const heldItemStat = heldItemConditionMet(u) ? u.heldItem?.stats?.[stat] || 0 : 0
+  const skillStat = sumSkills(u, (s) => (['playerPhase', 'arena', 'rally', 'tempo'].includes(s.family) ? 0 : s.stats?.[stat] || 0))
+  const heldItemStat = sumItems(u, (i) => (heldItemConditionMet(u, i) ? i.stats?.[stat] || 0 : 0))
   let value = (u.stats[stat] || 0) + heldItemStat + skillStat
   if (stat === 'spd' && hasArenaEffect('speedDown')) value = floor(value * ARENA_SPEED_MULTIPLIER)
   return Math.max(0, value + arenaStatDelta(stat))
@@ -96,7 +108,7 @@ export function combatStat(u: Unit, stat: StatKey) {
 // defender or to passive/display contexts (it would be inert there anyway since
 // this engine has no counterattacks).
 export function playerPhaseStat(u: Unit, stat: StatKey) {
-  return u.skill?.family === 'playerPhase' ? u.skill?.stats?.[stat] || 0 : 0
+  return sumSkills(u, (s) => (s.family === 'playerPhase' ? s.stats?.[stat] || 0 : 0))
 }
 export function arenaPhysicalPowerDelta(weapon: Weapon) {
   return hasArenaEffect('strUp') && !weapon?.magic ? ARENA_STAT_DELTA * arenaEffectMultiplier() : 0
@@ -108,13 +120,13 @@ export function arenaAvoidDelta() {
   return delta * arenaEffectMultiplier()
 }
 export function attackSpeed(u: Unit) {
-  const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con) + (u.heldItem?.speedPenalty || 0)
+  const penalty = Math.max(0, (u.weapon?.wt || 0) - u.stats.con) + sumItems(u, (i) => i.speedPenalty)
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
 // Attack speed the unit would have if its Con changed by conDelta (e.g. a Body Ring boost).
 // Mirrors attackSpeed's weight-penalty formula so the boost chooser can preview the AS gain.
 export function weaponResultingAS(u: Unit, conDelta = 0) {
-  const penalty = Math.max(0, (u.weapon?.wt || 0) - (u.stats.con + conDelta)) + (u.heldItem?.speedPenalty || 0)
+  const penalty = Math.max(0, (u.weapon?.wt || 0) - (u.stats.con + conDelta)) + sumItems(u, (i) => i.speedPenalty)
   return Math.max(0, combatStat(u, 'spd') + (u.weapon?.speedBonus || 0) - penalty)
 }
 export function combatDefense(u: Unit) {
@@ -136,9 +148,7 @@ export function weaponTypeMatches(skillType: string | undefined, wt: string | un
 // Weapon-mastery "faire" skills add flat damage when wielding the matching type
 // ('tome' covers anima/light/dark).
 export function skillFaireBonus(a: Unit) {
-  const s = a.skill
-  if (!s || s.family !== 'faire') return 0
-  return weaponTypeMatches(s.weaponType, a.weapon?.type) ? s.damageDealt || 0 : 0
+  return sumSkills(a, (s) => (s.family === 'faire' && weaponTypeMatches(s.weaponType, a.weapon?.type) ? s.damageDealt || 0 : 0))
 }
 // "Breaker" skills (Swordbreaker, Axebreaker, ...) grant the holder Hit +25 and
 // Avoid +25 against opponents wielding the skill's targeted weapon type. The bonus
@@ -146,9 +156,8 @@ export function skillFaireBonus(a: Unit) {
 // applies whether the holder initiates or defends/counters. 'tome' matches the same
 // anima/light/dark group as Tomefaire.
 export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | 'avoid') {
-  const s = u.skill
-  if (!s || s.family !== 'breaker' || !opponent) return 0
-  return weaponTypeMatches(s.breaker, opponent.weapon?.type) ? s[key] || 0 : 0
+  if (!opponent) return 0
+  return sumSkills(u, (s) => (s.family === 'breaker' && weaponTypeMatches(s.breaker, opponent.weapon?.type) ? s[key] || 0 : 0))
 }
 // 'arena'-family skills grant a CONDITIONAL bonus that only applies while the team
 // is in one of the skill's listed arenas (skill.arenas is a list of arena ids — the
@@ -157,11 +166,9 @@ export function skillBreakerBonus(u: Unit, opponent: Unit | null, key: 'hit' | '
 // numeric field (e.g. 'hit'/'avoid'/'damageDealt') or a stat under skill.stats
 // (e.g. 'def'/'res' for Natural Cover). Returns 0 when the family/arena doesn't match.
 export function skillArenaBonus(u: Unit, key: string) {
-  const s = u.skill
-  if (!s || s.family !== 'arena' || !Array.isArray(s.arenas)) return 0
   const arenaId = activeArenaEntry()?.arena.id
-  if (!arenaId || !s.arenas.includes(arenaId)) return 0
-  return s.stats?.[key] ?? s[key] ?? 0
+  if (!arenaId) return 0
+  return sumSkills(u, (s) => (s.family === 'arena' && Array.isArray(s.arenas) && s.arenas.includes(arenaId) ? s.stats?.[key] ?? s[key] ?? 0 : 0))
 }
 // Team-aura skills (Solidarity, Charm, Inspiration, Malefic Aura) buff the holder's
 // WHOLE team — every living ally including the holder — for as long as the holder is
@@ -179,8 +186,7 @@ export function teamAuraBonus(u: Unit, key: 'hit' | 'avoid' | 'crit' | 'critAvoi
   let total = 0
   for (const member of team) {
     if (member.hp <= 0) continue
-    const aura = member.skill?.teamAura
-    if (aura) total += aura[key] || 0
+    total += sumSkills(member, (s) => (s.teamAura ? s.teamAura[key] || 0 : 0))
   }
   return total
 }
@@ -200,8 +206,8 @@ export function allAdjacentAlliesFallen(u: Unit) {
 // 'solo' skills (e.g. Tantivy) grant a conditional Hit/Avoid while an adjacent ally
 // has fallen. Applied per-side in hitRate (attacker) and avoid (defender).
 export function skillSoloBonus(u: Unit, key: 'hit' | 'avoid') {
-  if (u.skill?.family !== 'solo') return 0
-  return allAdjacentAlliesFallen(u) ? u.skill[key] || 0 : 0
+  if (!allAdjacentAlliesFallen(u)) return 0
+  return sumSkills(u, (s) => (s.family === 'solo' ? s[key] || 0 : 0))
 }
 // Flat bonus damage from a skill the attacker applies on its own strike. Covers
 // 'playerPhase' ("when attacking", e.g. Quick Draw) and 'combat' (always-on, e.g.
@@ -209,8 +215,7 @@ export function skillSoloBonus(u: Unit, key: 'hit' | 'avoid') {
 // always the attacker (this engine has no counterattacks). 'faire' is handled
 // separately via skillFaireBonus, so it is not counted here (no double-apply).
 export function skillAttackDamage(a: Unit) {
-  if (a.skill?.family !== 'playerPhase' && a.skill?.family !== 'combat') return 0
-  return skillConditionMet(a) ? a.skill.damageDealt || 0 : 0
+  return sumSkills(a, (s) => ((s.family === 'playerPhase' || s.family === 'combat') && skillConditionMet(a, s) ? s.damageDealt || 0 : 0))
 }
 export function attackPower(a: Unit, d: Unit) {
   const t = triangle(a.weapon.type, d.weapon.type, a.weapon, d.weapon).atk
@@ -239,13 +244,13 @@ export function defenseAgainst(d: Unit, weapon: Weapon) {
 // defender's living team holders — negative, so it reduces incoming damage). The
 // min-damage floor in rawDamage / the proc branch keeps total damage >= 1.
 export function damageTakenFlat(d: Unit) {
-  return (d.skill?.damageTakenFlat || 0) + teamAuraBonus(d, 'damageTakenFlat')
+  return sumSkills(d, (s) => s.damageTakenFlat) + teamAuraBonus(d, 'damageTakenFlat')
 }
 export function rawDamage(a: Unit, d: Unit) {
   if (a.weapon.halveHp) return Math.max(1, Math.ceil(d.hp / 2))
   let def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
   if (a.weapon.halfDef) def = floor(def / 2)
-  const minDamage = a.skill?.effect === 'minimumDamage' ? a.skill.amount || 1 : 1
+  const minDamage = Math.max(1, ...unitSkills(a).filter((s) => s.effect === 'minimumDamage').map((s) => s.amount || 1))
   return Math.max(minDamage, attackPower(a, d) - def + damageTakenFlat(d))
 }
 export function hitRate(a: Unit, d: Unit) {
@@ -253,7 +258,7 @@ export function hitRate(a: Unit, d: Unit) {
   // 'arena' and 'breaker' skills carry their Hit conditionally (applied via
   // skillArenaBonus / skillBreakerBonus), so their top-level `hit` is excluded
   // from the condition-free attacker term below (avoids double-counting).
-  const attackerHit = a.skill?.family === 'arena' || a.skill?.family === 'breaker' ? 0 : a.skill?.hit || 0
+  const attackerHit = sumSkills(a, (s) => (s.family === 'arena' || s.family === 'breaker' ? 0 : s.hit || 0))
   // Quixotic: the defender feeds its attacker extra accuracy (incomingHit) — the
   // downside that mirrors the holder's own +hit when it attacks.
   return floor(
@@ -261,12 +266,12 @@ export function hitRate(a: Unit, d: Unit) {
       2 * combatStat(a, 'skl') +
       combatStat(a, 'lck') / 2 +
       t +
-      (a.heldItem?.hit || 0) +
+      sumItems(a, (i) => i.hit) +
       attackerHit +
-      (d.skill?.incomingHit || 0) +
+      sumSkills(d, (s) => s.incomingHit) +
       skillBreakerBonus(a, d, 'hit') +
       skillArenaBonus(a, 'hit') -
-      (a.skill?.enemyAvoid || 0) +
+      sumSkills(a, (s) => s.enemyAvoid) +
       teamAuraBonus(a, 'hit') +
       skillSoloBonus(a, 'hit')
   )
@@ -274,14 +279,14 @@ export function hitRate(a: Unit, d: Unit) {
 export function avoid(d: Unit, opponent: Unit | null = null) {
   // playerPhase avoid ("when initiating") is inert on defense, and 'arena' avoid is
   // conditional (applied via skillArenaBonus) — exclude both from this flat term.
-  const skillAvoid = d.skill && d.skill.family !== 'playerPhase' && d.skill.family !== 'arena' && d.skill.family !== 'breaker' ? d.skill.avoid || 0 : 0
+  const skillAvoid = sumSkills(d, (s) => (s.family !== 'playerPhase' && s.family !== 'arena' && s.family !== 'breaker' ? s.avoid || 0 : 0))
   // Breaker avoid is conditional on the opponent's weapon type, so it only applies
   // when an opponent is supplied (i.e. during an actual matchup, not card displays).
   return floor(
     2 * attackSpeed(d) +
       combatStat(d, 'lck') +
       arenaAvoidDelta() +
-      (d.heldItem?.avoid || 0) +
+      sumItems(d, (i) => i.avoid) +
       skillAvoid +
       skillBreakerBonus(d, opponent, 'avoid') +
       skillArenaBonus(d, 'avoid') +
@@ -298,11 +303,11 @@ export function trueHitRoll(displayed: any) {
 }
 export function critRate(a: Unit, d: Unit) {
   if (a.weapon?.halveHp) return 0
-  if (d.heldItem?.effect === 'critImmune') return 0
+  if (anyItem(d, (i) => i.effect === 'critImmune')) return 0
   let bonus = ['Swordmaster', 'Assassin', 'Berserker', 'Sniper'].includes(a.displayCls) ? 15 : 0
   // Quixotic: the defender feeds its attacker extra crit (incomingCrit) — the
   // downside mirroring the holder's own +crit when it attacks.
-  const heldItemCrit = heldItemConditionMet(a) ? a.heldItem?.crit || 0 : 0
+  const heldItemCrit = sumItems(a, (i) => (heldItemConditionMet(a, i) ? i.crit || 0 : 0))
   return clamp(
     floor(
       (a.weapon.crit || 0) +
@@ -311,10 +316,10 @@ export function critRate(a: Unit, d: Unit) {
         bonus -
         combatStat(d, 'lck') +
         heldItemCrit +
-        (skillConditionMet(a) ? a.skill?.crit || 0 : 0) +
+        sumSkills(a, (s) => (skillConditionMet(a, s) ? s.crit || 0 : 0)) +
         teamAuraBonus(a, 'crit') +
-        (d.skill?.incomingCrit || 0) -
-        (a.skill?.enemyCritAvoid || 0) -
+        sumSkills(d, (s) => s.incomingCrit) -
+        sumSkills(a, (s) => s.enemyCritAvoid) -
         teamAuraBonus(d, 'critAvoid')
     ),
     0,
@@ -425,7 +430,7 @@ export function speedRounds(a: Unit, d: Unit) {
 }
 // Healtouch (family 'staff', healBonus N): the user's healing staves restore +N HP.
 export function staffHealBonus(a: Unit) {
-  return a.skill?.family === 'staff' ? a.skill.healBonus || 0 : 0
+  return sumSkills(a, (s) => (s.family === 'staff' ? s.healBonus || 0 : 0))
 }
 export function healAmount(a: Unit) {
   return Math.max(1, (a.weapon.mt || 0) + combatStat(a, 'str') + staffHealBonus(a))
@@ -479,7 +484,7 @@ export function temporaryBuffLabel(u: Unit) {
 export function computeMaxHp(u: Unit) {
   // u.hpMult (enemy boss HP multiplier) is baked in here so it survives every
   // recompute — notably refreshMaxHp() in assignEnemyBonuses (xcZugbQ4).
-  return Math.floor(((u.stats.hp || 0) + (u.skill?.stats?.hp || 0) + (u.heldItem?.stats?.hp || 0)) * ((u as any).hpMult || 1))
+  return Math.floor(((u.stats.hp || 0) + sumSkills(u, (s) => s.stats?.hp) + sumItems(u, (i) => i.stats?.hp)) * ((u as any).hpMult || 1))
 }
 // Recompute maxHp after the skill/held-item HP layer changes (e.g. learning HP +5).
 // A living unit's current HP rises by the same delta so the gain is immediately
@@ -549,12 +554,12 @@ export function applyStatBuff(u: Unit, stat: StatKey, amount: number, bucketName
   return gained
 }
 export function applyStatus(u: Unit, fx: any) {
-  if (u.heldItem?.effect === `${fx}Immune`) return
+  if (anyItem(u, (i) => i.effect === `${fx}Immune`)) return
   u.status = fx
 }
 export function applyPoison(u: Unit) {
   if (u.poisoned) return false
-  if (u.heldItem?.effect === 'poisonImmune') return false
+  if (anyItem(u, (i) => i.effect === 'poisonImmune')) return false
   u.poisoned = true
   return true
 }
@@ -569,16 +574,17 @@ export async function applyBattleStartHeldItems() {
   for (const [team, foes] of sides) {
     for (const holder of team) {
       if (holder.hp <= 0) continue
-      const item = holder.heldItem
-      if (item?.trigger === 'battleStart' && item?.effect === 'enemyAoeDamage') {
-        const amount = item.amount || 0
-        foes.forEach((f) => {
-          if (f.hp > 0) {
-            f.hp = Math.max(0, f.hp - amount)
-            hits.push({ unit: f, amount })
-          }
-        })
-        logLine(null, `${holder.name}'s ${item.name} hits all foes for ${amount}.`, 'hit')
+      for (const item of unitItems(holder)) {
+        if (item?.trigger === 'battleStart' && item?.effect === 'enemyAoeDamage') {
+          const amount = item.amount || 0
+          foes.forEach((f) => {
+            if (f.hp > 0) {
+              f.hp = Math.max(0, f.hp - amount)
+              hits.push({ unit: f, amount })
+            }
+          })
+          logLine(null, `${holder.name}'s ${item.name} hits all foes for ${amount}.`, 'hit')
+        }
       }
     }
   }
@@ -613,35 +619,37 @@ export async function applyBattleStartRallies() {
   let applied = false
   const floats: { unit: Unit; text: string }[] = []
   for (const caster of living) {
-    const s = caster.skill
-    if (!s || s.family !== 'rally' || s.trigger !== 'battleStart' || !s.stats) continue
-    const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
-    if (!entries.length) continue
-    // Rally Strength/Magic are scoped by attack type so they don't double as a
-    // universal +4 attack (str is the single attack stat): 'physical' targets
-    // non-magic allies, 'magic' targets mages; otherwise all allies.
-    const targets = living.filter((ally) => (s.rallyTarget === 'physical' ? !ally.weapon?.magic : s.rallyTarget === 'magic' ? !!ally.weapon?.magic : true))
-    for (const ally of targets) {
-      for (const [stat, amt] of entries) applyStatBuff(ally, stat, amt, 'turnBuffs')
-      floats.push({ unit: ally, text: rallyFloatText(caster, entries) })
+    for (const s of unitSkills(caster)) {
+      if (!s || s.family !== 'rally' || s.trigger !== 'battleStart' || !s.stats) continue
+      const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
+      if (!entries.length) continue
+      // Rally Strength/Magic are scoped by attack type so they don't double as a
+      // universal +4 attack (str is the single attack stat): 'physical' targets
+      // non-magic allies, 'magic' targets mages; otherwise all allies.
+      const targets = living.filter((ally) => (s.rallyTarget === 'physical' ? !ally.weapon?.magic : s.rallyTarget === 'magic' ? !!ally.weapon?.magic : true))
+      for (const ally of targets) {
+        for (const [stat, amt] of entries) applyStatBuff(ally, stat, amt, 'turnBuffs')
+        floats.push({ unit: ally, text: rallyFloatText(caster, entries) })
+      }
+      const label = entries.map(([stat]) => statLabel(caster, stat)).join(', ')
+      logLine(null, `${caster.name} uses ${s.name}; allies gain ${label} on their first turn.`, 'heal')
+      applied = true
     }
-    const label = entries.map(([stat]) => statLabel(caster, stat)).join(', ')
-    logLine(null, `${caster.name} uses ${s.name}; allies gain ${label} on their first turn.`, 'heal')
-    applied = true
   }
   // Tempo skills (e.g. Movement) give the holder a one-turn self buff at battle start
   // for any stat(s) in skill.stats, lasting through its first turn via the same
   // turnBuffs lifecycle rally uses.
   for (const u of living) {
-    const s = u.skill
-    if (s?.family !== 'tempo' || !s.stats) continue
-    const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
-    if (!entries.length) continue
-    for (const [stat, amt] of entries) applyStatBuff(u, stat, amt, 'turnBuffs')
-    floats.push({ unit: u, text: rallyFloatText(u, entries) })
-    const label = entries.map(([stat, amt]) => `${statLabel(u, stat)} +${amt}`).join(', ')
-    logLine(null, `${u.name}'s ${s.name} grants ${label} on its first turn.`, 'heal')
-    applied = true
+    for (const s of unitSkills(u)) {
+      if (s?.family !== 'tempo' || !s.stats) continue
+      const entries = (Object.entries(s.stats) as [StatKey, number][]).filter(([, amt]) => amt > 0)
+      if (!entries.length) continue
+      for (const [stat, amt] of entries) applyStatBuff(u, stat, amt, 'turnBuffs')
+      floats.push({ unit: u, text: rallyFloatText(u, entries) })
+      const label = entries.map(([stat, amt]) => `${statLabel(u, stat)} +${amt}`).join(', ')
+      logLine(null, `${u.name}'s ${s.name} grants ${label} on its first turn.`, 'heal')
+      applied = true
+    }
   }
   if (!applied) return
   renderTeams()
@@ -674,58 +682,60 @@ export function applyTurnStartRegen(actor: Unit, allies: Unit[]) {
   if (!actor || actor.hp <= 0) return
   // Held-item turn-start regen (Renewal Scroll / Life Ring / Troll Charm): fires
   // independently of any skill the holder may carry.
-  const hi = actor.heldItem
-  if (hi?.trigger === 'turnStart' && (hi.effect === 'regenFlat' || hi.effect === 'regenPercent')) {
-    const amt = hi.effect === 'regenPercent' ? floor((actor.maxHp * (hi.amount || 0)) / 100) : hi.amount || 0
-    const healed = healUnit(actor, amt)
-    if (healed > 0) {
-      floatText(actor, `+${healed}`, 'healing')
-      updateUnitVisual(actor)
-      renderSideCards()
-      logLine(null, `${actor.name}'s ${hi.name} restores ${healed} HP.`, 'heal')
-    }
-  }
-  const s = actor?.skill
-  if (!s || s.trigger !== 'turnStart') return
-  const living = allies.filter((u) => u.hp > 0)
-  const fallen = allies.some((u) => u.hp <= 0)
-  if (s.effect === 'allyRegenFlat') {
-    let total = 0
-    for (const ally of living) {
-      const healed = healUnit(ally, s.amount || 0)
+  for (const hi of unitItems(actor)) {
+    if (hi?.trigger === 'turnStart' && (hi.effect === 'regenFlat' || hi.effect === 'regenPercent')) {
+      const amt = hi.effect === 'regenPercent' ? floor((actor.maxHp * (hi.amount || 0)) / 100) : hi.amount || 0
+      const healed = healUnit(actor, amt)
       if (healed > 0) {
-        total += healed
-        floatText(ally, `+${healed}`, 'healing')
-        updateUnitVisual(ally)
+        floatText(actor, `+${healed}`, 'healing')
+        updateUnitVisual(actor)
+        renderSideCards()
+        logLine(null, `${actor.name}'s ${hi.name} restores ${healed} HP.`, 'heal')
       }
     }
-    if (total > 0) {
-      renderSideCards()
-      logLine(null, `${actor.name}'s ${s.name} restores ${total} HP across allies.`, 'heal')
-    }
-    return
   }
-  // Self-targeted regen variants: decide the heal amount and any gating condition.
-  let amount = 0
-  if (s.effect === 'regenPercent') amount = floor((actor.maxHp * (s.amount || 0)) / 100)
-  else if (s.effect === 'regenFlat') amount = s.amount || 0
-  else if (s.effect === 'luckHealChance') {
-    const chance = DEBUG_SKILLS ? 100 : clamp(combatStat(actor, 'lck'), 0, 100)
-    amount = rint(100) + 1 <= chance ? s.amount || 0 : 0
-  } else if (s.effect === 'regenIfNoAllyFallen') {
-    amount = fallen ? 0 : floor((actor.maxHp * (s.amount || 0)) / 100)
-  } else if (s.effect === 'regenIfAdjacentAllyFallen') {
-    amount = allAdjacentAlliesFallen(actor) ? floor((actor.maxHp * (s.amount || 0)) / 100) : 0
-  } else if (s.effect === 'regenFlatIfAlliesAlive') {
-    const otherAllies = living.filter((u) => u !== actor).length
-    amount = otherAllies >= (s.minAllies ?? 1) ? s.amount || 0 : 0
-  } else return
-  const healed = healUnit(actor, amount)
-  if (healed <= 0) return
-  floatText(actor, `+${healed}`, 'healing')
-  updateUnitVisual(actor)
-  renderSideCards()
-  logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
+  const living = allies.filter((u) => u.hp > 0)
+  const fallen = allies.some((u) => u.hp <= 0)
+  for (const s of unitSkills(actor)) {
+    if (!s || s.trigger !== 'turnStart') continue
+    if (s.effect === 'allyRegenFlat') {
+      let total = 0
+      for (const ally of living) {
+        const healed = healUnit(ally, s.amount || 0)
+        if (healed > 0) {
+          total += healed
+          floatText(ally, `+${healed}`, 'healing')
+          updateUnitVisual(ally)
+        }
+      }
+      if (total > 0) {
+        renderSideCards()
+        logLine(null, `${actor.name}'s ${s.name} restores ${total} HP across allies.`, 'heal')
+      }
+      continue
+    }
+    // Self-targeted regen variants: decide the heal amount and any gating condition.
+    let amount = 0
+    if (s.effect === 'regenPercent') amount = floor((actor.maxHp * (s.amount || 0)) / 100)
+    else if (s.effect === 'regenFlat') amount = s.amount || 0
+    else if (s.effect === 'luckHealChance') {
+      const chance = DEBUG_SKILLS ? 100 : clamp(combatStat(actor, 'lck'), 0, 100)
+      amount = rint(100) + 1 <= chance ? s.amount || 0 : 0
+    } else if (s.effect === 'regenIfNoAllyFallen') {
+      amount = fallen ? 0 : floor((actor.maxHp * (s.amount || 0)) / 100)
+    } else if (s.effect === 'regenIfAdjacentAllyFallen') {
+      amount = allAdjacentAlliesFallen(actor) ? floor((actor.maxHp * (s.amount || 0)) / 100) : 0
+    } else if (s.effect === 'regenFlatIfAlliesAlive') {
+      const otherAllies = living.filter((u) => u !== actor).length
+      amount = otherAllies >= (s.minAllies ?? 1) ? s.amount || 0 : 0
+    } else continue
+    const healed = healUnit(actor, amount)
+    if (healed <= 0) continue
+    floatText(actor, `+${healed}`, 'healing')
+    updateUnitVisual(actor)
+    renderSideCards()
+    logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
+  }
 }
 
 // Shared Skl-based activation chance for any 'proc' skill. Resolves the skill's
@@ -738,16 +748,19 @@ export function sklProcChance(u: Unit, chanceStat: string | undefined) {
   return clamp(byStat[chanceStat ?? ''] ?? 0, 0, 100)
 }
 // Skl-based activation chance for an attack proc skill (Aether, Sol, Luna, ...).
-export function attackProcChance(a: Unit) {
-  const s = a.skill
+export function attackProcChance(a: Unit, s: any) {
   if (!s || s.family !== 'proc' || s.trigger !== 'attack') return 0
   return sklProcChance(a, s.chanceStat)
 }
+// Multiple attack procs each roll INDEPENDENTLY; if several fire, the FIRST in slot
+// order wins (at most one applied proc per strike).
 export function rollAttackProc(a: Unit) {
-  const isProc = a.skill?.family === 'proc' && a.skill?.trigger === 'attack'
-  if (!isProc) return null
-  const chance = DEBUG_SKILLS ? 100 : attackProcChance(a)
-  return rint(100) + 1 <= chance ? a.skill : null
+  for (const s of unitSkills(a)) {
+    if (s?.family !== 'proc' || s?.trigger !== 'attack') continue
+    const chance = DEBUG_SKILLS ? 100 : attackProcChance(a, s)
+    if (rint(100) + 1 <= chance) return s
+  }
+  return null
 }
 // Defensive proc (Pavise / Aegis): the DEFENDER d has a Skl% chance to HALVE an
 // incoming hit of the matching damage type. The skill's trigger gates the type:
@@ -756,37 +769,44 @@ export function rollAttackProc(a: Unit) {
 // halve the strike damage and log it), or null otherwise. Independent of the
 // attacker-side proc check, so it never disturbs Luna/Aether/Sol/etc.
 export function rollDefenseProc(a: Unit, d: Unit) {
-  const s = d?.skill
-  if (!s || s.family !== 'proc' || s.effect !== 'halveDamageChance') return null
-  const wantsMagic = s.trigger === 'magicHitTaken'
-  const wantsPhysical = s.trigger === 'physicalHitTaken'
-  if ((wantsMagic && !a.weapon.magic) || (wantsPhysical && a.weapon.magic)) return null
-  if (!wantsMagic && !wantsPhysical) return null
-  const chance = DEBUG_SKILLS ? 100 : sklProcChance(d, s.chanceStat)
-  return rint(100) + 1 <= chance ? s : null
+  for (const s of unitSkills(d)) {
+    if (!s || s.family !== 'proc' || s.effect !== 'halveDamageChance') continue
+    const wantsMagic = s.trigger === 'magicHitTaken'
+    const wantsPhysical = s.trigger === 'physicalHitTaken'
+    if ((wantsMagic && !a.weapon.magic) || (wantsPhysical && a.weapon.magic)) continue
+    if (!wantsMagic && !wantsPhysical) continue
+    const chance = DEBUG_SKILLS ? 100 : sklProcChance(d, s.chanceStat)
+    if (rint(100) + 1 <= chance) return s
+  }
+  return null
 }
 // Miracle (effect 'miracleChance', trigger 'lethalDamage'): when a hit would be
 // lethal, the defender's Luck is the chance to survive at 1 HP. Returns true only
 // when it actually saves the unit, so callers can flag/log the proc.
 export function rollMiracle(d: Unit) {
-  const s = d?.skill
-  if (!s || s.effect !== 'miracleChance' || d.hp <= 0) return false
-  const chance = DEBUG_SKILLS ? 100 : clamp(combatStat(d, 'lck'), 0, 100)
-  return rint(100) + 1 <= chance
+  if (!d || d.hp <= 0) return false
+  for (const s of unitSkills(d)) {
+    if (!s || s.effect !== 'miracleChance') continue
+    const chance = DEBUG_SKILLS ? 100 : clamp(combatStat(d, 'lck'), 0, 100)
+    if (rint(100) + 1 <= chance) return true
+  }
+  return false
 }
 // Lifetaker (effect 'healPercent', trigger 'playerPhaseKill'): after a living
 // PLAYER unit defeats an enemy during its own (player-phase) action, it heals a
 // percentage of its max HP. Gated to non-enemy actors so enemy kills don't trigger.
 export async function applyLifetaker(actor: Unit) {
-  const s = actor?.skill
-  if (!s || s.effect !== 'healPercent' || s.trigger !== 'playerPhaseKill' || actor.isEnemy || actor.hp <= 0) return
-  const healed = healUnit(actor, floor((actor.maxHp * (s.amount || 0)) / 100))
-  if (healed <= 0) return
-  floatText(actor, `+${healed}`, 'healing')
-  updateUnitVisual(actor)
-  renderSideCards()
-  logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
-  await sleep(350)
+  if (!actor || actor.isEnemy || actor.hp <= 0) return
+  for (const s of unitSkills(actor)) {
+    if (!s || s.effect !== 'healPercent' || s.trigger !== 'playerPhaseKill') continue
+    const healed = healUnit(actor, floor((actor.maxHp * (s.amount || 0)) / 100))
+    if (healed <= 0) continue
+    floatText(actor, `+${healed}`, 'healing')
+    updateUnitVisual(actor)
+    renderSideCards()
+    logLine(null, `${actor.name}'s ${s.name} restores ${healed} HP.`, 'heal')
+    await sleep(350)
+  }
 }
 export function strikeResult(a: Unit, d: Unit, suffix = '') {
   const dh = displayedHit(a, d),
@@ -824,8 +844,9 @@ export function strikeResult(a: Unit, d: Unit, suffix = '') {
   // Pierce Badge: an independent held-item proc (its own chance roll) to ignore half
   // the defender's Def/Res, using the same formula as Luna/Aether. Skipped if a skill
   // proc already halved defense this strike, so the two can't stack into a double-ignore.
-  if (!defenseHalved && a.heldItem?.effect === 'defPierceChance') {
-    const chance = DEBUG_SKILLS ? 100 : (a.heldItem.chance as number) || 0
+  const pierceItem = firstItem(a, (i) => i.effect === 'defPierceChance')
+  if (!defenseHalved && pierceItem) {
+    const chance = DEBUG_SKILLS ? 100 : (pierceItem.chance as number) || 0
     if (rint(100) + 1 <= chance) {
       const def = a.weapon.pierceRes ? 0 : defenseAgainst(d, a.weapon)
       dmg = Math.max(1, attackPower(a, d) - floor(def / 2) + damageTakenFlat(d))
@@ -1079,8 +1100,9 @@ export async function animateStrike(actor: Unit, target: Unit, result: any) {
 // heals an ally, the user also recovers N% of the HP actually restored. Skips
 // self-heal when the user healed itself (the heal already counted).
 export async function applyLiveToServe(actor: Unit, target: Unit, healed: number) {
-  const s = actor?.skill
-  if (!s || s.family !== 'staff' || s.effect !== 'selfHeal' || actor === target || healed <= 0 || actor.hp <= 0) return
+  if (!actor || actor === target || healed <= 0 || actor.hp <= 0) return
+  const s = firstSkill(actor, (s) => s.family === 'staff' && s.effect === 'selfHeal')
+  if (!s) return
   const selfHeal = healUnit(actor, floor((healed * (s.amountPercent || 0)) / 100))
   if (selfHeal <= 0) return
   floatText(actor, `+${selfHeal}`, 'healing')
@@ -1124,13 +1146,14 @@ export async function animateFortify(actor: Unit, targets: Unit[], amt: number) 
   renderSideCards()
   logLine(null, `${actor.name} uses Fortify; allies recover ${total} total HP.`, 'heal')
   // Live to Serve: recover a share of the HP restored to other allies (not self).
-  if (actor.skill?.family === 'staff' && actor.skill?.effect === 'selfHeal' && healedOthers > 0) {
-    const selfHeal = healUnit(actor, floor((healedOthers * (actor.skill.amountPercent || 0)) / 100))
+  const selfHealSkill = firstSkill(actor, (s) => s.family === 'staff' && s.effect === 'selfHeal')
+  if (selfHealSkill && healedOthers > 0) {
+    const selfHeal = healUnit(actor, floor((healedOthers * (selfHealSkill.amountPercent || 0)) / 100))
     if (selfHeal > 0) {
       floatText(actor, `+${selfHeal}`, 'healing')
       updateUnitVisual(actor)
       renderSideCards()
-      logLine(null, `${actor.name}'s ${actor.skill.name} restores ${selfHeal} HP to itself.`, 'heal')
+      logLine(null, `${actor.name}'s ${selfHealSkill.name} restores ${selfHeal} HP to itself.`, 'heal')
     }
   }
   await sleep(450)
@@ -1377,14 +1400,14 @@ export async function resolveActorTurn(actor: Unit, allies: Unit[], foes: Unit[]
       if (r.miracle) await animateSkillProc(target, { id: 'miracle', name: 'Miracle' })
       // Lifetaker: a player unit that defeats an enemy on player phase heals 50% max HP.
       if (target.hp <= 0 && r.hit) await applyLifetaker(actor)
-      if ((actor.weapon?.poison || actor.heldItem?.effect === 'weaponPoison') && r.hit && target.hp > 0 && applyPoison(target)) {
+      if ((actor.weapon?.poison || anyItem(actor, (i) => i.effect === 'weaponPoison')) && r.hit && target.hp > 0 && applyPoison(target)) {
         logLine(null, `${target.name} is poisoned.`, 'crit')
         floatText(target, 'POISON', 'statusText')
         renderSideCards()
         await sleep(650)
       }
       // Drain: weapon drain (×1.0) and the Drain Badge (×amount/100) STACK additively.
-      const drainMult = (actor.weapon?.drain ? 1 : 0) + (actor.heldItem?.effect === 'weaponDrainPercent' ? ((actor.heldItem.amount as number) || 0) / 100 : 0)
+      const drainMult = (actor.weapon?.drain ? 1 : 0) + sumItems(actor, (i) => (i.effect === 'weaponDrainPercent' ? ((i.amount as number) || 0) / 100 : 0))
       if (r.hit && r.damage > 0 && drainMult > 0) {
         const before = actor.hp
         const gain = Math.min(actor.maxHp - actor.hp, floor(r.damage * drainMult))

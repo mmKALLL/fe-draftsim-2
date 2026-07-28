@@ -1,7 +1,7 @@
 import { CONSUMABLE_SLOTS, SHOP_BOOST_OFFERS, SHOP_BOOST_PRICES, SHOP_CONSUMABLE_OFFERS, SHOP_CONSUMABLE_PRICES, SHOP_FORGE_PRICE, SHOP_HELD_ITEM_OFFERS, SHOP_SKILL_OFFERS, SHOP_SKILL_PRICES, SHOP_WEAPON_OFFERS, SHOP_WEAPON_PRICES } from '../config'
 import { HELD_ITEMS, TEACHABLE_SKILLS, WEAPONS, weaponRarityLabel } from '../data'
 import { setShopOpen } from './arenas'
-import { consumableSummary, refreshMaxHp, statLabel } from './combat'
+import { consumableSummary, refreshMaxHp, statLabel, unitItems } from './combat'
 import { beginNextBattle } from './game'
 import { growthSummaryHTML, heldItemOfferDescription, heldItemOfferTitle, logLine, renderTeams, selectionChoiceHTML, skillOfferDescription, skillOfferTitle, weaponOfferDescription, weaponOfferTitle, weaponSummary } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostReward, boostTargetOptions, boosterName, canApplyBoost, consumableInventoryFull, firstEmptyConsumableSlot, heldItemRelevantToUnit, pickByRarity, pickRewardConsumable, pickRewardWeapon, recordRewardCooldown, rollShopRarity, skillTargets } from './rewards'
@@ -11,8 +11,31 @@ import { afterReward, chooseBoostTarget, closeModal, levelLabel, showModal } fro
 import { canEquipAsNewWeapon, cloneConsumable, cloneWeapon, forgeWeapon, isBasicWeapon } from './units'
 import { $, capStat, rint } from './utils'
 import { sim } from './sim'
-import { state } from './state'
+import { slotCapacity, state } from './state'
 import type { Unit, Weapon, Consumable, StatKey, ArenaFocus, ArenaEntry, ShopOffer } from '../types'
+
+// Endless multi-slot grant (1T3CRjDJ): drop into a free skill/held-item slot, or when the unit is
+// full let the player choose which existing entry to replace. onDone runs after the grant settles;
+// onCancel only fires if the player backs out of the replace picker (free-slot grants never cancel).
+export function grantToUnit(u: Unit, kind: 'skill' | 'heldItem', item: any, onDone: () => void, onCancel: () => void) {
+  const arr: any[] = kind === 'skill' ? u.skills : u.heldItems
+  const finalize = (idx: number) => {
+    if (idx < 0) arr.push(item)
+    else arr[idx] = item
+    refreshMaxHp(u)
+    onDone()
+  }
+  if (arr.length < slotCapacity()) return finalize(-1)
+  const label = kind === 'skill' ? 'skill' : 'held item'
+  let html = `<h2>${u.name}: ${label} slots full</h2><div class="small">Choose which ${label} to replace with ${item.name}.</div>`
+  arr.forEach((cur, idx) => {
+    html += selectionChoiceHTML(`Replace ${cur.name}`, cur.desc || '', `data-replace-slot="${idx}"`, 'Replace')
+  })
+  html += `<button id="cancelReplaceBtn">Cancel</button>`
+  showModal(html)
+  document.querySelectorAll<HTMLElement>('[data-replace-slot]').forEach((btn) => (btn.onclick = () => finalize(+btn.dataset.replaceSlot!)))
+  $('cancelReplaceBtn').onclick = onCancel
+}
 
 
 export function shopWeaponPrice(w: Weapon) {
@@ -73,7 +96,7 @@ export function shopHeldItemPrice(item: any) {
   return item.price || SHOP_CONSUMABLE_PRICES[(item.rarity || 'normal') as keyof typeof SHOP_CONSUMABLE_PRICES] || 800
 }
 export function shopHeldItemPool() {
-  return HELD_ITEMS.filter((item) => state.player.some((u) => u.heldItem?.id !== item.id && heldItemRelevantToUnit(item, u)))
+  return HELD_ITEMS.filter((item) => state.player.some((u) => !unitItems(u).some((i) => i.id === item.id) && heldItemRelevantToUnit(item, u)))
 }
 export function shopHeldItemOffer() {
   const chosen = pickByRarity(shopHeldItemPool(), rollShopRarity())
@@ -184,8 +207,8 @@ export function renderShop(message = '') {
   html += `<div class="small shopSectionNote">Bought weapons can be equipped to anyone eligible to wield them.</div>`
 
   html += `<div class="shopRow shopWeapons">${groups.weapon.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
-  html += `<div class="shopLower"><section class="shopSection"><h3>Held Items</h3><div class="small shopSectionNote">Held items fill a unit's single accessory slot, replacing any current held item.</div><div class="shopRow">${groups.heldItem.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
-  html += `<section class="shopSection"><h3>Skills</h3><div class="small shopSectionNote">Skills are taught to one eligible unit, replacing any current skill.</div><div class="shopRow">${groups.skill.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section></div>`
+  html += `<div class="shopLower"><section class="shopSection"><h3>Held Items</h3><div class="small shopSectionNote">Held items go to a chosen unit — filling a free slot, or replacing one you pick when full.</div><div class="shopRow">${groups.heldItem.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
+  html += `<section class="shopSection"><h3>Skills</h3><div class="small shopSectionNote">Skills are taught to a chosen unit — filling a free slot, or replacing one you pick when full.</div><div class="shopRow">${groups.skill.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section></div>`
   html += `<div class="shopLower"><section class="shopSection"><h3>Consumables</h3><div class="shopRow">${groups.consumable.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
   html += `<section class="shopSection"><h3>Stat Boosters</h3><div class="shopRow">${groups.boost.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section></div>`
   html += `<section class="shopSection"><h3>Forge</h3><div class="shopRow">${groups.forge.map(({ offer, i }) => shopOfferHTML(offer, i)).join('')}</div></section>`
@@ -335,12 +358,22 @@ export function chooseShopHeldItemTarget(i: number) {
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
         }
-        u.heldItem = { ...offer.item }
-        refreshMaxHp(u) // keep maxHp in sync if a held item ever grants HP
-        offer.sold = true
-        closeModal()
-        renderTeams()
-        renderShop(`${u.name} received ${offer.item.name}.`)
+        grantToUnit(
+          u,
+          'heldItem',
+          { ...offer.item },
+          () => {
+            offer.sold = true
+            closeModal()
+            renderTeams()
+            renderShop(`${u.name} received ${offer.item.name}.`)
+          },
+          () => {
+            addGold(offer.price) // refund: they backed out of replacing a full slot
+            closeModal()
+            renderShop(`Kept ${u.name}'s items; refunded ${offer.item.name}.`)
+          }
+        )
       })
   )
   $('cancelShopHeldBtn').onclick = closeModal
@@ -367,13 +400,23 @@ export function chooseShopSkillTarget(i: number) {
           renderShop(`Not enough gold for ${offer.item.name}.`)
           return
         }
-        u.skill = { ...offer.item }
-        refreshMaxHp(u) // HP +5 etc. raises maxHp (and current HP) immediately on learning
-        recordRewardCooldown(u.id, 'skill')
-        offer.sold = true
-        closeModal()
-        renderTeams()
-        renderShop(`${u.name} learned ${offer.item.name}.`)
+        grantToUnit(
+          u,
+          'skill',
+          { ...offer.item },
+          () => {
+            recordRewardCooldown(u.id, 'skill')
+            offer.sold = true
+            closeModal()
+            renderTeams()
+            renderShop(`${u.name} learned ${offer.item.name}.`)
+          },
+          () => {
+            addGold(offer.price) // refund: they backed out of replacing a full slot
+            closeModal()
+            renderShop(`Kept ${u.name}'s skills; refunded ${offer.item.name}.`)
+          }
+        )
       })
   )
   $('cancelShopSkillBtn').onclick = closeModal
@@ -514,20 +557,32 @@ export function applyReward(r: any, backToRewards: (() => void) | null = null) {
     afterReward(`${r.unit.name} equipped ${r.item.name}.`)
   }
   if (r.type === 'heldItem') {
-    r.unit.heldItem = r.item
-    refreshMaxHp(r.unit) // keep maxHp in sync if a held item ever grants HP
-    recordRewardCooldown(r.unit.id, 'heldItem')
-    noteRewardChoice(r)
-    closeModal()
-    afterReward(`${r.unit.name} received ${r.item.name}.`)
+    grantToUnit(
+      r.unit,
+      'heldItem',
+      r.item,
+      () => {
+        recordRewardCooldown(r.unit.id, 'heldItem')
+        noteRewardChoice(r)
+        closeModal()
+        afterReward(`${r.unit.name} received ${r.item.name}.`)
+      },
+      backToRewards || closeModal
+    )
   }
   if (r.type === 'skill') {
-    r.unit.skill = r.item
-    refreshMaxHp(r.unit) // HP +5 etc. raises maxHp (and current HP) immediately on learning
-    recordRewardCooldown(r.unit.id, 'skill')
-    noteRewardChoice(r)
-    closeModal()
-    afterReward(`${r.unit.name} learned ${r.item.name}.`)
+    grantToUnit(
+      r.unit,
+      'skill',
+      r.item,
+      () => {
+        recordRewardCooldown(r.unit.id, 'skill')
+        noteRewardChoice(r)
+        closeModal()
+        afterReward(`${r.unit.name} learned ${r.item.name}.`)
+      },
+      backToRewards || closeModal
+    )
   }
   if (r.type === 'consumable') {
     if (consumableInventoryFull()) {
