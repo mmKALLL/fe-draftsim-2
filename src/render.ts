@@ -114,7 +114,7 @@ export function renderDraft() {
         const el = document.createElement('button')
         el.type = 'button'
         el.className = `draftChoice unitCard ${state.draft.chosen[slotIndex] === b.name ? 'selected' : ''}`
-        const personalNote = b.startOffset ? ` · starts with +${b.startOffset} levels` : ''
+        const personalNote = b.startOffset ? ` · +${b.startOffset} levels` : ''
         el.innerHTML = `${portraitImgForBase(b, c)}<div><div class="row space"><div><div class="name">${b.name}</div><div class="class">${b.cls} · ${b.weaponType} · con ${b.stats.con} · base ${b.stats.bTotal} · growth ${b.growths.gTotal}${personalNote}</div></div></div>${growthCompareHTML(b)}</div>`
         el.onclick = () => {
           state.draft.chosen[slotIndex] = b.name
