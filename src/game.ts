@@ -85,7 +85,9 @@ export function generateEnemy() {
     const promoted = (isBossSlot || promotionUnlockedForRegularEnemies()) && internal > 20
     const lvl = promoted ? internal - 20 : internal
     const e = freshFromBase(b, true, lvl, promoted, !!isBossSlot)
-    e.lvl = clamp(lvl + Math.ceil(b.startOffset / 2), 1, 20)
+    // Endless (1T3CRjDJ) keeps the continuous internal-level display set in freshFromBase (up to 99);
+    // normally prepromotes show a small display bump, clamped to 20.
+    if (state.run.endlessExtensions === 0) e.lvl = clamp(lvl + Math.ceil(b.startOffset / 2), 1, 20)
     // Boss HP: mid (battle-3) bosses keep 1.25x; arena (battle-5) bosses hit 1.5x in
     // the last two arenas, 1.25x earlier (EaM4uENF). Stored as hpMult and folded into
     // computeMaxHp so it survives refreshMaxHp() in assignEnemyBonuses (xcZugbQ4).
