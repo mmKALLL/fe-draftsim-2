@@ -183,13 +183,28 @@ function difficultyLabel(r: RunStat): string {
   return `${capitalize(skills)}/${capitalize(weapons)}`
 }
 
+// Stats view filter (1T3CRjDJ): 'normal' shows non-endless runs, 'endless' shows endless runs.
+// Toggled from the statistics screen; the toggle is only exposed once an endless run exists.
+let statsView: 'normal' | 'endless' = 'normal'
+export function getStatsView() {
+  return statsView
+}
+export function setStatsView(v: 'normal' | 'endless') {
+  statsView = v
+}
+export function hasEndlessRuns() {
+  return loadRunStats().some((r) => r.endless && !r.cheated)
+}
+const scopeByView = (runs: RunStat[]) => runs.filter((r) => (statsView === 'endless' ? !!r.endless : !r.endless))
+
 export function statisticsHTML(): string {
   const all = loadRunStats()
   if (all.length === 0) {
     return `<p class="small">No runs recorded yet — finish (or abandon) a run without using cheats to populate this.</p>`
   }
 
-  const valid = all.filter((r) => !r.cheated) // cheated runs are excluded from everything shown
+  const valid = scopeByView(all.filter((r) => !r.cheated)) // cheated excluded everywhere; scoped to the active view
+  if (!valid.length) return `<p class="small">No ${statsView} runs recorded yet.</p>`
   const completed = valid.filter((r) => r.outcome !== 'abandoned') // win/loss only — drives the averages
   const abandoned = valid.filter((r) => r.outcome === 'abandoned').length
 
@@ -246,9 +261,9 @@ export function statisticsDetailHTML(): string {
   const all = loadRunStats()
   if (all.length === 0) return ''
 
-  const valid = all.filter((r) => !r.cheated)
+  const valid = scopeByView(all.filter((r) => !r.cheated))
   const completed = valid.filter((r) => r.outcome !== 'abandoned') // win/loss only — drives the averages
-  const cheated = all.length - valid.length
+  const cheated = all.filter((r) => r.cheated).length
   const total = completed.length
 
   const avg = (sel: (r: RunStat) => number) => (total ? fmt1(completed.reduce((a, r) => a + sel(r), 0) / total) : '0.0')

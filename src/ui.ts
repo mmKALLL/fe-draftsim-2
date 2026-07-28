@@ -6,7 +6,7 @@ import { beginNextBattle, continueEndless, startRun } from './game'
 import { draftOptionsStale, emptyRosterChoices, growthSummaryHTML, logLine, randomDraftOptions, renderDraft, renderTeams, selectedRosterCount, SPD_ARROW } from './render'
 import { applyBoostToUnit, boostDetailHTML, boostTargetOptions, boosterName, canApplyBoost, recordRewardCooldown } from './rewards'
 import { shopConsumablePrice, startShop } from './shop'
-import { clearRunStats, loadRunStats, noteRewardChoice, recordRunStat, statisticsDetailHTML, statisticsHTML } from './stats'
+import { clearRunStats, getStatsView, hasEndlessRuns, loadRunStats, noteRewardChoice, recordRunStat, setStatsView, statisticsDetailHTML, statisticsHTML } from './stats'
 import { goldHTML, updateGoldUI } from './state'
 import { $, MUSIC_URL, capStat, pick } from './utils'
 import { sim } from './sim'
@@ -92,11 +92,11 @@ export function showWin() {
   // here — mid-endless blocks auto-continue in game.ts. So endlessExtensions > 0 here means mastery.
   if (state.run.endlessExtensions > 0) {
     showResultsModal(
-      `<h2>Absolute mastery!</h2><p>You have conquered all ${MAX_ENDLESS_ARENAS} arenas of Elibe across ${state.battle} battles — absolute mastery of FireRogue. Congratulations!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
+      `<h2>Absolute mastery!</h2><p>You have conquered all ${MAX_ENDLESS_ARENAS} arenas of Elibe across ${state.battle} battles, showcasing absolute mastery of FireRogue. The dev would be super curious to hear your strat, feel free to join the <a href="https://discord.gg/3VGQytvBDX" target="_blank" style="color: white;">Discord server</a> and share it there. Congratulations on this phenomenal achievement!!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
     )
   } else {
     showResultsModal(
-      `<h2>Victory!!!</h2><p>Congratulations, you have survived ${state.battle} battles and overcome the toughest arenas in Elibe! Enter endless mode for an ever-escalating challenge — a fresh set of 4 arenas each time, +1 skill/item slot and tougher foes per set, up to 20 arenas — or share the game with your friends!</p>${scoreHTML(true)}<button data-endless type="button">Endless mode</button><button data-reset class="good">New run</button>`
+      `<h2>Victory!!!</h2><p>Congratulations, you have survived 20 battles and overcome the toughest arenas in Elibe! Continue into endless mode for an ever-escalating challenge, or share the game with your friends!</p>${scoreHTML(true)}<button data-reset class="good">New run</button><button data-endless type="button" style="margin-left: 16px">Endless mode</button>`
     )
   }
 }
@@ -220,9 +220,16 @@ export function showStatistics() {
       `<button data-close class="good">Back</button>` +
       `<div class="row">` +
       `<button id="statsClearBtn" class="danger hidden" type="button">Clear all data</button>` +
+      (hasEndlessRuns() ? `<button id="statsViewBtn" type="button">${getStatsView() === 'normal' ? 'Show endless runs' : 'Show normal runs'}</button>` : '') +
       `<button id="statsDumpBtn" type="button">Show full data</button>` +
       `</div></div>`
   )
+  const viewBtn = $('statsViewBtn') as HTMLButtonElement | null
+  if (viewBtn)
+    viewBtn.onclick = () => {
+      setStatsView(getStatsView() === 'normal' ? 'endless' : 'normal')
+      showStatistics() // re-render the screen with the newly-selected view
+    }
   const dumpBtn = $('statsDumpBtn') as HTMLButtonElement | null
   const clearBtn = $('statsClearBtn') as HTMLButtonElement | null
   const detail = $('statsDetail')
