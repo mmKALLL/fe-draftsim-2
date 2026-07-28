@@ -124,7 +124,7 @@ export function combatResistance(u: Unit) {
   return combatStat(u, 'res') + (u.weapon?.resBonus || 0) + skillArenaBonus(u, 'res')
 }
 export function effectiveMt(a: Unit, d: Unit) {
-  const coeff = isWeaponEffective(a.weapon, d) ? 2 : 1
+  const coeff = isWeaponEffective(a.weapon, d) ? 3 : 1
   return (a.weapon.mt || 0) * coeff
 }
 // Shared weapon-type matcher for skills keyed on a weapon type. The 'tome' group
@@ -354,8 +354,7 @@ export function combatPreviewHTML(actor: Unit, target: Unit) {
     dmg = rawDamage(actor, target),
     hits = speedRounds(actor, target) * (actor.weapon?.brave ? 2 : 1),
     dmgClass = dmg < 3 ? 'lowDamage' : isWeaponEffective(actor.weapon, target) ? 'effectiveDamage' : '',
-    hitCountClass =
-      hits >= 4 ? 'attackCount attackCountQuad' : hits === 3 ? 'attackCount attackCountTriple' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
+    hitCountClass = hits >= 4 ? 'attackCount attackCountQuad' : hits === 3 ? 'attackCount attackCountTriple' : hits >= 2 ? 'attackCount attackCountMulti' : 'attackCount'
   return `<div><span class="${triangleClass(actor, target)}"${hitColorStyle(actor, target, hit)}>${hit}%</span> <span class="critLine">- ${crit}% crit</span></div><div><span class="${dmgClass}">${dmg} dmg</span> <span class="${hitCountClass}">(x${hits})</span></div>`
 }
 export function classAbbrev(cls: string) {

@@ -253,9 +253,10 @@ export const WEAPONS: WeaponData[] = [
   { name: 'Iron Bow', type: 'bow', rank: 'E', mt: 6, hit: 85, wt: 5, crit: 0, magic: false, effective: ['flying'] },
   { name: 'Steel Bow', type: 'bow', rank: 'D', mt: 9, hit: 70, wt: 8, crit: 0, magic: false, effective: ['flying'] },
   { name: 'Short Bow', type: 'bow', rank: 'D', mt: 5, hit: 85, wt: 3, crit: 10, magic: false, speedBonus: 2, effective: ['flying'] },
-  { name: 'Longbow', type: 'bow', rank: 'C', mt: 7, hit: 70, wt: 10, crit: 0, magic: false, defBonus: 4, effective: ['flying'] },
   { name: 'Poison Bow', type: 'bow', rank: 'C', mt: 4, hit: 80, wt: 6, crit: 0, magic: false, poison: true, effective: ['flying'] },
-  { name: 'Killer Bow', type: 'bow', rank: 'B', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
+  { name: 'Killer Bow', type: 'bow', rank: 'C', mt: 9, hit: 75, wt: 7, crit: 30, magic: false, effective: ['flying'] },
+  { name: 'Longbow', type: 'bow', rank: 'B', mt: 7, hit: 70, wt: 10, crit: 0, magic: false, defBonus: 4, effective: ['flying'] },
+  { name: 'Lightningrod', type: 'bow', rank: 'B', mt: 9, hit: 80, wt: 7, crit: 5, magic: true, effective: ['flying'] },
   { name: 'Silver Bow', type: 'bow', rank: 'A', mt: 13, hit: 75, wt: 6, crit: 0, magic: false, effective: ['flying'] },
   { name: 'Brave Bow', type: 'bow', rank: 'S', mt: 10, hit: 70, wt: 12, crit: 0, magic: false, brave: true, effective: ['flying'] },
 
@@ -269,9 +270,10 @@ export const WEAPONS: WeaponData[] = [
   { name: 'Excalibur', type: 'anima', rank: 'S', mt: 18, hit: 90, wt: 13, crit: 10, magic: true, effective: ['flying'] },
 
   { name: 'Lightning', type: 'light', rank: 'E', mt: 4, hit: 95, wt: 6, crit: 5, magic: true },
-  { name: 'Thani', type: 'light', rank: 'D', mt: 4, hit: 100, wt: 6, crit: 0, magic: true, effective: ['mounted', 'armored'] },
+  { name: 'Thani', type: 'light', rank: 'D', mt: 4, hit: 100, wt: 5, crit: 0, magic: true, effective: ['mounted', 'armored'] },
   { name: 'Shine', type: 'light', rank: 'D', mt: 6, hit: 90, wt: 8, crit: 8, magic: true },
   { name: 'Divine', type: 'light', rank: 'C', mt: 8, hit: 85, wt: 10, crit: 10, magic: true },
+  { name: 'Judgelight', type: 'light', rank: 'C', mt: 7, hit: 90, wt: 7, crit: 15, magic: true, effective: ['dragon'] },
   { name: 'Purge', type: 'light', rank: 'B', mt: 10, hit: 70, wt: 15, crit: 0, magic: true, pierceRes: true },
   { name: 'Aura', type: 'light', rank: 'A', mt: 12, hit: 80, wt: 12, crit: 15, magic: true },
   { name: 'Aureola', type: 'light', rank: 'S', mt: 15, hit: 90, wt: 14, crit: 5, magic: true, resBonus: 5 },
@@ -280,6 +282,7 @@ export const WEAPONS: WeaponData[] = [
   { name: 'Ruin', type: 'dark', rank: 'D', mt: 5, hit: 75, wt: 6, crit: 20, magic: true },
   { name: 'Luna', type: 'dark', rank: 'C', mt: 0, hit: 95, wt: 10, crit: 20, magic: true, pierceRes: true },
   { name: 'Nosferatu', type: 'dark', rank: 'C', mt: 10, hit: 70, wt: 14, crit: 0, magic: true, drain: true },
+  { name: 'Oblumbra', type: 'dark', rank: 'C', mt: 9, hit: 85, wt: 11, crit: 10, magic: true, effective: ['armored'] },
   { name: 'Mire', type: 'dark', rank: 'B', mt: 6, hit: 70, wt: 9, crit: 0, magic: true, poison: true },
   { name: 'Eclipse', type: 'dark', rank: 'B', mt: 0, hit: 60, wt: 14, crit: 0, magic: true, halveHp: true },
   { name: 'Fenrir', type: 'dark', rank: 'A', mt: 15, hit: 70, wt: 10, crit: 0, magic: true },
@@ -560,7 +563,7 @@ export const TEACHABLE_SKILLS: SkillData[] = [
   { rarity: 'normal', id: 'rally_luck', name: 'Rally Luck', desc: 'Allies gain Lck +8 on their first turn.', source: 'Fates Shrine Maiden/Monk', classes: SKILL_CLASS_GROUPS.holy, family: 'rally', trigger: 'battleStart', stats: { lck: 8 } },
   // { rarity: 'rare', id: 'countermagic', name: 'Countermagic', desc: 'Reflects 30% of magical damage taken.', source: 'Fates Priestess/Great Master', classes: SKILL_CLASS_GROUPS.holy, family: 'retaliation', trigger: 'magicHitTaken', effect: 'reflectDamagePercent', amountPercent: 30 },
   { rarity: 'rare', id: 'amaterasu', name: 'Amaterasu', desc: 'All allies recover 4 HP on user\'s turn.', source: 'Fates Basara', classes: SKILL_CLASS_GROUPS.monk, family: 'aura', trigger: 'turnStart', effect: 'allyRegenFlat', amount: 4 },
-  { rarity: 'uncommon', id: 'malice_sense', name: 'Malice Sense', desc: 'Grants passive Avoid +20.', source: 'Midnight Sun Shiori', classes: SKILL_CLASS_GROUPS.holy, family: 'stat', avoid: 20 },
+  { rarity: 'uncommon', id: 'malice_sense', name: 'Malice Sense', desc: 'Grants passive Avoid +20.', source: 'Midnight Sun Shiori', classes: SKILL_CLASS_GROUPS.monk, family: 'stat', avoid: 20 },
 
   // Shaman, dark mage, and druid skills
   { rarity: 'normal', id: 'hex', name: 'Hex', desc: 'Enemies have Avoid -10 against the user.', source: 'Awakening Dark Mage', classes: SKILL_CLASS_GROUPS.shaman, family: 'aura', enemyAvoid: -10 },
@@ -586,20 +589,20 @@ U('Menmus','Wyvern','lance',    {bTotal:35,hp:23,str:9,skl:6,spd:6,lck:4,def:9,r
 U('Quinn','Myrmidon','sword',   {bTotal:43,hp:20,str:9,skl:8,spd:8,lck:7,def:6,res:5,con:6},    {hp:80,str:60,skl:65,spd:55,lck:40,def:35,res:20,gTotal:355},'red'),
 U('Cattleya','Myrmidon','sword',{bTotal:39,hp:20,str:5,skl:8,spd:10,lck:8,def:4,res:4,con:6},   {hp:65,str:40,skl:55,spd:70,lck:45,def:30,res:40,gTotal:345},'purple'),
 U('Letruffe','Thief','sword',   {bTotal:38,hp:20,str:7,skl:10,spd:8,lck:6,def:5,res:2,con:8},   {hp:75,str:40,skl:70,spd:65,lck:45,def:35,res:25,gTotal:355},'green'),
-U('Brendan','Fighter','axe',    {bTotal:43,hp:27,str:9,skl:10,spd:5,lck:5,def:12,res:2,con:13}, {hp:90,str:65,skl:55,spd:30,lck:40,def:65,res:20,gTotal:365},'blue'),
+U('Brendan','Fighter','axe',    {bTotal:43,hp:27,str:9,skl:10,spd:5,lck:5,def:12,res:2,con:13}, {hp:90,str:65,skl:55,spd:30,lck:40,def:65,res:20,gTotal:365},'blue', 2),
 U('Cristoph','Fighter','axe',   {bTotal:33,hp:24,str:7,skl:6,spd:6,lck:9,def:4,res:1,con:11},   {hp:80,str:55,skl:40,spd:55,lck:60,def:25,res:25,gTotal:340},'red'),
-U('Garion','Fighter','axe',     {bTotal:29,hp:28,str:9,skl:7,spd:4,lck:3,def:4,res:2,con:13},   {hp:130,str:70,skl:50,spd:35,lck:30,def:40,res:15,gTotal:370},'red'),
+U('Garion','Fighter','axe',     {bTotal:29,hp:28,str:9,skl:7,spd:4,lck:3,def:4,res:2,con:13},   {hp:130,str:70,skl:50,spd:35,lck:30,def:40,res:15,gTotal:370},'red', 2),
 U('Djambo','Fighter','axe',     {bTotal:33,hp:26,str:9,skl:6,spd:5,lck:8,def:4,res:1,con:12},   {hp:95,str:70,skl:55,spd:50,lck:60,def:45,res:25,gTotal:400},'gold'),
 U('Weiss','Cavalier','sword',   {bTotal:39,hp:22,str:8,skl:8,spd:6,lck:7,def:6,res:4,con:9},    {hp:90,str:50,skl:55,spd:40,lck:40,def:55,res:30,gTotal:360},'blue'),
-U('Valpurga','Cavalier','lance',{bTotal:33,hp:21,str:7,skl:5,spd:6,lck:8,def:6,res:1,con:9},    {hp:85,str:60,skl:45,spd:50,lck:45,def:60,res:25,gTotal:370},'gold'),
+U('Valpurga','Knight','lance',{bTotal:33,hp:21,str:7,skl:5,spd:6,lck:8,def:6,res:1,con:9},    {hp:85,str:60,skl:45,spd:50,lck:45,def:60,res:25,gTotal:370},'gold'),
 U('Sae’rah','Knight','lance',   {bTotal:37,hp:19,str:5,skl:6,spd:7,lck:9,def:6,res:4,con:9},    {hp:75,str:50,skl:50,spd:55,lck:60,def:50,res:30,gTotal:370},'red'),
-U('Schwarz','Pegasus','sword',  {bTotal:34,hp:21,str:8,skl:5,spd:10,lck:3,def:4,res:4,con:6},   {hp:85,str:65,skl:40,spd:65,lck:30,def:30,res:50,gTotal:365},'purple'), // skl base 1 -> 5; sword-wielding flier per design
+U('Schwarz','Pegasus','sword',  {bTotal:34,hp:21,str:8,skl:5,spd:10,lck:3,def:4,res:4,con:6},   {hp:85,str:65,skl:40,spd:65,lck:30,def:30,res:50,gTotal:365},'purple'),
 U('Rya','Archer','bow',         {bTotal:30,hp:17,str:4,skl:6,spd:7,lck:6,def:3,res:4,con:5},    {hp:70,str:50,skl:65,spd:55,lck:35,def:30,res:45,gTotal:350},'green'),
-U('Diana','Mage','anima',       {bTotal:31,hp:18,str:5,skl:5,spd:7,lck:10,def:1,res:3,con:4},   {hp:65,str:55,skl:50,spd:60,lck:60,def:20,res:45,gTotal:355},'purple'), // str base 0 -> 5, growth 20 -> 30: otherwise deals no damage
-U('Andre','Mage','anima',       {bTotal:25,hp:16,str:4,skl:5,spd:6,lck:6,def:1,res:3,con:5},    {hp:80,str:70,skl:60,spd:60,lck:60,def:35,res:55,gTotal:420},'green'), // trainee: the game's highest growth total
-U('Ceapana','Cleric','staff',   {bTotal:39,hp:19,str:4,skl:7,spd:9,lck:11,def:3,res:5,con:5},   {hp:65,str:35,skl:45,spd:50,lck:50,def:30,res:55,gTotal:330},'green'),
-U('Poledra','Monk','light',     {bTotal:28,hp:19,str:4,skl:8,spd:6,lck:2,def:1,res:7,con:5},    {hp:120,str:20,skl:65,spd:45,lck:30,def:30,res:75,gTotal:385},'blue'), // ROM name "Puledra"; str growth 5 -> 20, HP growth 145 -> 120 (still the game's highest)
-U('Hellios','Mercenary','sword',            {bTotal:36,hp:22,str:8,skl:10,spd:8,lck:2,def:4,res:4,con:7},      {hp:80,str:55,skl:60,spd:40,lck:20,def:25,res:20,gTotal:300},'red'),
+U('Diana','Mage','anima',       {bTotal:31,hp:18,str:5,skl:5,spd:7,lck:10,def:1,res:3,con:4},   {hp:65,str:55,skl:50,spd:60,lck:60,def:20,res:45,gTotal:355},'purple',2),
+U('Andre','Mage','anima',       {bTotal:25,hp:16,str:4,skl:5,spd:6,lck:6,def:1,res:3,con:5},    {hp:80,str:70,skl:60,spd:60,lck:60,def:35,res:55,gTotal:420},'green'),
+U('Ceapana','Cleric','staff',   {bTotal:39,hp:19,str:4,skl:7,spd:9,lck:11,def:3,res:5,con:5},   {hp:65,str:65,skl:45,spd:50,lck:50,def:30,res:55,gTotal:360},'green'),
+U('Poledra','Cleric','light',     {bTotal:28,hp:19,str:4,skl:8,spd:6,lck:2,def:1,res:7,con:5},    {hp:100,str:50,skl:65,spd:45,lck:30,def:30,res:75,gTotal:395},'blue', 4),
+U('Hellios','Mercenary','sword',            {bTotal:36,hp:22,str:8,skl:10,spd:8,lck:2,def:4,res:4,con:7},      {hp:80,str:55,skl:60,spd:40,lck:20,def:25,res:20,gTotal:300},'red', 4),
 ]
 
 // prettier-ignore
