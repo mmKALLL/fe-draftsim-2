@@ -39,10 +39,12 @@ export const ROSTER_SIZE = 5,
   ARENA_STAT_DELTA = 4,
   ARENA_SPEED_MULTIPLIER = 0.6
 
-// Endless mode (1T3CRjDJ): most arenas a run can reach (base 4 + extensions of 4), and the
-// lifted internal-level cap (normal is 40) so units keep gaining levels/stats deep into endless.
+// Endless mode (1T3CRjDJ): most arenas a run can reach (base 4 + extensions of 4). The INTERNAL
+// level keeps climbing far past the normal-40 cap so enemies/units never stop gaining stats — this
+// is just a high safety ceiling for the level-up loop. The DISPLAYED level is clamped separately.
 export const MAX_ENDLESS_ARENAS = 20
-export const ENDLESS_INTERNAL_LEVEL_CAP = 99
+export const ENDLESS_INTERNAL_LEVEL_CAP = 9999
+export const ENDLESS_DISPLAY_LEVEL_CAP = 99
 
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   E: 300,
@@ -185,7 +187,7 @@ export const ENEMY_WEAPON_PROFILE: EnemyWeaponArena[] = [
   },
   // Arena 2
   {
-    minion: { default: { normal: 7, uncommon: 3, rare: 0 }, good: { normal: 2, uncommon: 6, rare: 2 } },
+    minion: { default: { normal: 8, uncommon: 2, rare: 0 }, good: { normal: 2, uncommon: 7, rare: 1 } },
     boss: { default: { normal: 0, uncommon: 6, rare: 3 }, good: { normal: 0, uncommon: 6, rare: 3 } },
   },
   // Arena 3

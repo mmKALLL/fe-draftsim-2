@@ -6,6 +6,7 @@ import {
   ENEMY_LUCK_GROWTH_PENALTY,
   ENEMY_LUCK_PENALTY,
   ENEMY_WEAPON_PROFILE,
+  ENDLESS_DISPLAY_LEVEL_CAP,
   ENDLESS_INTERNAL_LEVEL_CAP,
   ENEMY_WEAPON_TYPE_SPLIT,
   GROWTH_STAT_KEYS,
@@ -55,7 +56,7 @@ export function syncDisplayLevel(u: Unit) {
   // Endless (1T3CRjDJ): show the raw internal level, continuous across promotion, up to 99 —
   // rather than resetting to a 1-20 promoted tier.
   if (endlessActive()) {
-    u.lvl = clamp(internal, 1, ENDLESS_INTERNAL_LEVEL_CAP)
+    u.lvl = clamp(internal, 1, ENDLESS_DISPLAY_LEVEL_CAP)
     return
   }
   u.lvl = u.promoted ? clamp(internal - 20, 1, 20) : clamp(internal, 1, 20)

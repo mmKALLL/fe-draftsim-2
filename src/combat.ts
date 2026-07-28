@@ -319,7 +319,7 @@ export function critRate(a: Unit, d: Unit) {
         Math.min(30, combatStat(a, 'skl')) / 2 +
         Math.min(30, combatStat(a, 'lck')) / 2 +
         bonus -
-        combatStat(d, 'lck') +
+        Math.min(30, combatStat(d, 'lck')) +
         heldItemCrit +
         sumSkills(a, (s) => (skillConditionMet(a, s) ? s.crit || 0 : 0)) +
         teamAuraBonus(a, 'crit') +

@@ -60,8 +60,9 @@ export const state = {
 export const endlessActive = () => state.run.endlessExtensions > 0
 // Skill / held-item slots per unit: 1 normally, +1 per endless extension (2, 3, ...).
 export const slotCapacity = () => 1 + state.run.endlessExtensions
-// Enemy internal levels gained per battle: 2 normally, +1 per extension (3, 4, ...).
-export const enemyLevelPerBattle = () => 2 + state.run.endlessExtensions
+// Enemy internal levels gained per battle: 2 in a normal run, a flat 3 in endless (the slot
+// capacity still grows per extension, but the level rate stays constant).
+export const enemyLevelPerBattle = () => (endlessActive() ? 3 : 2)
 
 export const formatGold = (amount = 0) => `${amount} G`
 export const goldHTML = (amount = 0) => `<span class="goldAmount">${formatGold(amount)}</span>`
