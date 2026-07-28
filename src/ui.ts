@@ -85,7 +85,7 @@ export function showWin() {
   // here — mid-endless blocks auto-continue in game.ts. So endlessExtensions > 0 here means mastery.
   if (state.run.endlessExtensions > 0) {
     showResultsModal(
-      `<h2>Absolute mastery!</h2><p>You have conquered all ${MAX_ENDLESS_ARENAS} arenas of Elibe across ${state.battle} battles, showcasing absolute mastery of FireRogue. The dev would be super curious to hear your strat, feel free to join the <a href="https://discord.gg/3VGQytvBDX" target="_blank" style="color: white;">Discord server</a> and share it there. Congratulations on this phenomenal achievement!!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
+      `<h2>🏆 Ultimate Victory 🏆</h2><p>You have conquered every single one of Elibe's many arenas, showcasing absolute mastery of FireRogue. The dev would be super curious to hear your strat, feel free to join the <a href="https://discord.gg/3VGQytvBDX" target="_blank" style="color: white;">Discord server</a> and share it there. Congratulations on this phenomenal achievement!!</p>${scoreHTML(true)}<button data-reset class="good">New run</button>`
     )
   } else {
     showResultsModal(

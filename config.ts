@@ -1,7 +1,7 @@
 import type { Rarity, RewardType, StatKey, WeaponRank } from './types'
 import { gameOrigins, setEnabledGames } from './data'
 
-export const APP_VERSION = '1.10.3-endless-rebalancing'
+export const APP_VERSION = '1.10.4-endless-rebalancing'
 
 type BoostPriceKey = StatKey | 'level'
 
