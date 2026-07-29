@@ -49,6 +49,12 @@ export const ENDLESS_DISPLAY_LEVEL_CAP = 999
 // +-this fraction of the battle's base level, on top of the usual boss/minion offsets. Pct 0 = off.
 export const LATE_LEVEL_VARIANCE_AFTER_ARENA = 12
 export const LATE_LEVEL_VARIANCE_PCT = 0.04
+// Endless enemy level scaling (1T3CRjDJ): the base +2 internal level/battle continues into endless,
+// plus a BONUS level every N fights — gentler than a flat +3/battle. The cadence quickens (fewer
+// fights per bonus) once past ENDLESS_BONUS_STEP_ARENA.
+export const ENDLESS_BONUS_STEP_ARENA = 12
+export const ENDLESS_BONUS_EVERY = 4
+export const ENDLESS_BONUS_EVERY_LATE = 3
 
 export const SHOP_WEAPON_PRICES: Record<WeaponRank, number> = {
   E: 300,

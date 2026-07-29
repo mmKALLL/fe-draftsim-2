@@ -1,4 +1,4 @@
-import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENEMY_GOOD_MINION_COUNT, LATE_LEVEL_VARIANCE_AFTER_ARENA, LATE_LEVEL_VARIANCE_PCT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
+import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENDLESS_BONUS_EVERY, ENDLESS_BONUS_EVERY_LATE, ENDLESS_BONUS_STEP_ARENA, ENEMY_GOOD_MINION_COUNT, LATE_LEVEL_VARIANCE_AFTER_ARENA, LATE_LEVEL_VARIANCE_PCT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, arenaEffectMultiplier, enemyFocusForSlot, extendArenaPlan, pickBaseFromPool, setAutoFight } from './arenas'
 import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearHighlights, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setStatus, spriteEl, useConsumableFromSlot } from './combat'
@@ -340,12 +340,17 @@ export async function runBattle() {
   }
 }
 // --- Endless mode run-length helpers (1T3CRjDJ) ---
-// Enemy base internal level from the per-battle rate applied INCREMENTALLY (not retroactively):
-// +2/level through the normal 20-battle run, then +3/level from arena 5 (endless) onward. This
-// keeps the level continuous across the arena-4->5 boundary instead of re-scaling all battles.
+// Enemy base internal level, applied INCREMENTALLY (not retroactively): a base +2/battle throughout,
+// plus endless-only BONUS levels — one every ENDLESS_BONUS_EVERY fights (arenas 5..step arena), then
+// one every ENDLESS_BONUS_EVERY_LATE fights afterward. Gentler than a flat +3/battle, and continuous
+// across the arena-4->5 boundary. All cadence/threshold knobs live in config.ts.
 export function enemyBaseInternalLevel() {
-  const baseRunBattles = ARENA_CYCLES_PER_RUN * ARENA_CYCLE_LENGTH
-  return 1 + Math.min(state.battle, baseRunBattles) * 2 + Math.max(0, state.battle - baseRunBattles) * 3
+  const endlessStart = ARENA_CYCLES_PER_RUN * ARENA_CYCLE_LENGTH // battle 20 = end of the normal run
+  const stepBattle = ENDLESS_BONUS_STEP_ARENA * ARENA_CYCLE_LENGTH // arena 12 -> battle 60
+  const earlyFights = Math.max(0, Math.min(state.battle, stepBattle) - endlessStart)
+  const lateFights = Math.max(0, state.battle - stepBattle)
+  const bonus = Math.floor(earlyFights / ENDLESS_BONUS_EVERY) + Math.floor(lateFights / ENDLESS_BONUS_EVERY_LATE)
+  return 1 + state.battle * 2 + bonus
 }
 // Arenas this run: base 4, plus 4 per endless extension (4, 8, 12, 16, 20).
 export function arenasThisRun() {
