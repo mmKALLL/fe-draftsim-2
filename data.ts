@@ -66,7 +66,7 @@ export const CLASSES: Record<string, ClassData> = {
     promotesTo: 'General',
     kind: 'knight',
     promotionWeaponTypes: ['lance', 'axe'],
-    caps: { hp: 60, str: 27, skl: 25, spd: 24, lck: 30, def: 30, res: 25, con: 20 },
+    caps: { hp: 60, str: 27, skl: 25, spd: 24, lck: 30, def: 30, res: 24, con: 20 },
     promo: { hp: 4, str: 2, skl: 2, spd: 2, def: 4, res: 3, con: 2 },
   },
   Cavalier: {
@@ -110,7 +110,7 @@ export const CLASSES: Record<string, ClassData> = {
     kind: 'monk',
     strLabel: 'MAG',
     promotionWeaponTypes: ['light', 'staff'],
-    caps: { hp: 60, str: 25, skl: 26, spd: 24, lck: 30, def: 22, res: 30, con: 20 },
+    caps: { hp: 60, str: 25, skl: 26, spd: 28, lck: 30, def: 22, res: 30, con: 20 },
     promo: { hp: 3, str: 2, skl: 1, spd: 1, def: 2, res: 3, con: 1 },
   },
   Cleric: {
@@ -118,7 +118,7 @@ export const CLASSES: Record<string, ClassData> = {
     kind: 'cleric',
     strLabel: 'MAG',
     promotionWeaponTypes: ['light', 'staff'],
-    caps: { hp: 60, str: 25, skl: 25, spd: 26, lck: 30, def: 21, res: 30, con: 20 },
+    caps: { hp: 60, str: 24, skl: 27, spd: 29, lck: 30, def: 21, res: 30, con: 20 },
     promo: { hp: 3, str: 2, skl: 1, spd: 1, def: 2, res: 3, con: 1 },
   },
   Shaman: {
