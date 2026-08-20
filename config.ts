@@ -116,9 +116,9 @@ export const REWARD_RARITY_WEIGHTS: Record<'standard' | 'regular' | 'arena', Rec
   // Arena 1
   { standard: { normal: 80, uncommon: 20, rare: 0 }, regular: { normal: 40, uncommon: 55, rare: 5 }, arena: { normal: 0, uncommon: 90, rare: 10 } },
   // Arena 2
-  { standard: { normal: 40, uncommon: 50, rare: 10 }, regular: { normal: 30, uncommon: 40, rare: 20 }, arena: { normal: 0, uncommon: 60, rare: 40 } },
+  { standard: { normal: 45, uncommon: 50, rare: 5 }, regular: { normal: 30, uncommon: 40, rare: 20 }, arena: { normal: 0, uncommon: 40, rare: 60 } },
   // Arena 3
-  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 10, uncommon: 45, rare: 45 }, arena: { normal: 0, uncommon: 20, rare: 80 } },
+  { standard: { normal: 25, uncommon: 60, rare: 15 }, regular: { normal: 0, uncommon: 45, rare: 55 }, arena: { normal: 0, uncommon: 20, rare: 80 } },
   // Arena 4
   { standard: { normal: 10, uncommon: 70, rare: 20 }, regular: { normal: 0, uncommon: 30, rare: 70 }, arena: { normal: 0, uncommon: 10, rare: 90 } },
 ]
@@ -387,6 +387,16 @@ export const SETTINGS: SettingDef[] = [
     },
   },
   {
+    key: 'protectAction',
+    label: 'Enable rescue action',
+    description: "Tap an ally instead of an enemy to protect them for a turn. Enemy attacks aimed at that ally hit the protector instead, until the protector's next turn.",
+    type: 'toggle',
+    default: true,
+    apply: (v) => {
+      PROTECT_ENABLED = v === true
+    },
+  },
+  {
     key: 'combatCardNames',
     label: 'Skill & item names on combat cards',
     description: 'Show skill and item names on the unit combat cards. Most are long and get truncated though.',
@@ -438,16 +448,6 @@ export const SETTINGS: SettingDef[] = [
     ],
     apply: (v) => {
       SIMPLIFY_ENEMY_WEAPONS = (['never', 'arena2', 'arena3', 'arena4', 'endless', 'always'].includes(v as string) ? v : 'arena2') as SimplifyEnemyWeapons
-    },
-  },
-  {
-    key: 'protectAction',
-    label: 'Protect action',
-    description: "Spend a unit's turn to cover an ally (tap an ally instead of an enemy): enemy attacks and status staves aimed at that ally hit the protector instead, until the protector's next turn.",
-    type: 'toggle',
-    default: true,
-    apply: (v) => {
-      PROTECT_ENABLED = v !== false
     },
   },
   {

@@ -1,7 +1,7 @@
 import { ARENA_BOSS_HP_MULT, ARENA_BOSS_HP_MULT_LATE, ARENA_CYCLE_LENGTH, ARENA_CYCLES_PER_RUN, ARENA_ENEMY_FORGE_RANGE, ARENA_ENEMY_LEVEL_BONUS, BOSS_TIER_ARENA, BOSS_TIER_REGULAR, CONSUMABLE_SLOTS, EARLY_ENEMY_LEVEL_PENALTY, EARLY_ENEMY_NERF_BATTLES, ENEMY_ARENA_BANS, ENDLESS_BONUS_EVERY, ENDLESS_BONUS_EVERY_LATE, ENDLESS_BONUS_STEP_ARENA, ENEMY_GOOD_MINION_COUNT, LATE_LEVEL_VARIANCE_AFTER_ARENA, LATE_LEVEL_VARIANCE_PCT, LEADER_BONUS_LEVELS, MAX_ENDLESS_ARENAS, MID_BOSS_HP_MULT, ROSTER_SIZE, GOLD_ARENA_BOSS_BONUS, GOLD_METHOD, GOLD_PER_BATTLE_SURVIVOR, PROTECT_ENABLED, SHOP_ARENA_BOSS_GOLD, SHOW_VICTORY_LOG, STAFF_EXHAUST_ROUND_LIMIT } from '../config'
 import { BASES } from '../data'
 import { activeArenaEntry, arenaEffectLabels, arenaEffectMultiplier, enemyFocusForSlot, extendArenaPlan, pickBaseFromPool, setAutoFight } from './arenas'
-import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyProtectRedirect, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearAllProtect, clearHighlights, clearProtect, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setProtect, setStatus, spriteEl, useConsumableFromSlot } from './combat'
+import { applyBattleStartHeldItems, applyBattleStartRallies, applyEndOfTurnStatus, applyProtectRedirect, applyTurnStartRegen, autoFightTargetFor, chooseEnemyTarget, chooseStatusStaffTarget, clearAllProtect, clearHighlights, clearProtect, clearTemporaryBuffs, clearTurnBuffs, clearUnitStatus, computeMaxHp, consumeTurnStatus, enemyDisplayName, flashProtect, hasUsableConsumable, isStatusStaff, nextLivingIndex, resolveActorTurn, selectPlayerAction, setProtect, setStatus, spriteEl, useConsumableFromSlot } from './combat'
 import { logLine, renderTeams, selectedRosterCount, updateNextEnemyMarker } from './render'
 import { assignEnemyBonuses, firstEmptyConsumableSlot, showRewards } from './rewards'
 import { storeConsumable } from './shop'
@@ -269,6 +269,7 @@ export async function runBattle() {
           setProtect(actor, protectedAlly)
           setStatus(`${actor.name} braces to protect ${protectedAlly.name}.`)
           logLine(null, `${actor.name} moves to protect ${protectedAlly.name}.`, 'heal')
+          await flashProtect(protectedAlly)
         } else {
           setStatus(state.combat.autoFight ? (target ? `${actor.name} auto-targets ${target.name}.` : `${actor.name} auto-fights.`) : `${actor.name} acts.`)
           await resolveActorTurn(actor, state.player, state.enemy, target, stavesExhausted)
@@ -297,7 +298,9 @@ export async function runBattle() {
           continue
         }
         // Protect (2asrkT4w): redirect the attack/status-staff down the protection chain to a protector.
-        const target = applyProtectRedirect(actor.weapon.staff ? (!stavesExhausted && isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, state.player) : null) : chooseEnemyTarget())
+        const chosen = actor.weapon.staff ? (!stavesExhausted && isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, state.player) : null) : chooseEnemyTarget()
+        const target = applyProtectRedirect(chosen)
+        if (target && target !== chosen) await flashProtect(target) // an attack was redirected onto a protector
         if (target) setStatus(`${actor.name} targets ${target.name}.`)
         await resolveActorTurn(actor, state.enemy, state.player, target, stavesExhausted)
         await applyEndOfTurnStatus(actor)
