@@ -930,9 +930,11 @@ export function clearAllProtect() {
     u.protectedBy = null
   }
 }
-// Redirect an attack down the protection chain: at each protected unit pick a random LIVING protector
-// (dead protectors are skipped, so a dead protector's cover ends), following A<-B<-C chains to the
-// final protector. The `seen` set guards against protect cycles.
+// Redirect an attack down the protection chain: at each protected unit take the LATEST living
+// protector (most recently assigned — protectedBy is in assignment order), so the newest protector
+// soaks the ally's hits until it's knocked out or its cover clears at its turn (removed from the
+// list), then the previous protector takes over. Follows A<-B<-C chains to the final protector; the
+// `seen` set guards against protect cycles.
 export function applyProtectRedirect(target: Unit | null): Unit | null {
   if (!target) return null
   const seen = new Set<string>()
@@ -943,7 +945,7 @@ export function applyProtectRedirect(target: Unit | null): Unit | null {
       .map((id) => state.player.find((u) => u.id === id))
       .filter((p): p is Unit => !!p && p.hp > 0 && p.id !== cur.id && !seen.has(p.id))
     if (!protectors.length) break
-    cur = pick(protectors)
+    cur = protectors[protectors.length - 1]
   }
   return cur
 }
