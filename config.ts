@@ -298,6 +298,9 @@ export let MULTI_HIT_EXTRA_TIERS = false
 // Center combat cards (17WAdseJ): show each unit's skill + held-item names below the
 // damage line. Off (default) keeps the small cards compact (weapon + damage only).
 export let SHOW_COMBAT_LOADOUT_NAMES = false
+// Protect action (2asrkT4w): when on, a player unit can spend its turn to cover an ally — enemy
+// attacks and status staves aimed at that ally hit the protector instead, until the protector's next turn.
+export let PROTECT_ENABLED = true
 // Simplify enemy weapons: restrict regular minions to the plain (isDefaultWeapon) weapon pool,
 // reducing complex weapons, for arenas UP TO the chosen threshold (exclusive — 'arena3' simplifies
 // arenas 1-2). 'endless' covers all normal arenas but not endless; 'always' includes endless.
@@ -435,6 +438,16 @@ export const SETTINGS: SettingDef[] = [
     ],
     apply: (v) => {
       SIMPLIFY_ENEMY_WEAPONS = (['never', 'arena2', 'arena3', 'arena4', 'endless', 'always'].includes(v as string) ? v : 'arena2') as SimplifyEnemyWeapons
+    },
+  },
+  {
+    key: 'protectAction',
+    label: 'Protect action',
+    description: "Spend a unit's turn to cover an ally (tap an ally instead of an enemy): enemy attacks and status staves aimed at that ally hit the protector instead, until the protector's next turn.",
+    type: 'toggle',
+    default: true,
+    apply: (v) => {
+      PROTECT_ENABLED = v !== false
     },
   },
   {

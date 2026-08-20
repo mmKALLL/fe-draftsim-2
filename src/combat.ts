@@ -907,6 +907,46 @@ export function chooseAITarget(targets: Unit[], opposingTeam: any) {
 export function chooseEnemyTarget() {
   return chooseAITarget(state.player, state.enemy)
 }
+// --- Protect action (2asrkT4w) ---
+// A protector spends its turn covering ONE ally; an ally may be covered by MANY protectors. While
+// active, enemy attacks/status staves aimed at the ally are redirected to a protector. Stored as ids
+// (Unit has an open index signature): protector.protecting = allyId, ally.protectedBy = protectorId[].
+// Cleared at the protector's next turn (game.ts) and at battle start (clearAllProtect).
+export function setProtect(protector: Unit, ally: Unit) {
+  clearProtect(protector) // a protector covers only one ally at a time
+  protector.protecting = ally.id
+  ally.protectedBy = [...((ally.protectedBy as string[]) || []).filter((id) => id !== protector.id), protector.id]
+}
+export function clearProtect(protector: Unit) {
+  const allyId = protector.protecting
+  if (!allyId) return
+  const ally = state.player.find((u) => u.id === allyId)
+  if (ally && Array.isArray(ally.protectedBy)) ally.protectedBy = ally.protectedBy.filter((id: string) => id !== protector.id)
+  protector.protecting = null
+}
+export function clearAllProtect() {
+  for (const u of [...state.player, ...state.enemy]) {
+    u.protecting = null
+    u.protectedBy = null
+  }
+}
+// Redirect an attack down the protection chain: at each protected unit pick a random LIVING protector
+// (dead protectors are skipped, so a dead protector's cover ends), following A<-B<-C chains to the
+// final protector. The `seen` set guards against protect cycles.
+export function applyProtectRedirect(target: Unit | null): Unit | null {
+  if (!target) return null
+  const seen = new Set<string>()
+  let cur: Unit = target
+  while (!seen.has(cur.id)) {
+    seen.add(cur.id)
+    const protectors = ((cur.protectedBy as string[]) || [])
+      .map((id) => state.player.find((u) => u.id === id))
+      .filter((p): p is Unit => !!p && p.hp > 0 && p.id !== cur.id && !seen.has(p.id))
+    if (!protectors.length) break
+    cur = pick(protectors)
+  }
+  return cur
+}
 export function autoFightTargetFor(actor: Unit, allies: Unit[], foes: Unit[], stavesExhausted = false) {
   if (actor.weapon.staff) {
     if (stavesExhausted) return null

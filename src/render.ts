@@ -186,6 +186,10 @@ export function unitCard(u: Unit) {
   const leader = u.isLeader ? ' · Leader' : ''
   const buffs = temporaryBuffLabel(u)
   const buffText = buffs ? ` · ${buffs}` : ''
+  // Protect action (2asrkT4w): who this unit is covering, and whether it's covered by a living ally.
+  const protectedAlly = u.protecting ? state.player.find((a) => a.id === u.protecting && a.hp > 0) : null
+  const protectText = protectedAlly ? ` · Protecting ${protectedAlly.name}` : ''
+  const coveredText = Array.isArray(u.protectedBy) && state.player.some((p) => (u.protectedBy as string[]).includes(p.id) && p.hp > 0 && p.id !== u.id) ? ' · Protected' : ''
   const portrait = portraitImgForUnit(u)
   const effectBracket = (desc: string) => (desc ? ` <span class="effectNote">[${desc}]</span>` : '')
   const held = unitItems(u).map((i) => `<div class="small heldLine" title="${htmlAttr(i.desc || '')}">${i.name}${effectBracket(i.desc || '')}</div>`).join('')
@@ -193,7 +197,7 @@ export function unitCard(u: Unit) {
   const itemSkillList = held || skill ? `<div class="cardItemList">${skill}${held}</div>` : ''
   const dmg = displayAttackPower(u)
   const pill = u.weapon?.staff ? `${attackSpeed(u)} AS` : `${dmg} dmg / ${attackSpeed(u)} AS`
-  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space nameRow"><div class="name">${u.name}</div><span class="pill">${pill}</span></div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + sumItems(u, (i) => i.crit) + sumSkills(u, (s) => s.crit))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
+  return `<div class="card unitCard ${u.hp <= 0 ? 'dead' : ''}"><div class="portraitStack">${portrait}</div><div><div class="row space nameRow"><div class="name">${u.name}</div><span class="pill">${pill}</span></div><div class="class">${u.displayCls} ${levelLabel(u)}${leader}${wt}${status}${buffText}${protectText}${coveredText}</div><div class="hpbar"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></div><div class="small">HP ${u.hp}/${u.maxHp} · Hit ${u.weapon.staff ? '--' : hitRate(u, { weapon: { type: 'none' }, stats: { lck: 0, spd: 0, con: 99 } } as any)} · Avo ${avoid(u)} · Crit ${u.weapon.staff ? '--' : floor((u.weapon.crit || 0) + u.stats.skl / 2 + sumItems(u, (i) => i.crit) + sumSkills(u, (s) => s.crit))}</div>${weaponStatHTML(u.weapon)}<div class="stats">${statHTML(u)}</div>${itemSkillList}</div></div>`
 }
 export function renderConsumables() {
   const panel = $('consumablePanel')
