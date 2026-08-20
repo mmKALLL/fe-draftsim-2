@@ -300,7 +300,7 @@ export async function runBattle() {
         // Protect (2asrkT4w): redirect the attack/status-staff down the protection chain to a protector.
         const chosen = actor.weapon.staff ? (!stavesExhausted && isStatusStaff(actor.weapon) ? chooseStatusStaffTarget(actor, state.player) : null) : chooseEnemyTarget()
         const target = applyProtectRedirect(chosen)
-        if (target && target !== chosen) await flashProtect(target) // an attack was redirected onto a protector
+        if (target && chosen && target !== chosen) await flashProtect(chosen) // flash the protected unit whose attack got redirected
         if (target) setStatus(`${actor.name} targets ${target.name}.`)
         await resolveActorTurn(actor, state.enemy, state.player, target, stavesExhausted)
         await applyEndOfTurnStatus(actor)
