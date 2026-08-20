@@ -269,7 +269,7 @@ export async function runBattle() {
           setProtect(actor, protectedAlly)
           setStatus(`${actor.name} braces to protect ${protectedAlly.name}.`)
           logLine(null, `${actor.name} moves to protect ${protectedAlly.name}.`, 'heal')
-          await flashProtect(protectedAlly)
+          await flashProtect(protectedAlly, false) // text only on the initial protect; flash is for redirects
         } else {
           setStatus(state.combat.autoFight ? (target ? `${actor.name} auto-targets ${target.name}.` : `${actor.name} auto-fights.`) : `${actor.name} acts.`)
           await resolveActorTurn(actor, state.player, state.enemy, target, stavesExhausted)

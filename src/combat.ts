@@ -1036,10 +1036,11 @@ export async function animateSkillProc(u: Unit, skill: any) {
   await sleep(590)
   if (el) el.classList.remove('procFlash')
 }
-// Blue "Protect" flash + float on a unit's sprite (2asrkT4w) — shown when a unit starts protecting an
-// ally and when an incoming attack is redirected onto a protector. Mirrors the skill-proc beat.
-export async function flashProtect(u: Unit) {
-  const el = spriteEl(u)
+// "Protect" float on a unit's sprite (2asrkT4w). withFlash also adds a blue sprite flash (the
+// skill-proc beat) — used when an incoming attack is redirected for this unit; the initial protect
+// action shows the text only.
+export async function flashProtect(u: Unit, withFlash = true) {
+  const el = withFlash ? spriteEl(u) : null
   if (el) {
     el.style.setProperty('--procColor', '#60a5fa')
     el.classList.add('procFlash')
